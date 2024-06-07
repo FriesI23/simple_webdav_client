@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "test-and-coverage",
+            "type": "shell",
+            "command": "sh scripts/run_unittest.sh",
+            "options": {
+                "env": {
+                    "SKIP_OPENURL": "1",
+                }
+            },
+            "windows": {
+                "command": "scripts\\run_unittest.bat"
+            }
+        },
+        {
+            "label": "test-and-coverage-openurl",
+            "type": "shell",
+            "command": "sh scripts/run_unittest.sh",
+            "windows": {
+                "command": "scripts\\run_unittest.bat"
+            }
+        },
+    ]
+}

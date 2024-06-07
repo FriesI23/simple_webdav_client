@@ -1,0 +1,27 @@
+name: simple_webdav_client
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+# Add regular dependencies here.
+dependencies:
+  xml: ^6.5.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.24.0
+  coverage: ^1.7.2
+  mockito: ^5.4.4
+  build_runner: ^2.4.8
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+funding:
+  - https://www.buymeacoffee.com/d49cb87qgww
+
+topics:
+  - webdav
+  - webdav-client

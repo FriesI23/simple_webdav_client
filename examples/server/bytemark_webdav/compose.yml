@@ -1,0 +1,13 @@
+# https://hub.docker.com/r/bytemark/webdav
+services:
+  webdav:
+    image: bytemark/webdav
+    restart: no
+    ports:
+      - "80:80"
+    environment:
+      AUTH_TYPE: Basic
+      USERNAME: admin
+      PASSWORD: 123456
+    volumes:
+      - ./dav:/var/lib/dav
