@@ -24,6 +24,7 @@ class WebDavStdClient implements WebDavClient {
 
   @override
   void close({bool force = false}) {
+    if (_closing) return;
     client.close(force: force);
     _closing = true;
   }
