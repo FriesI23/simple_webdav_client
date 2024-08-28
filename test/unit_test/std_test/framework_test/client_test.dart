@@ -8,6 +8,8 @@ import 'dart:io';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:simple_webdav_client/src/_std/client.dart';
+import 'package:simple_webdav_client/src/_std/decoder_mgr.dart';
+import 'package:simple_webdav_client/src/_std/parser.dart';
 import 'package:simple_webdav_client/src/method.dart';
 import 'package:simple_webdav_client/src/request.dart';
 import 'package:test/expect.dart';
@@ -17,6 +19,8 @@ import 'package:test/scaffolding.dart';
   HttpClient,
   HttpClientRequest,
   WebDavRequestParam,
+  ResponseBodyDecoderManager,
+  ResponseResultParser,
 ])
 import 'client_test.mocks.dart';
 
@@ -38,19 +42,19 @@ void main() {
     tearDownAll(() {
       HttpOverrides.global = null;
     });
-    test("test constructor", () {
+    test("constructor", () {
       final client = WebDavStdClient();
       expect(client.client, same(MockHttpOverrides.client));
       expect(client.closed, isFalse);
     });
-    test("test close", () {
+    test("close", () {
       final client = WebDavStdClient();
       expect(client.closed, false);
       client.close();
       expect(client.closed, true);
       verify(client.client.close(force: false)).called(1);
     });
-    test("test close called multi times", () {
+    test("close called multi times", () {
       final client = WebDavStdClient();
       expect(client.closed, false);
       client.close(force: true);
@@ -60,7 +64,7 @@ void main() {
       verify(client.client.close(force: true)).called(1);
       verifyNever(client.client.close(force: false));
     });
-    test("test setAuthenticate", () {
+    test("setAuthenticate", () {
       Future<bool> mockFunc(Uri url, String scheme, String? realm) async =>
           true;
 
@@ -68,7 +72,7 @@ void main() {
       client.setAuthenticate(mockFunc);
       verify(client.client.authenticate = mockFunc).called(1);
     });
-    test("test setAuthenticateProxy", () {
+    test("setAuthenticateProxy", () {
       Future<bool> mockFunc(
               String host, int port, String scheme, String? realm) async =>
           true;
@@ -116,6 +120,30 @@ void main() {
       expect(request.param, equals(param));
       expect(request.responseBodyDecoders, isNull);
       expect(request.responseResultParser, isNull);
+    });
+    test("openUrl with params", () async {
+      final client = WebDavStdClient();
+      final method = WebDavMethod.get;
+      final url = Uri.parse("http://www.example.com");
+      final param = MockWebDavRequestParam();
+      final httpRequest = MockHttpClientRequest();
+      when(httpRequest.uri).thenReturn(url);
+      when(httpRequest.method).thenReturn(method.name);
+      when(client.client.openUrl(method.name, url))
+          .thenAnswer((_) => Future.value(httpRequest));
+      final request = await client.openUrl(
+        method: method,
+        url: url,
+        param: param,
+        responseBodyDecoders: MockResponseBodyDecoderManager(),
+        responseResultParser: MockResponseResultParser(),
+      );
+      expect(request.request, equals(TypeMatcher<HttpClientRequest>()));
+      expect(request.method, equals(method));
+      expect(request.param, equals(param));
+      expect(request.responseBodyDecoders,
+          equals(TypeMatcher<ResponseBodyDecoderManager>()));
+      expect(request.responseResultParser, TypeMatcher<ResponseResultParser>());
     });
   });
 }
