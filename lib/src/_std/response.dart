@@ -36,6 +36,9 @@ class WebDavStdResponse<T extends WebDavStdResResultView>
     required this.resultParser,
   });
 
+  @override
+  String? get body => _data;
+
   Future<String> _decodeBody() async {
     final contentType = response.headers.contentType;
     final decoder = bodyDecoders[contentType?.charset ?? 'utf-8'];

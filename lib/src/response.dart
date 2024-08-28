@@ -9,6 +9,7 @@ import 'method.dart';
 abstract interface class WebDavResponse<T extends WebDavResponseResultView> {
   Uri get path;
   WebDavMethod get method;
+  String? get body;
 
   Future<T?> parse();
 }
