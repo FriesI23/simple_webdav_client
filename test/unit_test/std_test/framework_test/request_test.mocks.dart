@@ -69,9 +69,40 @@ class _FakeEncoding_3 extends _i1.SmartFake implements _i3.Encoding {
         );
 }
 
-class _FakeStreamTransformer_4<S, T> extends _i1.SmartFake
+class _FakeSocket_4 extends _i1.SmartFake implements _i2.Socket {
+  _FakeSocket_4(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeStreamSubscription_5<T> extends _i1.SmartFake
+    implements _i4.StreamSubscription<T> {
+  _FakeStreamSubscription_5(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeFuture_6<T> extends _i1.SmartFake implements _i4.Future<T> {
+  _FakeFuture_6(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeStreamTransformer_7<S, T> extends _i1.SmartFake
     implements _i4.StreamTransformer<S, T> {
-  _FakeStreamTransformer_4(
+  _FakeStreamTransformer_7(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -80,9 +111,9 @@ class _FakeStreamTransformer_4<S, T> extends _i1.SmartFake
         );
 }
 
-class _FakeConverter_5<S, T> extends _i1.SmartFake
+class _FakeConverter_8<S, T> extends _i1.SmartFake
     implements _i3.Converter<S, T> {
-  _FakeConverter_5(
+  _FakeConverter_8(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -91,8 +122,8 @@ class _FakeConverter_5<S, T> extends _i1.SmartFake
         );
 }
 
-class _FakeSink_6<T> extends _i1.SmartFake implements Sink<T> {
-  _FakeSink_6(
+class _FakeSink_9<T> extends _i1.SmartFake implements Sink<T> {
+  _FakeSink_9(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -365,6 +396,566 @@ class MockHttpClientRequest extends _i1.Mock implements _i2.HttpClientRequest {
       ) as _i4.Future<dynamic>);
 }
 
+/// A class which mocks [HttpClientResponse].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockHttpClientResponse extends _i1.Mock
+    implements _i2.HttpClientResponse {
+  MockHttpClientResponse() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  int get statusCode => (super.noSuchMethod(
+        Invocation.getter(#statusCode),
+        returnValue: 0,
+      ) as int);
+
+  @override
+  String get reasonPhrase => (super.noSuchMethod(
+        Invocation.getter(#reasonPhrase),
+        returnValue: _i5.dummyValue<String>(
+          this,
+          Invocation.getter(#reasonPhrase),
+        ),
+      ) as String);
+
+  @override
+  int get contentLength => (super.noSuchMethod(
+        Invocation.getter(#contentLength),
+        returnValue: 0,
+      ) as int);
+
+  @override
+  _i2.HttpClientResponseCompressionState get compressionState =>
+      (super.noSuchMethod(
+        Invocation.getter(#compressionState),
+        returnValue: _i2.HttpClientResponseCompressionState.notCompressed,
+      ) as _i2.HttpClientResponseCompressionState);
+
+  @override
+  bool get persistentConnection => (super.noSuchMethod(
+        Invocation.getter(#persistentConnection),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get isRedirect => (super.noSuchMethod(
+        Invocation.getter(#isRedirect),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  List<_i2.RedirectInfo> get redirects => (super.noSuchMethod(
+        Invocation.getter(#redirects),
+        returnValue: <_i2.RedirectInfo>[],
+      ) as List<_i2.RedirectInfo>);
+
+  @override
+  _i2.HttpHeaders get headers => (super.noSuchMethod(
+        Invocation.getter(#headers),
+        returnValue: _FakeHttpHeaders_1(
+          this,
+          Invocation.getter(#headers),
+        ),
+      ) as _i2.HttpHeaders);
+
+  @override
+  List<_i2.Cookie> get cookies => (super.noSuchMethod(
+        Invocation.getter(#cookies),
+        returnValue: <_i2.Cookie>[],
+      ) as List<_i2.Cookie>);
+
+  @override
+  bool get isBroadcast => (super.noSuchMethod(
+        Invocation.getter(#isBroadcast),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i4.Future<int> get length => (super.noSuchMethod(
+        Invocation.getter(#length),
+        returnValue: _i4.Future<int>.value(0),
+      ) as _i4.Future<int>);
+
+  @override
+  _i4.Future<bool> get isEmpty => (super.noSuchMethod(
+        Invocation.getter(#isEmpty),
+        returnValue: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
+
+  @override
+  _i4.Future<List<int>> get first => (super.noSuchMethod(
+        Invocation.getter(#first),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<List<int>> get last => (super.noSuchMethod(
+        Invocation.getter(#last),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<List<int>> get single => (super.noSuchMethod(
+        Invocation.getter(#single),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<_i2.HttpClientResponse> redirect([
+    String? method,
+    Uri? url,
+    bool? followLoops,
+  ]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #redirect,
+          [
+            method,
+            url,
+            followLoops,
+          ],
+        ),
+        returnValue:
+            _i4.Future<_i2.HttpClientResponse>.value(_FakeHttpClientResponse_2(
+          this,
+          Invocation.method(
+            #redirect,
+            [
+              method,
+              url,
+              followLoops,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.HttpClientResponse>);
+
+  @override
+  _i4.Future<_i2.Socket> detachSocket() => (super.noSuchMethod(
+        Invocation.method(
+          #detachSocket,
+          [],
+        ),
+        returnValue: _i4.Future<_i2.Socket>.value(_FakeSocket_4(
+          this,
+          Invocation.method(
+            #detachSocket,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Socket>);
+
+  @override
+  _i4.Stream<List<int>> asBroadcastStream({
+    void Function(_i4.StreamSubscription<List<int>>)? onListen,
+    void Function(_i4.StreamSubscription<List<int>>)? onCancel,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #asBroadcastStream,
+          [],
+          {
+            #onListen: onListen,
+            #onCancel: onCancel,
+          },
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.StreamSubscription<List<int>> listen(
+    void Function(List<int>)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #listen,
+          [onData],
+          {
+            #onError: onError,
+            #onDone: onDone,
+            #cancelOnError: cancelOnError,
+          },
+        ),
+        returnValue: _FakeStreamSubscription_5<List<int>>(
+          this,
+          Invocation.method(
+            #listen,
+            [onData],
+            {
+              #onError: onError,
+              #onDone: onDone,
+              #cancelOnError: cancelOnError,
+            },
+          ),
+        ),
+      ) as _i4.StreamSubscription<List<int>>);
+
+  @override
+  _i4.Stream<List<int>> where(bool Function(List<int>)? test) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #where,
+          [test],
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Stream<S> map<S>(S Function(List<int>)? convert) => (super.noSuchMethod(
+        Invocation.method(
+          #map,
+          [convert],
+        ),
+        returnValue: _i4.Stream<S>.empty(),
+      ) as _i4.Stream<S>);
+
+  @override
+  _i4.Stream<E> asyncMap<E>(_i4.FutureOr<E> Function(List<int>)? convert) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #asyncMap,
+          [convert],
+        ),
+        returnValue: _i4.Stream<E>.empty(),
+      ) as _i4.Stream<E>);
+
+  @override
+  _i4.Stream<E> asyncExpand<E>(_i4.Stream<E>? Function(List<int>)? convert) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #asyncExpand,
+          [convert],
+        ),
+        returnValue: _i4.Stream<E>.empty(),
+      ) as _i4.Stream<E>);
+
+  @override
+  _i4.Stream<List<int>> handleError(
+    Function? onError, {
+    bool Function(dynamic)? test,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #handleError,
+          [onError],
+          {#test: test},
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Stream<S> expand<S>(Iterable<S> Function(List<int>)? convert) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #expand,
+          [convert],
+        ),
+        returnValue: _i4.Stream<S>.empty(),
+      ) as _i4.Stream<S>);
+
+  @override
+  _i4.Future<dynamic> pipe(_i4.StreamConsumer<List<int>>? streamConsumer) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #pipe,
+          [streamConsumer],
+        ),
+        returnValue: _i4.Future<dynamic>.value(),
+      ) as _i4.Future<dynamic>);
+
+  @override
+  _i4.Stream<S> transform<S>(
+          _i4.StreamTransformer<List<int>, S>? streamTransformer) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #transform,
+          [streamTransformer],
+        ),
+        returnValue: _i4.Stream<S>.empty(),
+      ) as _i4.Stream<S>);
+
+  @override
+  _i4.Future<List<int>> reduce(
+          List<int> Function(
+            List<int>,
+            List<int>,
+          )? combine) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #reduce,
+          [combine],
+        ),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<S> fold<S>(
+    S? initialValue,
+    S Function(
+      S,
+      List<int>,
+    )? combine,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fold,
+          [
+            initialValue,
+            combine,
+          ],
+        ),
+        returnValue: _i5.ifNotNull(
+              _i5.dummyValueOrNull<S>(
+                this,
+                Invocation.method(
+                  #fold,
+                  [
+                    initialValue,
+                    combine,
+                  ],
+                ),
+              ),
+              (S v) => _i4.Future<S>.value(v),
+            ) ??
+            _FakeFuture_6<S>(
+              this,
+              Invocation.method(
+                #fold,
+                [
+                  initialValue,
+                  combine,
+                ],
+              ),
+            ),
+      ) as _i4.Future<S>);
+
+  @override
+  _i4.Future<String> join([String? separator = r'']) => (super.noSuchMethod(
+        Invocation.method(
+          #join,
+          [separator],
+        ),
+        returnValue: _i4.Future<String>.value(_i5.dummyValue<String>(
+          this,
+          Invocation.method(
+            #join,
+            [separator],
+          ),
+        )),
+      ) as _i4.Future<String>);
+
+  @override
+  _i4.Future<bool> contains(Object? needle) => (super.noSuchMethod(
+        Invocation.method(
+          #contains,
+          [needle],
+        ),
+        returnValue: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
+
+  @override
+  _i4.Future<void> forEach(void Function(List<int>)? action) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #forEach,
+          [action],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<bool> every(bool Function(List<int>)? test) => (super.noSuchMethod(
+        Invocation.method(
+          #every,
+          [test],
+        ),
+        returnValue: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
+
+  @override
+  _i4.Future<bool> any(bool Function(List<int>)? test) => (super.noSuchMethod(
+        Invocation.method(
+          #any,
+          [test],
+        ),
+        returnValue: _i4.Future<bool>.value(false),
+      ) as _i4.Future<bool>);
+
+  @override
+  _i4.Stream<R> cast<R>() => (super.noSuchMethod(
+        Invocation.method(
+          #cast,
+          [],
+        ),
+        returnValue: _i4.Stream<R>.empty(),
+      ) as _i4.Stream<R>);
+
+  @override
+  _i4.Future<List<List<int>>> toList() => (super.noSuchMethod(
+        Invocation.method(
+          #toList,
+          [],
+        ),
+        returnValue: _i4.Future<List<List<int>>>.value(<List<int>>[]),
+      ) as _i4.Future<List<List<int>>>);
+
+  @override
+  _i4.Future<Set<List<int>>> toSet() => (super.noSuchMethod(
+        Invocation.method(
+          #toSet,
+          [],
+        ),
+        returnValue: _i4.Future<Set<List<int>>>.value(<List<int>>{}),
+      ) as _i4.Future<Set<List<int>>>);
+
+  @override
+  _i4.Future<E> drain<E>([E? futureValue]) => (super.noSuchMethod(
+        Invocation.method(
+          #drain,
+          [futureValue],
+        ),
+        returnValue: _i5.ifNotNull(
+              _i5.dummyValueOrNull<E>(
+                this,
+                Invocation.method(
+                  #drain,
+                  [futureValue],
+                ),
+              ),
+              (E v) => _i4.Future<E>.value(v),
+            ) ??
+            _FakeFuture_6<E>(
+              this,
+              Invocation.method(
+                #drain,
+                [futureValue],
+              ),
+            ),
+      ) as _i4.Future<E>);
+
+  @override
+  _i4.Stream<List<int>> take(int? count) => (super.noSuchMethod(
+        Invocation.method(
+          #take,
+          [count],
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Stream<List<int>> takeWhile(bool Function(List<int>)? test) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #takeWhile,
+          [test],
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Stream<List<int>> skip(int? count) => (super.noSuchMethod(
+        Invocation.method(
+          #skip,
+          [count],
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Stream<List<int>> skipWhile(bool Function(List<int>)? test) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #skipWhile,
+          [test],
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Stream<List<int>> distinct(
+          [bool Function(
+            List<int>,
+            List<int>,
+          )? equals]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #distinct,
+          [equals],
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+
+  @override
+  _i4.Future<List<int>> firstWhere(
+    bool Function(List<int>)? test, {
+    List<int> Function()? orElse,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #firstWhere,
+          [test],
+          {#orElse: orElse},
+        ),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<List<int>> lastWhere(
+    bool Function(List<int>)? test, {
+    List<int> Function()? orElse,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #lastWhere,
+          [test],
+          {#orElse: orElse},
+        ),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<List<int>> singleWhere(
+    bool Function(List<int>)? test, {
+    List<int> Function()? orElse,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #singleWhere,
+          [test],
+          {#orElse: orElse},
+        ),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Future<List<int>> elementAt(int? index) => (super.noSuchMethod(
+        Invocation.method(
+          #elementAt,
+          [index],
+        ),
+        returnValue: _i4.Future<List<int>>.value(<int>[]),
+      ) as _i4.Future<List<int>>);
+
+  @override
+  _i4.Stream<List<int>> timeout(
+    Duration? timeLimit, {
+    void Function(_i4.EventSink<List<int>>)? onTimeout,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #timeout,
+          [timeLimit],
+          {#onTimeout: onTimeout},
+        ),
+        returnValue: _i4.Stream<List<int>>.empty(),
+      ) as _i4.Stream<List<int>>);
+}
+
 /// A class which mocks [WebDavRequestParam].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -514,7 +1105,7 @@ class MockResponseBodyDecoderManager extends _i1.Mock
             ifAbsent,
           ],
         ),
-        returnValue: _FakeStreamTransformer_4<List<int>, String>(
+        returnValue: _FakeStreamTransformer_7<List<int>, String>(
           this,
           Invocation.method(
             #putIfAbsent,
@@ -543,7 +1134,7 @@ class MockResponseBodyDecoderManager extends _i1.Mock
           ],
           {#ifAbsent: ifAbsent},
         ),
-        returnValue: _FakeStreamTransformer_4<List<int>, String>(
+        returnValue: _FakeStreamTransformer_7<List<int>, String>(
           this,
           Invocation.method(
             #update,
@@ -653,7 +1244,7 @@ class MockResponseResultParser<
           #fuse,
           [other],
         ),
-        returnValue: _FakeConverter_5<_i10.ResponseResultParserParam, TT>(
+        returnValue: _FakeConverter_8<_i10.ResponseResultParserParam, TT>(
           this,
           Invocation.method(
             #fuse,
@@ -669,7 +1260,7 @@ class MockResponseResultParser<
           #startChunkedConversion,
           [sink],
         ),
-        returnValue: _FakeSink_6<_i10.ResponseResultParserParam>(
+        returnValue: _FakeSink_9<_i10.ResponseResultParserParam>(
           this,
           Invocation.method(
             #startChunkedConversion,
@@ -694,7 +1285,7 @@ class MockResponseResultParser<
           #cast,
           [],
         ),
-        returnValue: _FakeConverter_5<RS, RT>(
+        returnValue: _FakeConverter_8<RS, RT>(
           this,
           Invocation.method(
             #cast,
