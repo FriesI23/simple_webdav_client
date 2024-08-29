@@ -10,6 +10,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:simple_webdav_client/src/_std/decoder_mgr.dart';
 import 'package:simple_webdav_client/src/_std/parser.dart';
+import 'package:simple_webdav_client/src/_std/resource.dart';
 import 'package:simple_webdav_client/src/_std/response.dart';
 import 'package:simple_webdav_client/src/error.dart';
 import 'package:simple_webdav_client/src/method.dart';
@@ -166,6 +167,148 @@ void main() {
       verifyNever(httpResponse.transform(any));
       verifyNever(resultParser.convert(any));
       expect(response.body, isNull);
+    });
+  });
+  group("test WebDavStdResponseResult", () {
+    test("constructor", () {
+      final result = WebDavStdResponseResult();
+      expect(result, isEmpty);
+      expect(result, equals(TypeMatcher<Iterable>()));
+      expect(result, equals(TypeMatcher<WebDavStdResResultView>()));
+    });
+    test("constructor.fromMap", () {
+      final result1 = const WebDavStdResponseResult.fromMap({});
+      expect(result1, isEmpty);
+      expect(result1, equals(TypeMatcher<Iterable>()));
+      expect(result1, equals(TypeMatcher<WebDavStdResResultView>()));
+      final resource = WebDavStdResource(
+          path: Uri.parse("http://example.com"), status: HttpStatus.accepted);
+      final result2 = WebDavStdResponseResult.fromMap({Uri.base: resource});
+      expect(result2.length, 1);
+      expect(result2, equals(TypeMatcher<Iterable>()));
+      expect(result2, equals(TypeMatcher<WebDavStdResResultView>()));
+      expect(result2.first, same(resource));
+    });
+    test("add", () {
+      final result = WebDavStdResponseResult();
+      final resource1 = WebDavStdResource(
+          path: Uri.parse("http://example.com"), status: HttpStatus.accepted);
+      expect(result.add(resource1), isTrue);
+      expect(result.length, 1);
+      expect(result.first, same(resource1));
+      final resource2 = WebDavStdResource(
+          path: Uri.parse("http://example.com"), status: HttpStatus.accepted);
+      expect(result.add(resource2), isFalse);
+      expect(result.length, 1);
+      expect(result.first, same(resource1));
+      final resource3 = WebDavStdResource(
+          path: Uri.parse("http://example.com/3"), status: HttpStatus.accepted);
+      expect(result.add(resource3), isTrue);
+      expect(result.length, 2);
+      expect(result.toList(), equals([resource1, resource3]));
+    });
+    test("clear", () {
+      final result = WebDavStdResponseResult();
+      result.add(WebDavStdResource(
+          path: Uri.parse("http://example.com/1"),
+          status: HttpStatus.accepted));
+      result.add(WebDavStdResource(
+          path: Uri.parse("http://example.com/2"),
+          status: HttpStatus.accepted));
+      expect(result, isNotEmpty);
+      expect(result.length, 2);
+      result.clear();
+      expect(result, isEmpty);
+      expect(result.length, 0);
+    });
+    test("contain", () {
+      final result = WebDavStdResponseResult();
+      result.add(WebDavStdResource(
+          path: Uri.parse("http://example.com/1"),
+          status: HttpStatus.accepted));
+      result.add(WebDavStdResource(
+          path: Uri.parse("http://example.com/2"),
+          status: HttpStatus.accepted));
+      expect(result.contain(Uri.parse("http://example.com/1")), isTrue);
+      expect(result.contain(Uri.parse("http://example.com/2")), isTrue);
+      expect(result.contain(Uri.parse("http://example.com/3")), isFalse);
+    });
+    test("find", () {
+      final result = WebDavStdResponseResult();
+      final resource1 = WebDavStdResource(
+          path: Uri.parse("http://example.com/1"), status: HttpStatus.accepted);
+      final resource2 = WebDavStdResource(
+          path: Uri.parse("http://example.com/2"), status: HttpStatus.accepted);
+      result.add(resource1);
+      result.add(resource2);
+      expect(result.find(Uri.parse("http://example.com/1")), same(resource1));
+      expect(result.find(Uri.parse("http://example.com/2")), same(resource2));
+      expect(result.find(Uri.parse("http://example.com/3")), isNull);
+    });
+    test("iterator", () {
+      final result = WebDavStdResponseResult();
+      expect(
+          result.iterator, equals(TypeMatcher<Iterator<WebDavStdResource>>()));
+    });
+    test("remove", () {
+      final result = WebDavStdResponseResult();
+      final resource1 = WebDavStdResource(
+          path: Uri.parse("http://example.com/1"), status: HttpStatus.accepted);
+      final resource2 = WebDavStdResource(
+          path: Uri.parse("http://example.com/2"), status: HttpStatus.accepted);
+      result.add(resource1);
+      result.add(resource2);
+      expect(result, isNotEmpty);
+      expect(result.length, 2);
+      expect(result.remove(Uri.parse("http://example.com/1")), same(resource1));
+      expect(result, isNotEmpty);
+      expect(result.length, 1);
+      expect(result.remove(Uri.parse("http://example.com/1")), isNull);
+      expect(result, isNotEmpty);
+      expect(result.length, 1);
+      expect(result.remove(Uri.parse("http://example.com/2")), same(resource2));
+      expect(result.length, 0);
+      expect(result, isEmpty);
+    });
+    test("toDebugString", () {
+      final result = WebDavStdResponseResult();
+      final resource1 = WebDavStdResource(
+          path: Uri.parse("http://example.com/1"),
+          status: HttpStatus.accepted,
+          props: {
+            (name: "test", ns: "DAV:"): WebDavStdResourceProp(
+              name: "test",
+              namespace: Uri.parse("DAV:"),
+              status: HttpStatus.accepted,
+              value: DateTime.parse("2024-08-29 11:29:47"),
+            ),
+            (name: "test", ns: "CUSTOM:"): WebDavStdResourceProp(
+              name: "test",
+              namespace: Uri.parse("CUSTOM:"),
+              status: HttpStatus.accepted,
+              value: DateTime.parse("1970-01-01 12:00:00"),
+            )
+          });
+      final resource2 = WebDavStdResource(
+          path: Uri.parse("http://example.com/2"), status: HttpStatus.accepted);
+      result.add(resource1);
+      result.add(resource2);
+      final expectString = """
+WebDavStdResponseResult{
+  // http://example.com/1
+  WebDavStdResource{
+    path:http://example.com/1,status:202,  props(2):
+      [DAV:]test: WebDavStdResourceProp<dynamic>{name:test,ns:dav:,status:202,value:2024-08-29 11:29:47.000},
+      [CUSTOM:]test: WebDavStdResourceProp<dynamic>{name:test,ns:custom:,status:202,value:1970-01-01 12:00:00.000},
+  }
+  // http://example.com/2
+  WebDavStdResource{
+    path:http://example.com/2,status:202,  props(0):
+  }
+}
+"""
+          .trim();
+      expect(result.toDebugString(), expectString);
     });
   });
 }
