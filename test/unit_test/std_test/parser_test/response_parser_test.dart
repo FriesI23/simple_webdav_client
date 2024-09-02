@@ -12,7 +12,8 @@ import 'package:simple_webdav_client/src/_std/parser.dart';
 import 'package:simple_webdav_client/src/_std/parser_mgr.dart';
 import 'package:simple_webdav_client/src/_std/resource.dart';
 import 'package:simple_webdav_client/src/_std/response.dart';
-import 'package:test/expect.dart';
+import 'package:simple_webdav_client/src/dav/content_type.dart';
+import 'package:simple_webdav_client/src/response.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';
 
@@ -21,6 +22,7 @@ import 'package:xml/xml.dart';
   WebDavStdResResultView,
   WebDavStdResourceProp,
   ResponseResultParser,
+  MultiStatusElementParser,
   PropstatElementParser,
   ResponseElementParser,
   ErrorElementParser,
@@ -488,6 +490,103 @@ void main() {
       expect(result.first.props, unorderedEquals([prop2, prop1]));
       expect(result.first.redirect,
           equals(Uri.parse("http://example.com/redirect")));
+    });
+  });
+  group("test BaseRespMultiResultParser", () {
+    late HttpHeaders headers;
+    late WebDavResposneDataParserManger parserMgr;
+    late BaseRespMultiResultParser parser;
+
+    setUp(() {
+      headers = MockHttpHeaders();
+      parserMgr = MockWebDavResposneDataParserManger();
+      parser = BaseRespMultiResultParser(parserManger: parserMgr);
+    });
+
+    test("convert not xml | no parser", () {
+      when(headers.contentType).thenReturn(null);
+      when(parserMgr.multistatus).thenReturn(null);
+      final result = parser.convert(ResponseResultParserParam(
+          path: Uri.parse("http://example.com/resource"),
+          status: HttpStatus.accepted,
+          headers: headers,
+          data: """
+<D:prop xmlns:D="DAV:">
+  <D:data1/>
+  <D:data2/>
+</D:prop>
+"""
+              .trim()));
+      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+      expect(result, isEmpty);
+    });
+    test("convert not xml | with parser", () {
+      when(headers.contentType).thenReturn(null);
+      when(parserMgr.multistatus).thenReturn(MockMultiStatusElementParser());
+      final result = parser.convert(ResponseResultParserParam(
+          path: Uri.parse("http://example.com/resource"),
+          status: HttpStatus.accepted,
+          headers: headers,
+          data: """
+<D:prop xmlns:D="DAV:">
+  <D:data1/>
+  <D:data2/>
+</D:prop>
+"""
+              .trim()));
+      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+      expect(result, isEmpty);
+    });
+    test("convert with xml | no parser", () {
+      when(headers.contentType).thenReturn(XmlContentType.applicationXml);
+      when(parserMgr.multistatus).thenReturn(null);
+      final result = parser.convert(ResponseResultParserParam(
+          path: Uri.parse("http://example.com/resource"),
+          status: HttpStatus.accepted,
+          headers: headers,
+          data: """
+<D:prop xmlns:D="DAV:">
+  <D:data1/>
+  <D:data2/>
+</D:prop>
+"""
+              .trim()));
+      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+      expect(result, isEmpty);
+    });
+    test("convert with xml and parser", () {
+      final multiParser = MockMultiStatusElementParser();
+      final result = WebDavStdResponseResult();
+      when(multiParser.convert(any)).thenReturn(result);
+      when(headers.contentType).thenReturn(XmlContentType.applicationXml);
+      when(parserMgr.multistatus).thenReturn(multiParser);
+      expect(
+          parser.convert(ResponseResultParserParam(
+              path: Uri.parse("http://example.com/resource"),
+              status: HttpStatus.accepted,
+              headers: headers,
+              data: """
+<D:prop xmlns:D="DAV:">
+  <D:data1/>
+  <D:data2/>
+</D:prop>
+"""
+                  .trim())),
+          same(result));
+      when(multiParser.convert(any)).thenReturn(null);
+      expect(
+          parser.convert(ResponseResultParserParam(
+              path: Uri.parse("http://example.com/resource"),
+              status: HttpStatus.accepted,
+              headers: headers,
+              data: """
+<D:prop xmlns:D="DAV:">
+  <D:data1/>
+  <D:data2/>
+</D:prop>
+"""
+                  .trim())),
+          equals(TypeMatcher<WebDavResponseResultView>()));
     });
   });
 }

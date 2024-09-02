@@ -925,6 +925,87 @@ class MockResponseResultParser<
       ) as _i2.Converter<RS, RT>);
 }
 
+/// A class which mocks [MultiStatusElementParser].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockMultiStatusElementParser extends _i1.Mock
+    implements _i10.MultiStatusElementParser {
+  MockMultiStatusElementParser() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i7.WebDavResponseResultView<_i3.WebDavStdResource>? convert(
+          _i5.XmlElement? input) =>
+      (super.noSuchMethod(Invocation.method(
+        #convert,
+        [input],
+      )) as _i7.WebDavResponseResultView<_i3.WebDavStdResource>?);
+
+  @override
+  _i2.Converter<_i5.XmlElement, TT> fuse<TT>(
+          _i2.Converter<_i7.WebDavResponseResultView<_i3.WebDavStdResource>?,
+                  TT>?
+              other) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #fuse,
+          [other],
+        ),
+        returnValue: _FakeConverter_0<_i5.XmlElement, TT>(
+          this,
+          Invocation.method(
+            #fuse,
+            [other],
+          ),
+        ),
+      ) as _i2.Converter<_i5.XmlElement, TT>);
+
+  @override
+  Sink<_i5.XmlElement> startChunkedConversion(
+          Sink<_i7.WebDavResponseResultView<_i3.WebDavStdResource>?>? sink) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #startChunkedConversion,
+          [sink],
+        ),
+        returnValue: _FakeSink_3<_i5.XmlElement>(
+          this,
+          Invocation.method(
+            #startChunkedConversion,
+            [sink],
+          ),
+        ),
+      ) as Sink<_i5.XmlElement>);
+
+  @override
+  _i11.Stream<_i7.WebDavResponseResultView<_i3.WebDavStdResource>?> bind(
+          _i11.Stream<_i5.XmlElement>? stream) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #bind,
+          [stream],
+        ),
+        returnValue: _i11.Stream<
+            _i7.WebDavResponseResultView<_i3.WebDavStdResource>?>.empty(),
+      ) as _i11.Stream<_i7.WebDavResponseResultView<_i3.WebDavStdResource>?>);
+
+  @override
+  _i2.Converter<RS, RT> cast<RS, RT>() => (super.noSuchMethod(
+        Invocation.method(
+          #cast,
+          [],
+        ),
+        returnValue: _FakeConverter_0<RS, RT>(
+          this,
+          Invocation.method(
+            #cast,
+            [],
+          ),
+        ),
+      ) as _i2.Converter<RS, RT>);
+}
+
 /// A class which mocks [PropstatElementParser].
 ///
 /// See the documentation for Mockito's code generation for more information.
