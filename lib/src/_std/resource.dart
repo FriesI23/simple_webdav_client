@@ -66,7 +66,7 @@ class WebDavStdResource
   }
 }
 
-final class WebDavStdResourceProp<V>
+class WebDavStdResourceProp<V>
     implements WebDavResourceProp<V, WebDavStdResError> {
   @override
   final String name;
