@@ -29,7 +29,7 @@ import 'package:xml/xml.dart';
   PropElementParser,
   HttpHeaders,
 ])
-import 'response_parser_test.mocks.dart';
+import 'result_parser_test.mocks.dart';
 
 void main() {
   group("test BaseRespResultParser", () {
