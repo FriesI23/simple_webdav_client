@@ -369,8 +369,7 @@ final class BasePropstatElementParser extends PropstatElementParser {
     final error = errorNode != null ? _errorParser?.convert(errorNode) : null;
     final desc = descNode?.innerText;
     if (propNode == null) return const [];
-    return propNode
-        .findElements("*", namespace: "*")
+    return propNode.childElements
         .map((e) => _parserManager
                 .fetchPropParser<WebDavStdResourceProp>(
                     e.localName, e.namespaceUri)
