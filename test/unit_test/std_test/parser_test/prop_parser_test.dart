@@ -132,6 +132,46 @@ void main() {
         expect(result.value, equals("qwertyuiop"));
       });
     });
+    group("test NumPropParser", () {
+      test("convert", () {
+        final parser = NumPropParser();
+        final result = parser.convert((
+          desc: null,
+          error: null,
+          node: XmlDocument.parse("<prop1></prop1>").rootElement,
+          status: HttpStatus.accepted,
+        ));
+        expect(result.name, "prop1");
+        expect(result.namespace, isNull);
+        expect(result.status, HttpStatus.accepted);
+        expect(result.desc, isNull);
+        expect(result.error, isNull);
+        expect(result.lang, isNull);
+        expect(result.value, isNull);
+      });
+      test("convert, full case", () {
+        final parser = NumPropParser();
+        final result = parser.convert((
+          desc: 'test',
+          error: WebDavStdResError("mock"),
+          node: XmlDocument.parse("""
+<D:prop1 xml:lang=en-us xmlns:D=DAV:>
+  1234.45
+</D:prop1>
+"""
+                  .trim())
+              .rootElement,
+          status: HttpStatus.accepted,
+        ));
+        expect(result.name, "prop1");
+        expect(result.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(result.status, HttpStatus.accepted);
+        expect(result.desc, 'test');
+        expect(result.error!.message, "mock");
+        expect(result.lang, 'en-us');
+        expect(result.value, equals(1234.45));
+      });
+    });
     group("test ContentTypePropParser", () {
       test("convert", () {
         final parser = ContentTypePropParser();
