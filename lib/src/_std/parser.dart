@@ -317,7 +317,7 @@ final class BaseErrorElementParser extends ErrorElementParser {
   const BaseErrorElementParser();
 
   @override
-  WebDavStdResError? convert(XmlElement input) {
+  WebDavStdResError convert(XmlElement input) {
     return WebDavStdResError("",
         conditions: input
             .findElements("*", namespace: input.namespaceUri)
