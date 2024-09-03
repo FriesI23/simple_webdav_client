@@ -390,7 +390,7 @@ abstract class _PropElementParser<T>
   T? convertValue(XmlElement node);
 
   @override
-  WebDavStdResourceProp<T>? convert(
+  WebDavStdResourceProp<T> convert(
       ({
         String? desc,
         WebDavStdResError? error,
@@ -422,15 +422,17 @@ final class HttpDatePropParser extends _PropElementParser<DateTime> {
   const HttpDatePropParser();
 
   @override
-  DateTime? convertValue(XmlElement node) =>
-      HttpDate.parse(node.innerText.trim());
+  DateTime? convertValue(XmlElement node) {
+    final str = node.innerText.trim();
+    return str.isNotEmpty ? HttpDate.parse(str) : null;
+  }
 }
 
 final class StringPropParser extends _PropElementParser<String> {
   const StringPropParser();
 
   @override
-  String? convertValue(XmlElement node) => node.innerText.trim();
+  String convertValue(XmlElement node) => node.innerText.trim();
 }
 
 final class NumPropParser extends _PropElementParser<num> {
@@ -444,15 +446,17 @@ final class ContentTypePropParser extends _PropElementParser<ContentType> {
   const ContentTypePropParser();
 
   @override
-  ContentType? convertValue(XmlElement node) =>
-      ContentType.parse(node.innerText.trim());
+  ContentType? convertValue(XmlElement node) {
+    final str = node.innerText.trim();
+    return str.isNotEmpty ? ContentType.parse(str) : null;
+  }
 }
 
 final class ResourceTypePropParser extends _PropElementParser<ResourceTypes> {
   const ResourceTypePropParser();
 
   @override
-  ResourceTypes? convertValue(XmlElement node) =>
+  ResourceTypes convertValue(XmlElement node) =>
       ResourceTypes(node.childElements
           .map((e) => (name: e.localName, ns: e.namespaceUri))
           .toList());
