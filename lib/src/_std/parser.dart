@@ -467,10 +467,9 @@ final class BaseLockScopeElementParser extends LockScopeElementParser {
 
   @override
   LockScope? convert(XmlElement input) {
-    final scopeNode =
-        input.findElements("*", namespace: input.namespaceUri).firstOrNull;
+    final scopeNode = input.getElement("*", namespace: input.namespaceUri);
     if (scopeNode == null) return null;
-    return LockScope.fromName(scopeNode.innerText.trim().toLowerCase());
+    return LockScope.fromName(scopeNode.localName.toLowerCase());
   }
 }
 
@@ -488,7 +487,7 @@ final class SupportedLockPropParser extends _PropElementParser<SupportedLock> {
   const SupportedLockPropParser({required this.pieceParser});
 
   @override
-  SupportedLock? convertValue(XmlElement node) => SupportedLock.from(node
+  SupportedLock convertValue(XmlElement node) => SupportedLock.from(node
       .findElements(WebDavElementNames.lockentry, namespace: node.namespaceUri)
       .map((e) => pieceParser.convert(e))
       .whereNotNull()
@@ -527,7 +526,7 @@ final class LockDiscoveryPropParser<O>
   const LockDiscoveryPropParser({required this.pieceParser});
 
   @override
-  LockDiscovery<O>? convertValue(XmlElement node) => LockDiscovery.from(node
+  LockDiscovery<O> convertValue(XmlElement node) => LockDiscovery.from(node
       .findElements(WebDavElementNames.activelock, namespace: node.namespaceUri)
       .map((e) => pieceParser.convert(e))
       .whereNotNull()
