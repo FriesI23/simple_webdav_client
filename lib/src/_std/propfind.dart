@@ -32,7 +32,7 @@ final class PropfindPropRequestParam<P extends PropfindRequestProp>
     context.element(
       WebDavElementNames.propfind,
       namespace: davns,
-      namespaces: Map.fromEntries(nsmgr.all),
+      namespaces: Map.fromEntries(nsmgr.all.where((e) => e.value.isNotEmpty)),
       nest: () {
         context.element(
           WebDavElementNames.prop,
@@ -74,15 +74,17 @@ final class PropfindAllRequestParam<P extends PropfindRequestProp>
       namespaces: Map.fromEntries(nsmgr.all),
       nest: () {
         context.element(WebDavElementNames.allprop, namespace: davns);
-        context.element(
-          WebDavElementNames.include,
-          namespace: davns,
-          nest: () {
-            for (var prop in _includes ?? const []) {
-              prop.toXml(context, nsmgr);
-            }
-          },
-        );
+        if (_includes != null) {
+          context.element(
+            WebDavElementNames.include,
+            namespace: davns,
+            nest: () {
+              for (var prop in _includes ?? const []) {
+                prop.toXml(context, nsmgr);
+              }
+            },
+          );
+        }
       },
     );
   }
@@ -112,7 +114,7 @@ final class PropfindNameRequestParam extends CommonPropfindRequestParam {
   String toRequestBody() => processXmlData().buildDocument().toXmlString();
 }
 
-final class PropfindRequestProp implements Prop<Null>, ToXmlCapable {
+class PropfindRequestProp implements Prop<Null>, ToXmlCapable {
   @override
   final String name;
   @override
@@ -122,6 +124,8 @@ final class PropfindRequestProp implements Prop<Null>, ToXmlCapable {
   Null get value => null;
 
   const PropfindRequestProp(this.name, [this.namespace]);
+
+  const PropfindRequestProp.dav(this.name) : namespace = kDavNamespaceUrlStr;
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {

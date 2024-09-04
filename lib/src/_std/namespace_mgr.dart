@@ -28,6 +28,7 @@ final class StdNamespaceManger implements NamespaceManager {
 
   @override
   String? generate(String uri, {bool noPrefix = false}) {
+    if (uri.isEmpty) return null;
     if (namespaces.containsKey(uri)) return getPrefix(uri);
     final prefix = _genNextPrefix(noPrefix);
     if (reversedCache.containsKey(prefix)) return null;

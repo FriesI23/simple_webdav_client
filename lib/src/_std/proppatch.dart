@@ -84,7 +84,7 @@ final class ProppatchRequestParam<P extends ProppatchRequestProp>
   }
 }
 
-final class ProppatchRequestProp<V extends ToXmlCapable>
+class ProppatchRequestProp<V extends ToXmlCapable>
     implements Prop<V>, ToXmlCapable {
   @override
   final String name;
@@ -146,10 +146,10 @@ final class ProppatchRequestProp<V extends ToXmlCapable>
   }
 }
 
-final class ProppatchReqPropBaseValue<T> implements ToXmlCapable {
+final class ProppatchRequestPropBaseValue<T> implements ToXmlCapable {
   final T value;
 
-  const ProppatchReqPropBaseValue(this.value);
+  const ProppatchRequestPropBaseValue(this.value);
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {
@@ -157,10 +157,10 @@ final class ProppatchReqPropBaseValue<T> implements ToXmlCapable {
   }
 }
 
-final class ProppatchReqLastModifiedValue implements ToXmlCapable {
+final class ProppatchRequestPropHttpDateValue implements ToXmlCapable {
   final DateTime value;
 
-  const ProppatchReqLastModifiedValue(this.value);
+  const ProppatchRequestPropHttpDateValue(this.value);
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {
