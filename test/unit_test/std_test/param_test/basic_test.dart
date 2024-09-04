@@ -10,7 +10,13 @@ import 'package:mockito/mockito.dart';
 import 'package:simple_webdav_client/src/_std/_param.dart';
 import 'package:simple_webdav_client/src/_std/copy.dart';
 import 'package:simple_webdav_client/src/_std/depth.dart';
+import 'package:simple_webdav_client/src/_std/get.dart';
+import 'package:simple_webdav_client/src/_std/head.dart';
 import 'package:simple_webdav_client/src/_std/if.dart';
+import 'package:simple_webdav_client/src/_std/mkcol.dart';
+import 'package:simple_webdav_client/src/_std/move.dart';
+import 'package:simple_webdav_client/src/_std/post.dart';
+import 'package:simple_webdav_client/src/_std/put.dart';
 import 'package:test/test.dart';
 
 @GenerateMocks([
@@ -154,6 +160,104 @@ void main() {
       expect(param.depth, Depth.all);
       expect(param.overwrite, isFalse);
       expect(param.condition, equals(TypeMatcher<IfOr>()));
+    });
+  });
+  group("test GetRequestParam", () {
+    test("constructor", () {
+      final param = GetRequestParam();
+      expect(param.data, isNull);
+      expect(param.condition, isNull);
+    });
+  });
+  group("test HeadRequestParam", () {
+    test("constructor", () {
+      final param = HeadRequestParam();
+      expect(param.data, isNull);
+      expect(param.condition, isNull);
+    });
+  });
+  group("test MkcolRequestParam", () {
+    late MockHttpClientRequest request;
+    late MockHttpHeaders headers;
+
+    setUp(() {
+      request = MockHttpClientRequest();
+      headers = MockHttpHeaders();
+      when(request.headers).thenReturn(headers);
+      when(headers.add(any, any)).thenReturn(null);
+    });
+
+    test("constructor", () {
+      final param1 = MkcolRequestParam();
+      expect(param1.condition, isNull);
+      final param2 = MkcolRequestParam(condition: MockIfOr());
+      expect(param2.condition, TypeMatcher<IfOr>());
+    });
+    test("toRequestBody", () {
+      expect(MkcolRequestParam().toRequestBody(), isNull);
+      expect(MkcolRequestParam(condition: MockIfOr()).toRequestBody(), isNull);
+    });
+    test("test beforeAddRequestBody", () {
+      MkcolRequestParam().beforeAddRequestBody(request);
+      verifyNever(headers.add("If", any));
+      final ifOr = MockIfOr();
+      MkcolRequestParam(condition: ifOr).beforeAddRequestBody(request);
+      verify(headers.add("If", ifOr.toString())).called(1);
+    });
+  });
+  group("test MoveRequestParam", () {
+    test("constructor", () {
+      final param = MoveRequestParam(destination: Uri.base);
+      expect(param.destination, Uri.base);
+      expect(param.depth, isNull);
+      expect(param.overwrite, isNull);
+      expect(param.condition, isNull);
+    });
+    test("constructor with params", () {
+      final param = MoveRequestParam(
+          destination: Uri.base,
+          recursive: false,
+          overwrite: true,
+          condition: MockIfOr());
+      expect(param.destination, Uri.base);
+      expect(param.depth, isNull);
+      expect(param.overwrite, isTrue);
+      expect(param.condition, equals(TypeMatcher<IfOr>()));
+    });
+    test("constructor when recursive is true", () {
+      final param = MoveRequestParam(
+          destination: Uri.base,
+          recursive: true,
+          overwrite: false,
+          condition: MockIfOr());
+      expect(param.destination, Uri.base);
+      expect(param.depth, Depth.all);
+      expect(param.overwrite, isFalse);
+      expect(param.condition, equals(TypeMatcher<IfOr>()));
+    });
+  });
+  group("test PostRequestParam", () {
+    test("constructor", () {
+      final param = PostRequestParam(data: 1234);
+      expect(param.condition, isNull);
+      expect(param.data, 1234);
+    });
+    test("constructor with params", () {
+      final param = PostRequestParam(data: "test", condition: MockIfOr());
+      expect(param.condition, TypeMatcher<IfOr>());
+      expect(param.data, "test");
+    });
+  });
+  group("test PutRequestParam", () {
+    test("constructor", () {
+      final param = PutRequestParam(data: 1234);
+      expect(param.condition, isNull);
+      expect(param.data, 1234);
+    });
+    test("constructor with params", () {
+      final param = PutRequestParam(data: "test", condition: MockIfOr());
+      expect(param.condition, TypeMatcher<IfOr>());
+      expect(param.data, "test");
     });
   });
 }

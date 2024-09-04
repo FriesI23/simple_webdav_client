@@ -17,7 +17,9 @@ final class MkcolRequestParam
   const MkcolRequestParam({this.condition});
 
   @override
-  void beforeAddRequestBody(HttpClientRequest request) {}
+  void beforeAddRequestBody(HttpClientRequest request) {
+    addIfHeader(request.headers);
+  }
 
   @override
   String? toRequestBody() => null;
