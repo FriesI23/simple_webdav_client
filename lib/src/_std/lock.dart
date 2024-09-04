@@ -63,44 +63,39 @@ final class LockRequestParam
       lockInfo != null ? processXmlData().buildDocument().toXmlString() : null;
 
   @override
-  void toXml(XmlBuilder context, NamespaceManager nsmgr) {
-    const davns = kDavNamespaceUrlStr;
-    nsmgr.generate(davns);
-    context.element(
-      WebDavElementNames.lockinfo,
-      namespace: davns,
-      namespaces: Map.fromEntries(nsmgr.all),
-      nest: () => lockInfo?.toXml(context, nsmgr),
-    );
-  }
+  void toXml(XmlBuilder context, NamespaceManager nsmgr) =>
+      lockInfo?.toXml(context, nsmgr);
 }
 
 class LockInfo<O extends ToXmlCapable> implements ToXmlCapable {
   final LockScope lockScope;
-  final bool isWriteLock;
   final O? owner;
 
-  const LockInfo(
-      {required this.lockScope, required this.isWriteLock, this.owner});
+  const LockInfo({required this.lockScope, this.owner});
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {
     const davns = kDavNamespaceUrlStr;
-    if (!nsmgr.contain(davns)) {
-      context.namespace(davns, nsmgr.generate(davns));
-    }
-    context.element(WebDavElementNames.lockscope,
-        namespace: davns,
-        nest: () => context.element(lockScope.name, namespace: davns));
-    context.element(WebDavElementNames.locktype,
-        namespace: davns,
-        nest: isWriteLock
-            ? () => context.element("write", namespace: davns)
-            : null);
-    final owner = this.owner;
-    if (owner != null) {
-      context.element(WebDavElementNames.owner,
-          namespace: davns, nest: () => owner.toXml(context, nsmgr));
-    }
+    context.element(
+      WebDavElementNames.lockinfo,
+      namespace: davns,
+      namespaces: Map.fromEntries(nsmgr.all),
+      nest: () {
+        if (!nsmgr.contain(davns)) {
+          context.namespace(davns, nsmgr.generate(davns));
+        }
+        context.element(WebDavElementNames.lockscope,
+            namespace: davns,
+            nest: () => context.element(lockScope.name, namespace: davns));
+        context.element(WebDavElementNames.locktype,
+            namespace: davns,
+            nest: () => context.element("write", namespace: davns));
+        final owner = this.owner;
+        if (owner != null) {
+          context.element(WebDavElementNames.owner,
+              namespace: davns, nest: () => owner.toXml(context, nsmgr));
+        }
+      },
+    );
   }
 }
