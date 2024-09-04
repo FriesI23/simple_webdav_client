@@ -53,7 +53,9 @@ class CommonDataRequestParam<T>
   const CommonDataRequestParam({required this.data, this.condition});
 
   @override
-  void beforeAddRequestBody(HttpClientRequest request) {}
+  void beforeAddRequestBody(HttpClientRequest request) {
+    addIfHeader(request.headers);
+  }
 
   @override
   String? toRequestBody() => data?.toString();

@@ -28,6 +28,7 @@ final class DeleteRequestParam
     if (depth != null) {
       request.headers.add(Depth.headerKey, depth.name);
     }
+    addIfHeader(request.headers);
   }
 
   @override
