@@ -8,6 +8,7 @@ import 'dart:collection';
 import 'package:xml/xml.dart';
 
 import '../const.dart';
+import '../dav/element.dart';
 import '../namespace.dart';
 import 'depth.dart';
 import 'request.dart';
@@ -26,23 +27,30 @@ enum LockScope {
 
 class ResourceTypes
     with IterableMixin<({String name, String? ns})>, ToXmlMixin {
-  final List<({String name, String? ns})>? _types;
+  final List<({String name, String? ns})> _types;
 
-  const ResourceTypes([List<({String name, String? ns})>? types])
-      : _types = types;
+  const ResourceTypes(List<({String name, String? ns})> types) : _types = types;
+
+  ResourceTypes.collection()
+      : _types = [
+          (name: WebDavElementNames.collection, ns: kDavNamespaceUrlStr)
+        ];
 
   @override
-  Iterator<({String name, String? ns})> get iterator => _typesImpl.iterator;
+  int get length => _types.length;
 
-  List<({String name, String? ns})> get _typesImpl => _types ?? const [];
+  @override
+  Iterator<({String name, String? ns})> get iterator => _types.iterator;
 
-  bool get isCollection => _typesImpl
-      .where((e) => e.ns == kDavNamespaceUrlStr && e.name == "collection")
+  bool get isCollection => _types
+      .where((e) =>
+          e.ns == kDavNamespaceUrlStr &&
+          e.name == WebDavElementNames.collection)
       .isNotEmpty;
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {
-    for (var type in _typesImpl) {
+    for (var type in _types) {
       final ns = type.ns;
       if (ns != null && !nsmgr.contain(ns)) nsmgr.generate(ns);
       if (ns != null) context.namespace(ns, nsmgr.getPrefix(ns));

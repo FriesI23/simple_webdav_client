@@ -104,7 +104,7 @@ void main() {
     test("constructor with param", () {
       final param = LockRequestParam(
         lockInfo: LockInfo(lockScope: LockScope.exclusive),
-        timeout: davto.Timeout([double.infinity, 123]),
+        timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: IfOr.tagged([]),
       );
@@ -115,7 +115,7 @@ void main() {
     });
     test("constructor.renew", () {
       final param = LockRequestParam.renew(
-        timeout: davto.Timeout([double.infinity, 123]),
+        timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: IfOr.tagged([]),
       );
@@ -135,7 +135,7 @@ void main() {
       final ifOr = IfOr.tagged([]);
       LockRequestParam(
         lockInfo: LockInfo(lockScope: LockScope.exclusive),
-        timeout: davto.Timeout([double.infinity, 123]),
+        timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: ifOr,
       ).beforeAddRequestBody(request);
@@ -166,7 +166,7 @@ void main() {
       final context = XmlBuilder();
       final nsmgr = StdNamespaceManger();
       LockRequestParam.renew(
-        timeout: davto.Timeout([double.infinity, 123]),
+        timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: IfOr.tagged([]),
       ).toXml(context, nsmgr);

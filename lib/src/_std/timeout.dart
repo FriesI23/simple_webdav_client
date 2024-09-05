@@ -7,28 +7,30 @@ import 'dart:collection';
 
 import '../codec/timeout.dart';
 
-class Timeout with ListMixin<double> {
-  final TimeoutEncoder _encoder;
-  final List<double>? _timeout;
+class DavTimeout with ListMixin<double> {
+  final DavTimeoutEncoder _encoder;
+  final List<double> _timeout;
 
-  const Timeout(List<double>? timeout,
-      {TimeoutEncoder encoder = const TimeoutEncoder()})
+  const DavTimeout(List<double> timeout,
+      {DavTimeoutEncoder encoder = const DavTimeoutEncoder()})
       : _timeout = timeout,
         _encoder = encoder;
 
-  List<double> get _timeoutInst => _timeout ?? const [];
+  @override
+  int get length => _timeout.length;
 
   @override
-  int get length => _timeoutInst.length;
+  set length(int newLength) =>
+      throw UnimplementedError("timeout length can't be changed.");
 
   @override
-  set length(int newLength) => _timeoutInst.length = newLength;
+  void add(double element) => _timeout.add(element);
 
   @override
-  operator [](int index) => _timeoutInst[index];
+  operator [](int index) => _timeout[index];
 
   @override
-  void operator []=(int index, value) => _timeoutInst[index] = value;
+  void operator []=(int index, value) => _timeout[index] = value;
 
   @override
   String toString() => _encoder.convert(this);

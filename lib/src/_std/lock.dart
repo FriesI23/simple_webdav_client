@@ -26,7 +26,7 @@ final class LockRequestParam
 
   final Depth? depth;
   final LockInfo? lockInfo;
-  final Timeout? timeout;
+  final DavTimeout? timeout;
 
   const LockRequestParam(
       {required LockInfo this.lockInfo,

@@ -36,30 +36,30 @@ final class TimeTypeEncoder extends Converter<double, String> {
   }
 }
 
-final class TimeoutCodec extends Codec<Iterable<double>, String> {
-  const TimeoutCodec();
+final class DavTimeoutCodec extends Codec<Iterable<double>, String> {
+  const DavTimeoutCodec();
 
   @override
-  Converter<String, Iterable<double>> get decoder => const TimeoutDecoder();
+  Converter<String, Iterable<double>> get decoder => const DavTimeoutDecoder();
 
   @override
-  Converter<Iterable<double>, String> get encoder => const TimeoutEncoder();
+  Converter<Iterable<double>, String> get encoder => const DavTimeoutEncoder();
 }
 
-final class TimeoutEncoder extends Converter<Iterable<double>, String> {
+final class DavTimeoutEncoder extends Converter<Iterable<double>, String> {
   final TimeTypeEncoder typeEncoder;
 
-  const TimeoutEncoder({this.typeEncoder = const TimeTypeEncoder()});
+  const DavTimeoutEncoder({this.typeEncoder = const TimeTypeEncoder()});
 
   @override
   String convert(Iterable<double> input) =>
       input.map((e) => typeEncoder.convert(e)).join(', ');
 }
 
-final class TimeoutDecoder extends Converter<String, Iterable<double>> {
+final class DavTimeoutDecoder extends Converter<String, Iterable<double>> {
   final TimeTypeDecoder typeDecoder;
 
-  const TimeoutDecoder({this.typeDecoder = const TimeTypeDecoder()});
+  const DavTimeoutDecoder({this.typeDecoder = const TimeTypeDecoder()});
 
   @override
   Iterable<double> convert(String input) =>

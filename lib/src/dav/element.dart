@@ -38,4 +38,5 @@ abstract interface class WebDavElementNames {
   static const resourcetype = "resourcetype";
   static const activelock = "activelock";
   static const supportedlock = "supportedlock";
+  static const collection = "collection";
 }
