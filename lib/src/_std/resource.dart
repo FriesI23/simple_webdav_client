@@ -30,6 +30,19 @@ class WebDavStdResource
     Map<({String? ns, String name}), WebDavStdResourceProp> props = const {},
   }) : _props = props;
 
+  WebDavStdResource.fromProps({
+    required this.path,
+    required this.status,
+    this.error,
+    this.desc,
+    this.redirect,
+    required Iterable<WebDavStdResourceProp> props,
+  }) : _props = {} {
+    for (var p in props) {
+      _props[(name: p.name, ns: p.namespace?.toString())] = p;
+    }
+  }
+
   @override
   bool get isEmpty => _props.isEmpty;
 
@@ -51,9 +64,9 @@ class WebDavStdResource
         "props(${_props.length}):${_props.keys.toList()}"
         "}";
     sb.writeln("WebDavStdResource{");
-    sb.write("  path:$path,status:$status,");
-    if (error != null) sb.write("  err:$error,");
-    if (desc != null) sb.write("  desc:$desc");
+    sb.writeln("  path:$path | status:$status,");
+    if (error != null) sb.writeln("  err:$error,");
+    if (desc != null) sb.writeln("  desc:$desc,");
     sb.writeln("  props(${_props.length}):");
     for (var entry in _props.entries) {
       sb.write("    ");

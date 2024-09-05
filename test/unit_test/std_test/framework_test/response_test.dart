@@ -297,13 +297,15 @@ void main() {
 WebDavStdResponseResult{
   // http://example.com/1
   WebDavStdResource{
-    path:http://example.com/1,status:202,  props(2):
+    path:http://example.com/1 | status:202,
+    props(2):
       [DAV:]test: WebDavStdResourceProp<dynamic>{name:test,ns:dav:,status:202,value:2024-08-29 11:29:47.000},
       [CUSTOM:]test: WebDavStdResourceProp<dynamic>{name:test,ns:custom:,status:202,value:1970-01-01 12:00:00.000},
   }
   // http://example.com/2
   WebDavStdResource{
-    path:http://example.com/2,status:202,  props(0):
+    path:http://example.com/2 | status:202,
+    props(0):
   }
 }
 """

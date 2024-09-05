@@ -148,15 +148,13 @@ final class BaseRespSingleResultParser
             : const (null, null, <WebDavStdResourceProp>[]);
     }
 
-    return WebDavStdResource(
-      path: path,
-      status: status,
-      error: error,
-      desc: desc,
-      redirect: redirect,
-      props: Map.fromEntries(props
-          .map((e) => MapEntry((name: e.name, ns: e.namespace.toString()), e))),
-    );
+    return WebDavStdResource.fromProps(
+        path: path,
+        status: status,
+        error: error,
+        desc: desc,
+        redirect: redirect,
+        props: props);
   }
 
   @override
@@ -260,21 +258,17 @@ final class BaseResponseElementParser extends ResponseElementParser {
         final resourceTemplate =
             WebDavStdResource(path: path, status: status, redirect: redirect);
         return [
-          WebDavStdResource(
+          WebDavStdResource.fromProps(
             path: path,
             status: status,
             error: error,
             redirect: redirect,
-            props: Map.fromEntries(
-              input
-                  .findElements(WebDavElementNames.propstat,
-                      namespace: input.namespaceUri)
-                  .map((e) => propstatParser
-                      .convert((node: e, resource: resourceTemplate)))
-                  .expand((e) => e)
-                  .map((e) =>
-                      MapEntry((name: e.name, ns: e.namespace?.toString()), e)),
-            ),
+            props: input
+                .findElements(WebDavElementNames.propstat,
+                    namespace: input.namespaceUri)
+                .map((e) => propstatParser
+                    .convert((node: e, resource: resourceTemplate)))
+                .expand((e) => e),
           )
         ];
       default:
