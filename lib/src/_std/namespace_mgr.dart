@@ -13,7 +13,11 @@ final class StdNamespaceManger implements NamespaceManager {
   StdNamespaceManger();
 
   @override
-  void clear() => namespaces.clear();
+  void clear() {
+    namespaces.clear();
+    reversedCache.clear();
+    index = 0xA1;
+  }
 
   @override
   bool contain(String uri) => namespaces.containsKey(uri);
