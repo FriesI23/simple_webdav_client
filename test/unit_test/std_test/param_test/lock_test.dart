@@ -106,7 +106,7 @@ void main() {
         lockInfo: LockInfo(lockScope: LockScope.exclusive),
         timeout: davto.Timeout([double.infinity, 123]),
         recursive: true,
-        condition: IfOr([]),
+        condition: IfOr.tagged([]),
       );
       expect(param.lockInfo!.lockScope, LockScope.exclusive);
       expect(param.condition, TypeMatcher<IfOr>());
@@ -117,7 +117,7 @@ void main() {
       final param = LockRequestParam.renew(
         timeout: davto.Timeout([double.infinity, 123]),
         recursive: true,
-        condition: IfOr([]),
+        condition: IfOr.tagged([]),
       );
       expect(param.lockInfo, isNull);
       expect(param.condition, TypeMatcher<IfOr>());
@@ -132,7 +132,7 @@ void main() {
       verifyNever(headers.add('If', any));
     });
     test("beforeAddRequestBody with params", () {
-      final ifOr = IfOr([]);
+      final ifOr = IfOr.tagged([]);
       LockRequestParam(
         lockInfo: LockInfo(lockScope: LockScope.exclusive),
         timeout: davto.Timeout([double.infinity, 123]),
@@ -168,7 +168,7 @@ void main() {
       LockRequestParam.renew(
         timeout: davto.Timeout([double.infinity, 123]),
         recursive: true,
-        condition: IfOr([]),
+        condition: IfOr.tagged([]),
       ).toXml(context, nsmgr);
       expect(context.buildDocument().toXmlString(pretty: true), '');
     });
@@ -185,7 +185,7 @@ void main() {
     });
     test("toRequestBody renew", () {
       final result =
-          LockRequestParam.renew(condition: IfOr([])).toRequestBody();
+          LockRequestParam.renew(condition: IfOr.tagged([])).toRequestBody();
       expect(result, isNull);
     });
   });

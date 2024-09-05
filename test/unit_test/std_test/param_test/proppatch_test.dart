@@ -170,7 +170,7 @@ void main() {
       final param = ProppatchRequestParam(ops: <ProppatchRequestProp>[
         ProppatchRequestProp.set(name: "prop1"),
         ProppatchRequestProp.remove(name: "prop2"),
-      ], condition: IfOr([]));
+      ], condition: IfOr.tagged([]));
       expect(param.condition, TypeMatcher<IfOr>());
       expect(param.operations.length, 2);
     });
@@ -180,7 +180,7 @@ void main() {
       verifyNever(headers.add("If", any));
     });
     test("beforeAddRequestBody with conditions", () {
-      final ifOr = IfOr([]);
+      final ifOr = IfOr.tagged([]);
       ProppatchRequestParam(ops: <ProppatchRequestProp>[], condition: ifOr)
           .beforeAddRequestBody(request);
       verify(headers.add("If", ifOr.toString())).called(1);

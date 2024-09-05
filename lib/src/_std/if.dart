@@ -7,11 +7,21 @@ import 'dart:io';
 
 class IfOr {
   final Iterable<IfAnd> _tagList;
+  final bool _tagged;
 
-  const IfOr(List<IfAnd> list) : _tagList = list;
+  const IfOr.tagged(List<IfAnd> list)
+      : _tagList = list,
+        _tagged = true;
+
+  const IfOr.notag(List<IfAnd> list)
+      : _tagList = list,
+        _tagged = false;
 
   @override
-  String toString() => _tagList.map((e) => e.toString()).join('\n ');
+  String toString() => _tagList
+      .where((e) => e.tagged == _tagged)
+      .map((e) => e.toString())
+      .join(' ');
 }
 
 class IfAnd {
@@ -26,10 +36,12 @@ class IfAnd {
       : _resourceTag = null,
         _conditions = conditions;
 
+  bool get tagged => _resourceTag != null;
+
   @override
   String toString() {
     final sb = StringBuffer();
-    if (_resourceTag != null) sb.writeAll([_resourceTag.toString(), ' ']);
+    if (_resourceTag != null) sb.writeAll(['<', _resourceTag.toString(), '> ']);
     sb.write("(");
     sb.writeAll(_conditions.map((e) => e.toString()), ' ');
     sb.write(")");
@@ -42,6 +54,12 @@ class IfCondition {
   final String? _etag;
   final Uri? _abspath;
 
+  const IfCondition._(
+      {required bool not, required String? etag, required Uri? abspath})
+      : _not = not,
+        _etag = etag,
+        _abspath = abspath;
+
   const IfCondition.token(Uri abspath)
       : _not = false,
         _etag = null,
@@ -53,7 +71,7 @@ class IfCondition {
         _abspath = abspath;
 
   const IfCondition.etag(String etag)
-      : _not = true,
+      : _not = false,
         _etag = etag,
         _abspath = null;
 
@@ -65,6 +83,9 @@ class IfCondition {
   bool get isEtag => _etag != null ? true : false;
 
   String get value => _etag ?? _abspath?.toString() ?? '';
+
+  IfCondition not() =>
+      IfCondition._(not: !_not, etag: _etag, abspath: _abspath);
 
   @override
   String toString() {
