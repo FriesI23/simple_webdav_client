@@ -9,7 +9,7 @@ import 'decoder_mgr.dart';
 import 'parser.dart';
 import 'parser_mgr.dart';
 
-const kStdDecoderManager = ResponseBodyDecoderManager();
+const kStdDecoderManager = ResponseBodyDecoderManager(decoders: {});
 
 const kStdPropParserManager = WebDavResposneDataParserManger(parsers: {
   (name: WebDavElementNames.creationdate, ns: kDavNamespaceUrlStr):

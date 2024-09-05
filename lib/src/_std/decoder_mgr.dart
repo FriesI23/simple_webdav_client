@@ -16,30 +16,28 @@ class ResponseBodyDecoderManager extends MapBase<String, ResponseBodyDecoder> {
     'iso-8859-1': latin1.decoder,
   };
 
-  final Map<String, ResponseBodyDecoder>? _customs;
+  final Map<String, ResponseBodyDecoder> _customs;
 
   const ResponseBodyDecoderManager({
-    Map<String, ResponseBodyDecoder>? decoders,
+    required Map<String, ResponseBodyDecoder> decoders,
   }) : _customs = decoders;
-
-  Map<String, ResponseBodyDecoder> get _map => _customs ?? const {};
 
   @override
   ResponseBodyDecoder? operator [](Object? key) {
     if (key is! String) return null;
-    final realKey = key.toLowerCase();
-    return _map[realKey] ?? _builtins[realKey];
+    return _customs[key] ?? _builtins[key.toLowerCase()];
   }
 
   @override
-  void operator []=(String key, ResponseBodyDecoder value) => _map[key] = value;
+  void operator []=(String key, ResponseBodyDecoder value) =>
+      _customs[key] = value;
 
   @override
-  void clear() => _map.clear();
+  void clear() => _customs.clear();
 
   @override
-  Iterable<String> get keys => _map.keys;
+  Iterable<String> get keys => _customs.keys;
 
   @override
-  ResponseBodyDecoder? remove(Object? key) => _map.remove(key);
+  ResponseBodyDecoder? remove(Object? key) => _customs.remove(key);
 }
