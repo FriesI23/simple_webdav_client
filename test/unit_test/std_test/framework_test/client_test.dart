@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:simple_webdav_client/src/_std/client.dart';
+import 'package:simple_webdav_client/src/_std/client_dispatcher.dart';
 import 'package:simple_webdav_client/src/_std/decoder_mgr.dart';
 import 'package:simple_webdav_client/src/_std/parser.dart';
 import 'package:simple_webdav_client/src/method.dart';
@@ -144,6 +145,10 @@ void main() {
       expect(request.responseBodyDecoders,
           equals(TypeMatcher<ResponseBodyDecoderManager>()));
       expect(request.responseResultParser, TypeMatcher<ResponseResultParser>());
+    });
+    test("dispatch", () {
+      final dispatcher = WebDavStdClient().dispatch(Uri.base);
+      expect(dispatcher, TypeMatcher<WebDavStdRequestDispatcher>());
     });
   });
 }

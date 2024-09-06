@@ -43,7 +43,8 @@ abstract interface class WebDavStdRequestDispatcher {
 
   Future<WebDavStdRequest<GetRequestParam>> get();
 
-  Future<WebDavStdRequest<PutRequestParam<T>>> create<T>({T? data});
+  Future<WebDavStdRequest<PutRequestParam<T>>> create<T>(
+      {T? data, IfOr? condition});
 
   Future<WebDavStdRequest<MkcolRequestParam>> createDir({IfOr? condition});
 
@@ -123,11 +124,12 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
       method: WebDavMethod.get, url: source, param: GetRequestParam());
 
   @override
-  Future<WebDavStdRequest<PutRequestParam<T>>> create<T>({T? data}) =>
+  Future<WebDavStdRequest<PutRequestParam<T>>> create<T>(
+          {T? data, IfOr? condition}) =>
       client.openUrl(
           method: WebDavMethod.put,
           url: source,
-          param: PutRequestParam(data: data));
+          param: PutRequestParam(data: data, condition: condition));
 
   @override
   Future<WebDavStdRequest<MkcolRequestParam>> createDir({IfOr? condition}) =>
@@ -239,7 +241,7 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
   @override
   Future<WebDavStdRequest<UnlockRequestParam>> unlock({required Uri token}) =>
       client.openUrl(
-          method: WebDavMethod.unknown,
+          method: WebDavMethod.unlock,
           url: source,
           param: UnlockRequestParam(lockToken: token));
 }
