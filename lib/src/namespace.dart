@@ -3,7 +3,11 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+import '_std/namespace_mgr.dart';
+
 abstract interface class NamespaceManager {
+  factory NamespaceManager.std() => StdNamespaceManger();
+
   Iterable<MapEntry<String, String>> get all;
 
   String? generate(String uri, {bool noPrefix});
