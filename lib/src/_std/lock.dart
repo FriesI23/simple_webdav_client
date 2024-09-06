@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:xml/xml.dart';
 
 import '../const.dart';
+import '../dav/content_type.dart';
 import '../dav/element.dart';
 import '../namespace.dart';
 import '../request.dart';
@@ -44,6 +45,9 @@ class LockRequestParam
 
   @override
   void beforeAddRequestBody(HttpClientRequest request) {
+    if (lockInfo != null) {
+      request.headers.contentType = XmlContentType.applicationXml;
+    }
     final depth = this.depth;
     if (depth != null) {
       request.headers.add(Depth.headerKey, depth.name);

@@ -138,8 +138,8 @@ DingALing property.
       ]);
 
       Future<void> serverSideChecker(HttpRequest event) async {
-        // expect(event.headers.contentType.toString(),
-        //     equals(XmlContentType.applicationXml));
+        expect(event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()));
         final body = await utf8.decodeStream(event);
         expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
       }

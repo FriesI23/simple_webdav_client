@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:xml/xml.dart';
 
 import '../const.dart';
+import '../dav/content_type.dart';
 import '../dav/element.dart';
 import '../dav/prop.dart';
 import '../namespace.dart';
@@ -53,6 +54,7 @@ class ProppatchRequestParam<P extends ProppatchRequestProp>
 
   @override
   void beforeAddRequestBody(HttpClientRequest request) {
+    request.headers.contentType = XmlContentType.applicationXml;
     addIfHeader(request.headers);
   }
 

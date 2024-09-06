@@ -5,6 +5,7 @@
 
 import 'dart:io';
 
+import '../dav/content_type.dart';
 import '../request.dart';
 import '../utils.dart';
 import 'depth.dart';
@@ -70,6 +71,7 @@ abstract class CommonPropfindRequestParam
 
   @override
   void beforeAddRequestBody(HttpClientRequest request) {
+    request.headers.contentType = XmlContentType.applicationXml;
     final depth = this.depth;
     if (depth != null) {
       request.headers.add(Depth.headerKey, depth.name);
