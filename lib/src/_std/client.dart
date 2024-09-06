@@ -69,6 +69,14 @@ class WebDavStdClient implements WebDavClient {
           responseBodyDecoders: responseBodyDecoders,
           responseResultParser: responseResultParser));
 
-  WebDavStdRequestDispatcher dispatch(Uri from) =>
-      WebDavStdRequestDispatcher(client: this, from: from);
+  WebDavStdRequestDispatcher dispatch(
+    Uri from, {
+    ResponseBodyDecoderManager? responseBodyDecoders,
+    ResponseResultParser<WebDavStdResResultView>? responseResultParser,
+  }) =>
+      WebDavStdRequestDispatcher(
+          client: this,
+          from: from,
+          respDecoder: responseBodyDecoders,
+          respParser: responseResultParser);
 }

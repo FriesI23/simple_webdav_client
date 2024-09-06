@@ -24,6 +24,9 @@ enum WebDavMethod {
 
   const WebDavMethod(this.name);
 
-  static WebDavMethod fromName(String name) => WebDavMethod.values
-      .singleWhere((e) => e.name == name, orElse: () => unknown);
+  static WebDavMethod fromName(String name) {
+    name = name.toUpperCase();
+    return WebDavMethod.values
+        .singleWhere((e) => e.name == name, orElse: () => unknown);
+  }
 }

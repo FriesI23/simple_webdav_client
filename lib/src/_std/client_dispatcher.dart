@@ -7,6 +7,7 @@ import '../method.dart';
 import '../utils.dart';
 import 'client.dart';
 import 'copy.dart';
+import 'decoder_mgr.dart';
 import 'delete.dart';
 import 'depth.dart';
 import 'get.dart';
@@ -14,17 +15,24 @@ import 'if.dart';
 import 'lock.dart';
 import 'mkcol.dart';
 import 'move.dart';
+import 'parser.dart';
 import 'propfind.dart';
 import 'proppatch.dart';
 import 'put.dart';
 import 'request.dart';
+import 'response.dart';
 import 'timeout.dart';
 import 'unlock.dart';
 
 abstract interface class WebDavStdRequestDispatcher {
-  factory WebDavStdRequestDispatcher(
-          {required WebDavStdClient client, required Uri from}) =>
-      StdRequestDispatcherImpl(client, from);
+  factory WebDavStdRequestDispatcher({
+    required WebDavStdClient client,
+    required Uri from,
+    ResponseBodyDecoderManager? respDecoder,
+    ResponseResultParser<WebDavStdResResultView>? respParser,
+  }) =>
+      StdRequestDispatcherImpl(client, from,
+          respDecoder: respDecoder, respParser: respParser);
 
   Future<WebDavStdRequest<PropfindPropRequestParam<P>>>
       findProps<P extends PropfindRequestProp>(
@@ -79,17 +87,23 @@ abstract interface class WebDavStdRequestDispatcher {
 final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
   final WebDavStdClient client;
   final Uri source;
+  final ResponseBodyDecoderManager? respDecoder;
+  final ResponseResultParser<WebDavStdResResultView>? respParser;
 
-  StdRequestDispatcherImpl(this.client, this.source);
+  StdRequestDispatcherImpl(this.client, this.source,
+      {this.respDecoder, this.respParser});
 
   @override
-  Future<WebDavStdRequest<PropfindPropRequestParam<P>>> findProps<
-              P extends PropfindRequestProp>(
-          {required Iterable<P> props, Depth? depth}) =>
-      client.openUrl(
-          method: WebDavMethod.propfind,
-          url: source,
-          param: PropfindPropRequestParam(props: props.toList(), depth: depth));
+  Future<WebDavStdRequest<PropfindPropRequestParam<P>>>
+      findProps<P extends PropfindRequestProp>(
+              {required Iterable<P> props, Depth? depth}) =>
+          client.openUrl(
+              method: WebDavMethod.propfind,
+              url: source,
+              param:
+                  PropfindPropRequestParam(props: props.toList(), depth: depth),
+              responseBodyDecoders: respDecoder,
+              responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<PropfindAllRequestParam<P>>>
@@ -99,7 +113,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               method: WebDavMethod.propfind,
               url: source,
               param: PropfindAllRequestParam(
-                  include: includes.toList(), depth: depth));
+                  include: includes.toList(), depth: depth),
+              responseBodyDecoders: respDecoder,
+              responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<PropfindNameRequestParam>> findPropNames(
@@ -107,7 +123,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
       client.openUrl(
           method: WebDavMethod.propfind,
           url: source,
-          param: PropfindNameRequestParam(depth: depth));
+          param: PropfindNameRequestParam(depth: depth),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<ProppatchRequestParam<P>>>
@@ -117,11 +135,17 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               method: WebDavMethod.proppatch,
               url: source,
               param:
-                  ProppatchRequestParam(ops: operations, condition: condition));
+                  ProppatchRequestParam(ops: operations, condition: condition),
+              responseBodyDecoders: respDecoder,
+              responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<GetRequestParam>> get() => client.openUrl(
-      method: WebDavMethod.get, url: source, param: GetRequestParam());
+      method: WebDavMethod.get,
+      url: source,
+      param: GetRequestParam(),
+      responseBodyDecoders: respDecoder,
+      responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<PutRequestParam<T>>> create<T>(
@@ -129,14 +153,18 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
       client.openUrl(
           method: WebDavMethod.put,
           url: source,
-          param: PutRequestParam(data: data, condition: condition));
+          param: PutRequestParam(data: data, condition: condition),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<MkcolRequestParam>> createDir({IfOr? condition}) =>
       client.openUrl(
           method: WebDavMethod.mkcol,
           url: source,
-          param: MkcolRequestParam(condition: condition));
+          param: MkcolRequestParam(condition: condition),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<DeleteRequestParam>> delete({IfOr? condition}) =>
@@ -144,14 +172,18 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
           method: WebDavMethod.delete,
           url: source,
           param:
-              DeleteRequestParam(depth: Depth.resource, condition: condition));
+              DeleteRequestParam(depth: Depth.resource, condition: condition),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<DeleteRequestParam>> deleteDir({IfOr? condition}) =>
       client.openUrl(
           method: WebDavMethod.delete,
           url: source,
-          param: DeleteRequestParam(depth: Depth.all, condition: condition));
+          param: DeleteRequestParam(depth: Depth.all, condition: condition),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<CopyRequestParam>> copy(
@@ -163,7 +195,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               destination: to,
               overwrite: overwrite,
               condition: condition,
-              recursive: false));
+              recursive: false),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<CopyRequestParam>> copyDir(
@@ -175,7 +209,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               destination: to,
               overwrite: overwrite,
               condition: condition,
-              recursive: true));
+              recursive: true),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<MoveRequestParam>> move(
@@ -187,7 +223,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               destination: to,
               overwrite: overwrite,
               condition: condition,
-              recursive: false));
+              recursive: false),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<MoveRequestParam>> moveDir(
@@ -199,7 +237,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               destination: to,
               overwrite: overwrite,
               condition: condition,
-              recursive: true));
+              recursive: true),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<LockRequestParam>> createLock(
@@ -213,7 +253,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               lockInfo: info,
               timeout: timeout,
               condition: condition,
-              recursive: false));
+              recursive: false),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<LockRequestParam>> createDirLock(
@@ -227,7 +269,9 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
               lockInfo: info,
               timeout: timeout,
               condition: condition,
-              recursive: true));
+              recursive: true),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<LockRequestParam>> renewLock(
@@ -235,13 +279,16 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
       client.openUrl(
           method: WebDavMethod.lock,
           url: source,
-          param:
-              LockRequestParam.renew(condition: condition, timeout: timeout));
+          param: LockRequestParam.renew(condition: condition, timeout: timeout),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 
   @override
   Future<WebDavStdRequest<UnlockRequestParam>> unlock({required Uri token}) =>
       client.openUrl(
           method: WebDavMethod.unlock,
           url: source,
-          param: UnlockRequestParam(lockToken: token));
+          param: UnlockRequestParam(lockToken: token),
+          responseBodyDecoders: respDecoder,
+          responseResultParser: respParser);
 }
