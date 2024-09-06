@@ -18,7 +18,7 @@ import 'prop.dart';
 import 'request.dart';
 import 'timeout.dart';
 
-final class LockRequestParam
+class LockRequestParam
     with ToXmlMixin, IfHeaderRequestMixin
     implements WebDavRequestParam, ToXmlCapable {
   @override

@@ -7,7 +7,7 @@ import 'dart:io';
 
 import '../request.dart';
 
-final class UnlockRequestParam implements WebDavRequestParam {
+class UnlockRequestParam implements WebDavRequestParam {
   final Uri lockToken;
 
   const UnlockRequestParam({required this.lockToken});

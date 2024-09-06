@@ -18,7 +18,7 @@ import 'request.dart';
 
 enum ProppatchRequestOp { set, remove }
 
-final class ProppatchRequestParam<P extends ProppatchRequestProp>
+class ProppatchRequestParam<P extends ProppatchRequestProp>
     with ToXmlMixin, IfHeaderRequestMixin
     implements WebDavRequestParam, ToXmlCapable {
   static Iterable<({ProppatchRequestOp op, List<ProppatchRequestProp> props})>

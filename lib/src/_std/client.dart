@@ -8,6 +8,7 @@ import 'dart:io';
 import '../client.dart';
 import '../method.dart';
 import '../request.dart';
+import 'client_dispatcher.dart';
 import 'decoder_mgr.dart';
 import 'parser.dart';
 import 'request.dart';
@@ -67,4 +68,7 @@ class WebDavStdClient implements WebDavClient {
           param: param,
           responseBodyDecoders: responseBodyDecoders,
           responseResultParser: responseResultParser));
+
+  WebDavStdRequestDispatcher dispatch(Uri from) =>
+      WebDavStdRequestDispatcher(client: this, from: from);
 }

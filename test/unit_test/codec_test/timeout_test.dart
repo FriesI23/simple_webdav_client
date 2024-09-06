@@ -4,7 +4,6 @@
 // https://opensource.org/licenses/MIT
 
 import 'package:simple_webdav_client/src/codec/timeout.dart';
-import 'package:test/expect.dart';
 import 'package:test/test.dart';
 
 void main() {

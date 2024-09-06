@@ -8,7 +8,7 @@ import 'dart:io';
 import '../request.dart';
 import 'if.dart';
 
-final class MkcolRequestParam
+class MkcolRequestParam
     with IfHeaderRequestMixin
     implements WebDavRequestParam {
   @override

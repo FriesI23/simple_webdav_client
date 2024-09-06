@@ -5,11 +5,15 @@
 
 import 'dart:io';
 
+import '_std/client.dart';
 import 'method.dart';
 import 'request.dart';
 import 'response.dart';
 
 abstract interface class WebDavClient {
+  static WebDavStdClient std({SecurityContext? context}) =>
+      WebDavStdClient(context);
+
   void close({bool force = false});
 
   bool get closed;

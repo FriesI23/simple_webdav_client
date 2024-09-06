@@ -5,6 +5,6 @@
 
 import '_param.dart';
 
-final class PostRequestParam<T> extends CommonDataRequestParam<T> {
+class PostRequestParam<T> extends CommonDataRequestParam<T> {
   const PostRequestParam({required super.data, super.condition});
 }

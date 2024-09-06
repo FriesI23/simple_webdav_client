@@ -5,6 +5,6 @@
 
 import '_param.dart';
 
-final class HeadRequestParam extends CommonDataRequestParam {
+class HeadRequestParam extends CommonDataRequestParam {
   const HeadRequestParam() : super(data: null);
 }

@@ -6,7 +6,7 @@
 import '_param.dart';
 import 'depth.dart';
 
-final class MoveRequestParam extends CommonCopyMoveRequestParam {
+class MoveRequestParam extends CommonCopyMoveRequestParam {
   const MoveRequestParam(
       {required super.destination,
       bool recursive = false,

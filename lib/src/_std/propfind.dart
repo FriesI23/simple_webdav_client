@@ -12,7 +12,7 @@ import '../namespace.dart';
 import '../utils.dart';
 import '_param.dart';
 
-final class PropfindPropRequestParam<P extends PropfindRequestProp>
+class PropfindPropRequestParam<P extends PropfindRequestProp>
     extends CommonPropfindRequestParam {
   final List<P>? _props;
 
@@ -51,7 +51,7 @@ final class PropfindPropRequestParam<P extends PropfindRequestProp>
   String toRequestBody() => processXmlData().buildDocument().toXmlString();
 }
 
-final class PropfindAllRequestParam<P extends PropfindRequestProp>
+class PropfindAllRequestParam<P extends PropfindRequestProp>
     extends CommonPropfindRequestParam {
   final List<P>? _includes;
 
@@ -93,7 +93,7 @@ final class PropfindAllRequestParam<P extends PropfindRequestProp>
   String toRequestBody() => processXmlData().buildDocument().toXmlString();
 }
 
-final class PropfindNameRequestParam extends CommonPropfindRequestParam {
+class PropfindNameRequestParam extends CommonPropfindRequestParam {
   const PropfindNameRequestParam({super.depth});
 
   @override

@@ -9,7 +9,7 @@ import '../request.dart';
 import 'depth.dart';
 import 'if.dart';
 
-final class DeleteRequestParam
+class DeleteRequestParam
     with IfHeaderRequestMixin
     implements WebDavRequestParam {
   @override
