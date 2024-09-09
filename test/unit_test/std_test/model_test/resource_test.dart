@@ -163,5 +163,48 @@ WebDavStdResource{
 """
               .trim());
     });
+    test("find", () {
+      final path = Uri.parse("http://example.com/file");
+      final resource = WebDavStdResource.fromProps(
+          path: path,
+          status: HttpStatus.multiStatus,
+          error: WebDavStdResError("test"),
+          desc: "desc",
+          redirect: Uri.parse("http://redirect"),
+          props: [
+            WebDavStdResourceProp<String>(
+                name: "prop1",
+                status: HttpStatus.notFound,
+                namespace: Uri.parse("DAV:"),
+                value: "test"),
+            WebDavStdResourceProp<int>(
+                name: "prop2", status: HttpStatus.accepted, value: 123),
+          ]);
+      expect(resource.path, path);
+      expect(resource.status, HttpStatus.multiStatus);
+      expect(resource.desc, "desc");
+      expect(resource.error, TypeMatcher<WebDavStdResError>());
+      expect(resource.redirect, Uri.parse("http://redirect"));
+      expect(resource.props.length, 2);
+      expect(resource.isEmpty, isFalse);
+      expect(resource.isNotEmpty, isTrue);
+      expect(resource.length, 2);
+      final prop1 = resource.props.where((e) => e.name == 'prop1').first;
+      final prop2 = resource.props.where((e) => e.name == 'prop2').first;
+      expect(resource.find("prop1", emptyNamespace: false), equals([prop1]));
+      expect(resource.find("prop1", namespace: "DAV:"), equals([prop1]));
+      expect(resource.find("prop1", namespace: "CUS:"), isEmpty);
+      expect(resource.find("prop1"), isEmpty);
+      expect(resource.find("prop2", emptyNamespace: false), equals([prop2]));
+      expect(resource.find("prop2"), equals([prop2]));
+      expect(resource.find("prop2", namespace: "DAV:"), isEmpty);
+      expect(resource.find("prop3", emptyNamespace: false), isEmpty);
+      expect(resource.findByNamespace("DAV:"), equals([prop1]));
+      expect(resource.findByNamespace(null), equals([prop2]));
+      expect(resource.findByNamespace("DAV:", name: "prop1"), equals([prop1]));
+      expect(resource.findByNamespace("DAV:", name: "prop2"), isEmpty);
+      expect(resource.findByNamespace(null, name: "prop1"), isEmpty);
+      expect(resource.findByNamespace(null, name: "prop2"), equals([prop2]));
+    });
   });
 }

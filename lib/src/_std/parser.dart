@@ -241,6 +241,8 @@ final class BaseResponseElementParser extends ResponseElementParser {
         namespace: input.namespaceUri);
     final locationNode = input.getElement(WebDavElementNames.location,
         namespace: input.namespaceUri);
+    final descNode = input.getElement(WebDavElementNames.responsedescription,
+        namespace: input.namespaceUri);
 
     final status = statusNode != null
         ? statusParser.convert(statusNode)
@@ -248,6 +250,7 @@ final class BaseResponseElementParser extends ResponseElementParser {
     final error = errorNode != null ? errorParser?.convert(errorNode) : null;
     final redirect =
         locationNode != null ? locationParser?.convert(locationNode) : null;
+    final desc = descNode?.innerText.trim();
 
     switch (status) {
       case null:
@@ -263,6 +266,7 @@ final class BaseResponseElementParser extends ResponseElementParser {
             status: status,
             error: error,
             redirect: redirect,
+            desc: desc,
             props: input
                 .findElements(WebDavElementNames.propstat,
                     namespace: input.namespaceUri)
@@ -278,7 +282,11 @@ final class BaseResponseElementParser extends ResponseElementParser {
             .map((e) => hrefParser.convert(e))
             .whereNotNull()
             .map((e) => WebDavStdResource(
-                path: e, status: status, error: error, redirect: redirect));
+                path: e,
+                status: status,
+                error: error,
+                redirect: redirect,
+                desc: desc));
     }
   }
 }

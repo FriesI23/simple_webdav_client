@@ -21,7 +21,8 @@ class TestUsagedHttpServer {
   TestUsagedHttpServer({this.bindPort = 45678});
 
   Future<void> open() async {
-    server = await HttpServer.bind(InternetAddress.loopbackIPv4, bindPort);
+    server = await HttpServer.bind(InternetAddress.loopbackIPv4, bindPort,
+        shared: true);
     server.listen((event) async {
       if (WebDavMethod.fromName(event.method) == WebDavMethod.unknown) {
         event.response.statusCode = HttpStatus.methodNotAllowed;

@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+import '../../utils.dart';
 import '../dav/resource.dart';
 import 'error.dart';
 
@@ -54,6 +55,20 @@ class WebDavStdResource
 
   @override
   Iterable<WebDavStdResourceProp> get props => _props.values;
+
+  Iterable<WebDavStdResourceProp> find(String name,
+          {String? namespace, bool emptyNamespace = true}) =>
+      (namespace != null || emptyNamespace)
+          ? [_props[(name: name, ns: namespace?.toLowerCase())]].whereNotNull()
+          : props.where((e) => e.name == name);
+
+  Iterable<WebDavStdResourceProp> findByNamespace(String? namespace,
+          {String? name}) =>
+      name != null
+          ? [_props[(name: name, ns: namespace?.toLowerCase())]].whereNotNull()
+          : _props.entries
+              .where((e) => e.key.ns == namespace?.toLowerCase())
+              .map((e) => e.value);
 
   @override
   String toDebugString() {

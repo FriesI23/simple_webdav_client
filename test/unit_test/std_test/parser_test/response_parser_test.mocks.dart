@@ -105,6 +105,38 @@ class MockWebDavStdResource extends _i1.Mock implements _i3.WebDavStdResource {
       ) as Iterable<_i3.WebDavStdResourceProp<dynamic>>);
 
   @override
+  Iterable<_i3.WebDavStdResourceProp<dynamic>> find(
+    String? name, {
+    String? namespace,
+    bool? emptyNamespace = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #find,
+          [name],
+          {
+            #namespace: namespace,
+            #emptyNamespace: emptyNamespace,
+          },
+        ),
+        returnValue: <_i3.WebDavStdResourceProp<dynamic>>[],
+      ) as Iterable<_i3.WebDavStdResourceProp<dynamic>>);
+
+  @override
+  Iterable<_i3.WebDavStdResourceProp<dynamic>> findByNamespace(
+    String? namespace, {
+    String? name,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #findByNamespace,
+          [namespace],
+          {#name: name},
+        ),
+        returnValue: <_i3.WebDavStdResourceProp<dynamic>>[],
+      ) as Iterable<_i3.WebDavStdResourceProp<dynamic>>);
+
+  @override
   String toDebugString() => (super.noSuchMethod(
         Invocation.method(
           #toDebugString,
