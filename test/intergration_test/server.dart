@@ -9,7 +9,6 @@ import 'package:simple_webdav_client/client.dart';
 import 'package:simple_webdav_client/dav.dart';
 import 'package:simple_webdav_client/src/_std/error.dart';
 import 'package:simple_webdav_client/utils.dart';
-import 'package:xml/src/xml/nodes/element.dart';
 import 'package:xml/xml.dart';
 
 class TestUsagedHttpServer {

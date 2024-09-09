@@ -89,7 +89,7 @@ void main() {
       final result = parser.convert(input.rootElement);
       expect(result, isTrue);
     });
-    test("convert is write lock", () {
+    test("convert is not write lock", () {
       final parser = BaseWriteLockElementParser();
       final input = XmlDocument.parse("""
 <root>

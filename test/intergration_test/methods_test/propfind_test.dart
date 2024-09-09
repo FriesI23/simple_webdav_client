@@ -177,5 +177,197 @@ DingALing property.
       expect(props[3].status, HttpStatus.forbidden);
       expect(props[3].value, "");
     });
+    test(
+        "RFC4918 9.1.4 Using 'propname' to Retrieve All Property Names, "
+        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.1.4",
+        () async {
+      final ns = "http://ns.example.com/boxschema/";
+
+      final requestBody = '''
+<?xml version="1.0" encoding="utf-8"?>
+<a1:propfind xmlns:a1="DAV:">
+  <a1:propname/>
+</a1:propfind>
+'''
+          .trim();
+
+      final responseBody = '''
+<?xml version="1.0" encoding="utf-8"?>
+<multistatus xmlns="DAV:">
+  <response>
+    <href>http://www.example.com/container/</href>
+    <propstat>
+      <prop xmlns:R="http://ns.example.com/boxschema/">
+        <R:bigbox/>
+        <R:author/>
+        <creationdate/>
+        <displayname/>
+        <resourcetype/>
+        <supportedlock/>
+      </prop>
+      <status>HTTP/1.1 200 OK</status>
+    </propstat>
+  </response>
+  <response>
+    <href>http://www.example.com/container/front.html</href>
+    <propstat>
+      <prop xmlns:R="http://ns.example.com/boxschema/">
+        <R:bigbox/>
+        <creationdate/>
+        <displayname/>
+        <getcontentlength/>
+        <getcontenttype/>
+        <getetag/>
+        <getlastmodified/>
+        <resourcetype/>
+        <supportedlock/>
+      </prop>
+      <status>HTTP/1.1 200 OK</status>
+    </propstat>
+  </response>
+</multistatus>
+'''
+          .trim();
+
+      Future<bool> expectedResponse(HttpRequest event) async {
+        event.response.statusCode = HttpStatus.multiStatus;
+        event.response.headers.contentType =
+            ContentType.parse('application/xml; charset="utf-8"');
+        event.response.contentLength = responseBody.length;
+        event.response.write(responseBody);
+        return true;
+      }
+
+      server.expectedResponse = expectedResponse;
+
+      final propParsers = Map.of(kStdPropParserManager);
+      propParsers[(name: "bigbox", ns: ns)] =
+          const TestUsageXmlStringPropParser();
+      propParsers[(name: "author", ns: ns)] =
+          const TestUsageXmlStringPropParser();
+
+      final propstatParser = BasePropstatElementParser(
+          parserManger: WebDavResposneDataParserManger(parsers: propParsers),
+          statusParser: const BaseHttpStatusElementParser(),
+          errorParser: const BaseErrorElementParser());
+      final responseParser = BaseResponseElementParser(
+          hrefParser: const BaseHrefElementParser(),
+          statusParser: const BaseHttpStatusElementParser(),
+          propstatParser: propstatParser,
+          errorParser: const BaseErrorElementParser(),
+          locationParser: const BaseHrefElementParser());
+      final multistatParser =
+          BaseMultistatusElementParser(responseParser: responseParser);
+
+      final parsers = Map.of(kStdElementParserManager);
+      parsers[(name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr)] =
+          multistatParser;
+
+      final resultParser = BaseRespMultiResultParser(
+          parserManger: WebDavResposneDataParserManger(parsers: parsers));
+
+      final request = await client
+          .dispatch(addr, responseResultParser: resultParser)
+          .findPropNames();
+
+      Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()));
+        final body = await utf8.decodeStream(event);
+        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
+      }
+
+      server.serverSideChecker = serverSideChecker;
+
+      final response = await request.close();
+      expect(response.body, isNull);
+      final result = await response.parse();
+      expect(response.body, equals(responseBody));
+      expect(result!.length, 2);
+      final resourceList = result.toList();
+      List<WebDavStdResourceProp> props;
+      List resourceCases;
+      // resource1: http://www.example.com/container/
+      expect(resourceList[0].status, HttpStatus.multiStatus);
+      expect(
+        resourceList[0].path,
+        Uri.parse("http://www.example.com/container/"),
+      );
+      expect(resourceList[0].error, isNull);
+      expect(resourceList[0].props.length, 6);
+      // resource1's props
+      props = resourceList[0].props.toList();
+      resourceCases = [
+        ("bigbox", ns, HttpStatus.ok, ''),
+        ("author", ns, HttpStatus.ok, ''),
+        ("creationdate", kDavNamespaceUrlStr, HttpStatus.ok, isNull),
+        ("displayname", kDavNamespaceUrlStr, HttpStatus.ok, ''),
+        (
+          "resourcetype",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          TypeMatcher<ResourceTypes>()
+        ),
+        (
+          "supportedlock",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          TypeMatcher<SupportedLock>()
+        ),
+      ];
+      for (var i = 0; i < resourceCases.length; i++) {
+        expect(props[i].name, resourceCases[i].$1,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].namespace, equals(Uri.parse(resourceCases[i].$2)),
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].status, resourceCases[i].$3,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].value, resourceCases[i].$4,
+            reason: "failed in resource ${props[i].name}");
+        if (props[i].value is Iterable) expect(props[i].value, isEmpty);
+      }
+      // resource2: http://ns.example.com/boxschema/
+      expect(resourceList[1].status, HttpStatus.multiStatus);
+      expect(
+        resourceList[1].path,
+        Uri.parse("http://www.example.com/container/front.html"),
+      );
+      expect(resourceList[1].error, isNull);
+      expect(resourceList[1].props.length, 9);
+      // resource2's props
+      props = resourceList[1].props.toList();
+      resourceCases = [
+        ("bigbox", ns, HttpStatus.ok, ''),
+        ("creationdate", kDavNamespaceUrlStr, HttpStatus.ok, isNull),
+        ("displayname", kDavNamespaceUrlStr, HttpStatus.ok, ''),
+        ("getcontentlength", kDavNamespaceUrlStr, HttpStatus.ok, isNull),
+        ("getcontenttype", kDavNamespaceUrlStr, HttpStatus.ok, isNull),
+        ("getetag", kDavNamespaceUrlStr, HttpStatus.ok, ''),
+        ("getlastmodified", kDavNamespaceUrlStr, HttpStatus.ok, isNull),
+        (
+          "resourcetype",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          TypeMatcher<ResourceTypes>()
+        ),
+        (
+          "supportedlock",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          TypeMatcher<SupportedLock>()
+        ),
+      ];
+      for (var i = 0; i < resourceCases.length; i++) {
+        expect(props[i].name, resourceCases[i].$1,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].namespace, equals(Uri.parse(resourceCases[i].$2)),
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].status, resourceCases[i].$3,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].value, resourceCases[i].$4,
+            reason: "failed in resource ${props[i].name}");
+        if (props[i].value is Iterable) expect(props[i].value, isEmpty);
+      }
+    });
   });
 }

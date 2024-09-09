@@ -51,9 +51,10 @@ void main() {
   });
   group("test WebDavStdResource", () {
     test("constructor", () {
+      final path = Uri.parse("http://example.com/file");
       final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
-      expect(resource.path, Uri.base);
+          WebDavStdResource(path: path, status: HttpStatus.accepted);
+      expect(resource.path, path);
       expect(resource.status, HttpStatus.accepted);
       expect(resource.desc, isNull);
       expect(resource.error, isNull);
@@ -66,15 +67,16 @@ void main() {
           resource.toDebugString(),
           """
 WebDavStdResource{
-  path:file:///D:/Users/weooh/Documents/Projects/a01/simple_webdav_client/ | status:202,
+  path:http://example.com/file | status:202,
   props(0):
 }
 """
               .trim());
     });
     test("constructor with param", () {
+      final path = Uri.parse("http://example.com/file");
       final resource = WebDavStdResource(
-          path: Uri.base,
+          path: path,
           status: HttpStatus.multiStatus,
           error: WebDavStdResError("test"),
           desc: "desc",
@@ -85,7 +87,7 @@ WebDavStdResource{
                 status: HttpStatus.accepted,
                 namespace: Uri.parse("DAV:")),
           });
-      expect(resource.path, Uri.base);
+      expect(resource.path, path);
       expect(resource.status, HttpStatus.multiStatus);
       expect(resource.desc, "desc");
       expect(resource.error, TypeMatcher<WebDavStdResError>());
@@ -98,7 +100,7 @@ WebDavStdResource{
           resource.toDebugString(),
           """
 WebDavStdResource{
-  path:file:///D:/Users/weooh/Documents/Projects/a01/simple_webdav_client/ | status:207,
+  path:http://example.com/file | status:207,
   err:StdResErrorCond{test, cond=[]},
   desc:desc,
   props(1):
@@ -109,8 +111,9 @@ WebDavStdResource{
               .trim());
     });
     test("constructor.fromProps", () {
+      final path = Uri.parse("http://example.com/file");
       final resource = WebDavStdResource.fromProps(
-          path: Uri.base,
+          path: path,
           status: HttpStatus.multiStatus,
           error: WebDavStdResError("test"),
           desc: "desc",
@@ -128,7 +131,7 @@ WebDavStdResource{
                 namespace: Uri.parse("DAV:"),
                 value: "test"),
           ]);
-      expect(resource.path, Uri.base);
+      expect(resource.path, path);
       expect(resource.status, HttpStatus.multiStatus);
       expect(resource.desc, "desc");
       expect(resource.error, TypeMatcher<WebDavStdResError>());
@@ -150,7 +153,7 @@ WebDavStdResource{
           resource.toDebugString(),
           """
 WebDavStdResource{
-  path:file:///D:/Users/weooh/Documents/Projects/a01/simple_webdav_client/ | status:207,
+  path:http://example.com/file | status:207,
   err:StdResErrorCond{test, cond=[]},
   desc:desc,
   props(2):
