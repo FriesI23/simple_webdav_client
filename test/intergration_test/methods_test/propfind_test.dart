@@ -138,6 +138,7 @@ DingALing property.
       ]);
 
       Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers["Depth"], isNull);
         expect(event.headers.contentType.toString(),
             equals(XmlContentType.applicationXml.toString()));
         final body = await utf8.decodeStream(event);
@@ -271,6 +272,7 @@ DingALing property.
           .findPropNames();
 
       Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers["Depth"], isNull);
         expect(event.headers.contentType.toString(),
             equals(XmlContentType.applicationXml.toString()));
         final body = await utf8.decodeStream(event);
@@ -326,7 +328,7 @@ DingALing property.
             reason: "failed in resource ${props[i].name}");
         if (props[i].value is Iterable) expect(props[i].value, isEmpty);
       }
-      // resource2: http://ns.example.com/boxschema/
+      // resource2: http://www.example.com/container/front.html
       expect(resourceList[1].status, HttpStatus.multiStatus);
       expect(
         resourceList[1].path,
@@ -368,6 +370,320 @@ DingALing property.
             reason: "failed in resource ${props[i].name}");
         if (props[i].value is Iterable) expect(props[i].value, isEmpty);
       }
+    });
+    test(
+        "RFC4918 9.1.5 Using So-called 'allprop', "
+        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.1.5",
+        () async {
+      final ns = "http://ns.example.com/boxschema/";
+
+      final requestBody = '''
+<?xml version="1.0" encoding="utf-8"?>
+<a1:propfind xmlns:a1="DAV:">
+  <a1:allprop/>
+</a1:propfind>
+'''
+          .trim();
+
+      final responseBody = '''
+<?xml version="1.0" encoding="utf-8" ?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>/container/</D:href>
+    <D:propstat>
+      <D:prop xmlns:R="http://ns.example.com/boxschema/">
+        <R:bigbox><R:BoxType>Box type A</R:BoxType></R:bigbox>
+        <R:author><R:Name>Hadrian</R:Name></R:author>
+        <D:creationdate>1997-12-01T17:42:21-08:00</D:creationdate>
+        <D:displayname>Example collection</D:displayname>
+        <D:resourcetype><D:collection/></D:resourcetype>
+        <D:supportedlock>
+          <D:lockentry>
+            <D:lockscope><D:exclusive/></D:lockscope>
+            <D:locktype><D:write/></D:locktype>
+          </D:lockentry>
+          <D:lockentry>
+            <D:lockscope><D:shared/></D:lockscope>
+            <D:locktype><D:write/></D:locktype>
+          </D:lockentry>
+        </D:supportedlock>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+  <D:response>
+    <D:href>/container/front.html</D:href>
+    <D:propstat>
+      <D:prop xmlns:R="http://ns.example.com/boxschema/">
+        <R:bigbox><R:BoxType>Box type B</R:BoxType>
+        </R:bigbox>
+        <D:creationdate>1997-12-01T18:27:21-08:00</D:creationdate>
+        <D:displayname>Example HTML resource</D:displayname>
+        <D:getcontentlength>4525</D:getcontentlength>
+        <D:getcontenttype>text/html</D:getcontenttype>
+        <D:getetag>"zzyzx"</D:getetag>
+        <D:getlastmodified
+          >Mon, 12 Jan 1998 09:25:56 GMT</D:getlastmodified>
+        <D:resourcetype/>
+        <D:supportedlock>
+          <D:lockentry>
+            <D:lockscope><D:exclusive/></D:lockscope>
+            <D:locktype><D:write/></D:locktype>
+          </D:lockentry>
+          <D:lockentry>
+            <D:lockscope><D:shared/></D:lockscope>
+            <D:locktype><D:write/></D:locktype>
+          </D:lockentry>
+        </D:supportedlock>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>
+'''
+          .trim();
+
+      Future<bool> expectedResponse(HttpRequest event) async {
+        event.response.statusCode = HttpStatus.multiStatus;
+        event.response.headers.contentType =
+            ContentType.parse('application/xml; charset="utf-8"');
+        event.response.contentLength = responseBody.length;
+        event.response.write(responseBody);
+        return true;
+      }
+
+      server.expectedResponse = expectedResponse;
+
+      final propParsers = Map.of(kStdPropParserManager);
+      propParsers[(name: "bigbox", ns: ns)] =
+          const TestUsageXmlStringPropParser();
+      propParsers[(name: "author", ns: ns)] =
+          const TestUsageXmlStringPropParser();
+
+      final propstatParser = BasePropstatElementParser(
+          parserManger: WebDavResposneDataParserManger(parsers: propParsers),
+          statusParser: const BaseHttpStatusElementParser(),
+          errorParser: const BaseErrorElementParser());
+      final responseParser = BaseResponseElementParser(
+          hrefParser: const BaseHrefElementParser(),
+          statusParser: const BaseHttpStatusElementParser(),
+          propstatParser: propstatParser,
+          errorParser: const BaseErrorElementParser(),
+          locationParser: const BaseHrefElementParser());
+      final multistatParser =
+          BaseMultistatusElementParser(responseParser: responseParser);
+
+      final parsers = Map.of(kStdElementParserManager);
+      parsers[(name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr)] =
+          multistatParser;
+
+      final resultParser = BaseRespMultiResultParser(
+          parserManger: WebDavResposneDataParserManger(parsers: parsers));
+
+      final request = await client
+          .dispatch(addr, responseResultParser: resultParser)
+          .findAllProps(depth: Depth.members);
+
+      Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers['Depth']!.first, "1");
+        expect(event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()));
+        final body = await utf8.decodeStream(event);
+        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
+      }
+
+      server.serverSideChecker = serverSideChecker;
+
+      final response = await request.close();
+      expect(response.body, isNull);
+      final result = await response.parse();
+      expect(response.body, equals(responseBody));
+      expect(result!.length, 2);
+      final resourceList = result.toList();
+
+      List<WebDavStdResourceProp> props;
+      List resourceCases;
+
+      // resource1: /container/
+      expect(resourceList[0].status, HttpStatus.multiStatus);
+      expect(
+        resourceList[0].path,
+        Uri.parse("/container/"),
+      );
+      expect(resourceList[0].error, isNull);
+      expect(resourceList[0].props.length, 6);
+
+      // resource1's props
+      props = resourceList[0].props.toList();
+      resourceCases = [
+        ("bigbox", ns, HttpStatus.ok, '<R:BoxType>Box type A</R:BoxType>'),
+        ("author", ns, HttpStatus.ok, '<R:Name>Hadrian</R:Name>'),
+        (
+          "creationdate",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          equals(DateTime.parse("1997-12-01T17:42:21-08:00"))
+        ),
+        (
+          "displayname",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          'Example collection'
+        ),
+      ];
+      for (var i = 0; i < resourceCases.length; i++) {
+        expect(props[i].name, resourceCases[i].$1,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].namespace, equals(Uri.parse(resourceCases[i].$2)),
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].status, resourceCases[i].$3,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].value, resourceCases[i].$4,
+            reason: "failed in resource ${props[i].name}");
+        if (props[i].value is Iterable) expect(props[i].value, isEmpty);
+      }
+
+      void resource1PropCase() {
+        final resourceType = props[4] as WebDavStdResourceProp<ResourceTypes>;
+        expect(resourceType.name, "resourcetype");
+        expect(resourceType.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(resourceType.status, HttpStatus.ok);
+        expect(resourceType.value, TypeMatcher<ResourceTypes>());
+        expect(resourceType.value!.length, 1);
+        expect(resourceType.value!.isCollection, isTrue);
+        final supportedLock = props[5] as WebDavStdResourceProp<SupportedLock>;
+        expect(supportedLock.name, "supportedlock");
+        expect(supportedLock.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(supportedLock.status, HttpStatus.ok);
+        expect(supportedLock.value, TypeMatcher<SupportedLock>());
+        expect(supportedLock.value!.length, 2);
+        expect(supportedLock.value!.first.lockScope, LockScope.exclusive);
+        expect(supportedLock.value!.first.isWriteLock, isTrue);
+        expect(supportedLock.value!.last.lockScope, LockScope.shared);
+        expect(supportedLock.value!.last.isWriteLock, isTrue);
+      }
+
+      resource1PropCase();
+
+      // resource2: /container/front.html
+      expect(resourceList[1].status, HttpStatus.multiStatus);
+      expect(
+        resourceList[1].path,
+        Uri.parse("/container/front.html"),
+      );
+      expect(resourceList[1].error, isNull);
+      expect(resourceList[1].props.length, 9);
+
+      // resource2's props
+      props = resourceList[1].props.toList();
+      resourceCases = [
+        ("bigbox", ns, HttpStatus.ok, '<R:BoxType>Box type B</R:BoxType>'),
+        (
+          "creationdate",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          DateTime.parse("1997-12-01T18:27:21-08:00")
+        ),
+        (
+          "displayname",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          'Example HTML resource'
+        ),
+        ("getcontentlength", kDavNamespaceUrlStr, HttpStatus.ok, 4525),
+        (
+          "getcontenttype",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          TypeMatcher<ContentType>()
+        ),
+        ("getetag", kDavNamespaceUrlStr, HttpStatus.ok, '"zzyzx"'),
+        (
+          "getlastmodified",
+          kDavNamespaceUrlStr,
+          HttpStatus.ok,
+          HttpDate.parse("Mon, 12 Jan 1998 09:25:56 GMT")
+        ),
+      ];
+      for (var i = 0; i < resourceCases.length; i++) {
+        expect(props[i].name, resourceCases[i].$1,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].namespace, equals(Uri.parse(resourceCases[i].$2)),
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].status, resourceCases[i].$3,
+            reason: "failed in resource ${props[i].name}");
+        expect(props[i].value, resourceCases[i].$4,
+            reason: "failed in resource ${props[i].name}");
+        if (props[i].value is Iterable) expect(props[i].value, isEmpty);
+      }
+
+      void resource2PropCase() {
+        final resourceType = props[7] as WebDavStdResourceProp<ResourceTypes>;
+        expect(resourceType.name, "resourcetype");
+        expect(resourceType.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(resourceType.status, HttpStatus.ok);
+        expect(resourceType.value, TypeMatcher<ResourceTypes>());
+        expect(resourceType.value!, isEmpty);
+        expect(resourceType.value!.isCollection, isFalse);
+        final supportedLock = props[8] as WebDavStdResourceProp<SupportedLock>;
+        expect(supportedLock.name, "supportedlock");
+        expect(supportedLock.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(supportedLock.status, HttpStatus.ok);
+        expect(supportedLock.value, TypeMatcher<SupportedLock>());
+        expect(supportedLock.value!.length, 2);
+        expect(supportedLock.value!.first.lockScope, LockScope.exclusive);
+        expect(supportedLock.value!.first.isWriteLock, isTrue);
+        expect(supportedLock.value!.last.lockScope, LockScope.shared);
+        expect(supportedLock.value!.last.isWriteLock, isTrue);
+      }
+
+      resource2PropCase();
+    });
+    test(
+        "RFC4918 9.1.5 Using 'allprop' with 'include', "
+        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.1.6",
+        () async {
+      final requestBody = '''
+<?xml version="1.0" encoding="utf-8"?>
+<a1:propfind xmlns:a1="DAV:">
+  <a1:allprop/>
+  <a1:include>
+    <a1:supported-live-property-set/>
+    <a1:supported-report-set/>
+  </a1:include>
+</a1:propfind>
+'''
+          .trim();
+
+      Future<bool> expectedResponse(HttpRequest event) async {
+        event.response.statusCode = HttpStatus.multiStatus;
+        event.response.headers.contentType =
+            ContentType.parse('application/xml; charset="utf-8"');
+        event.response.contentLength = "".length;
+        event.response.write("");
+        return true;
+      }
+
+      server.expectedResponse = expectedResponse;
+
+      final request = await client
+          .dispatch(addr)
+          .findAllProps(depth: Depth.members, includes: [
+        PropfindRequestProp("supported-live-property-set", kDavNamespaceUrlStr),
+        PropfindRequestProp("supported-report-set", kDavNamespaceUrlStr),
+      ]);
+
+      Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers['Depth']!.first, "1");
+        expect(event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()));
+        final body = await utf8.decodeStream(event);
+        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
+      }
+
+      server.serverSideChecker = serverSideChecker;
+
+      await request.close();
     });
   });
 }

@@ -40,7 +40,7 @@ abstract interface class WebDavStdRequestDispatcher {
 
   Future<WebDavStdRequest<PropfindAllRequestParam<P>>>
       findAllProps<P extends PropfindRequestProp>(
-          {required Iterable<P> includes, Depth? depth});
+          {Iterable<P> includes, Depth? depth});
 
   Future<WebDavStdRequest<PropfindNameRequestParam>> findPropNames(
       {Depth? depth});
@@ -108,12 +108,12 @@ final class StdRequestDispatcherImpl implements WebDavStdRequestDispatcher {
   @override
   Future<WebDavStdRequest<PropfindAllRequestParam<P>>>
       findAllProps<P extends PropfindRequestProp>(
-              {required Iterable<P> includes, Depth? depth}) =>
+              {Iterable<P>? includes, Depth? depth}) =>
           client.openUrl(
               method: WebDavMethod.propfind,
               url: source,
               param: PropfindAllRequestParam(
-                  include: includes.toList(), depth: depth),
+                  include: includes?.toList(), depth: depth),
               responseBodyDecoders: respDecoder,
               responseResultParser: respParser);
 
