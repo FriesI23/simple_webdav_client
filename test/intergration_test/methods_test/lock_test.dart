@@ -158,6 +158,7 @@ void main() {
               timeout: DavTimeout([double.infinity, 4100000000]));
 
       Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.method, WebDavMethod.lock.name);
         expect(event.headers["Depth"]!.first, "0");
         expect(event.headers.contentType.toString(),
             equals(XmlContentType.applicationXml.toString()));
@@ -265,6 +266,7 @@ void main() {
               timeout: DavTimeout([double.infinity, 4100000000]));
 
       Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.method, WebDavMethod.lock.name);
         expect(event.headers["Depth"], isNull);
         expect(event.headers["If"]!.first,
             "(<urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4>)");
@@ -379,6 +381,7 @@ void main() {
               timeout: DavTimeout([double.infinity, 4100000000]));
 
       Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.method, WebDavMethod.lock.name);
         expect(event.headers["Depth"]!.first, "infinity");
         expect(event.headers.contentType.toString(),
             equals(XmlContentType.applicationXml.toString()));

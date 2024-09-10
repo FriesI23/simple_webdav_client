@@ -16,7 +16,7 @@ import 'package:simple_webdav_client/src/method.dart';
 import 'package:simple_webdav_client/src/namespace.dart';
 import 'package:simple_webdav_client/src/request.dart';
 import 'package:test/test.dart';
-import 'package:xml/src/xml/builder.dart';
+import 'package:xml/xml.dart';
 
 @GenerateMocks([
   HttpClientRequest,

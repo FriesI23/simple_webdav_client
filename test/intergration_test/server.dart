@@ -4,6 +4,7 @@
 // https://opensource.org/licenses/MIT
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:simple_webdav_client/client.dart';
 import 'package:simple_webdav_client/dav.dart';
@@ -13,16 +14,33 @@ import 'package:xml/xml.dart';
 
 class TestUsagedHttpServer {
   late HttpServer server;
-  final int bindPort;
+  late int bindPort;
+  final random = Random();
 
   Future<void> Function(HttpRequest event)? serverSideChecker;
   Future<bool> Function(HttpRequest event)? expectedResponse;
 
-  TestUsagedHttpServer({this.bindPort = 45678});
+  TestUsagedHttpServer();
+
+  int getPort() {
+    final int minPort = 49152;
+    final int maxPort = 65535;
+
+    return minPort + random.nextInt(maxPort - minPort);
+  }
 
   Future<void> open() async {
-    server = await HttpServer.bind(InternetAddress.loopbackIPv4, bindPort,
-        shared: true);
+    for (var i = 0; i <= 10; i++) {
+      final port = getPort();
+      try {
+        server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+        bindPort = port;
+        break;
+      } on SocketException catch (e) {
+        if (i >= 10) rethrow;
+        print('socket connected failed, port($port) retry($i): $e');
+      }
+    }
     server.listen((event) async {
       if (WebDavMethod.fromName(event.method) == WebDavMethod.unknown) {
         event.response.statusCode = HttpStatus.methodNotAllowed;
@@ -35,7 +53,7 @@ class TestUsagedHttpServer {
     });
   }
 
-  Future<void> close() async => server.close();
+  Future<void> close() async => server.close(force: true);
 }
 
 final class TestUsageXmlStringPropParser
