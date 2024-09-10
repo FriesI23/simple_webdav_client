@@ -140,5 +140,55 @@ void main() {
       expect(result.first, isEmpty);
       expect(result.first.isEmpty, isTrue);
     });
+    test(
+        "RFC4918 16 Precondition/Postcondition XML Elements "
+        "/ Response with precondition code, "
+        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-16",
+        () async {
+      final requestBody = '';
+      final responseBody = '''
+<?xml version="1.0" encoding="utf-8" ?>
+<D:error xmlns:D="DAV:">
+    <D:lock-token-submitted>
+        <D:href>/workspace/webdav/</D:href>
+    </D:lock-token-submitted>
+</D:error>
+'''
+          .trim();
+      final destination = "http://www.example/workspace/webdav/1/proposal.doc";
+
+      Future<bool> expectedResponse(HttpRequest event) async {
+        event.response.statusCode = HttpStatus.locked;
+        event.response.headers.contentType =
+            ContentType.parse('application/xml; charset="utf-8"');
+        event.response.contentLength = responseBody.length;
+        event.response.write(responseBody);
+        return true;
+      }
+
+      server.expectedResponse = expectedResponse;
+
+      Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.method, WebDavMethod.move.name);
+        expect(event.headers.contentType, isNull);
+        expect(event.headers["Destination"]!.first, equals(destination));
+        final body = await utf8.decodeStream(event);
+        expect(body, requestBody);
+      }
+
+      server.serverSideChecker = serverSideChecker;
+
+      final request =
+          await client.dispatch(addr).move(to: Uri.parse(destination));
+      final response = await request.close();
+      final result = await response.parse();
+      expect(result!.length, 1);
+      expect(result.first.path, equals(addr));
+      expect(result.first.status, equals(HttpStatus.locked));
+      expect(result.first.desc, isNull);
+      expect(result.first.error, TypeMatcher<WebDavStdResError>());
+      expect(result.first.error!.conditions,
+          contains(StdResErrorCond.lockTokenSubmitted));
+    });
   });
 }

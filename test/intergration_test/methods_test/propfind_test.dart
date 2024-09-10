@@ -15,6 +15,13 @@ import 'package:xml/xml.dart';
 
 import '../server.dart';
 
+final class BaseStringParser extends Converter<XmlElement, String> {
+  const BaseStringParser();
+
+  @override
+  String convert(XmlElement input) => input.innerText;
+}
+
 void main() {
   group("test propfind", () {
     late final TestUsagedHttpServer server;
@@ -684,6 +691,235 @@ DingALing property.
       server.serverSideChecker = serverSideChecker;
 
       await request.close();
+    });
+    test(
+        "RFC4918 15.8.1 Retrieving DAV:lockdiscovery, "
+        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-15.8.1",
+        () async {
+      final requestBody = '''
+<?xml version="1.0" encoding="utf-8"?>
+<a1:propfind xmlns:a1="DAV:">
+  <a1:prop>
+    <a1:lockdiscovery/>
+  </a1:prop>
+</a1:propfind>
+'''
+          .trim();
+
+      final responseBody = '''
+<?xml version="1.0" encoding="utf-8" ?>
+<D:multistatus xmlns:D='DAV:'>
+  <D:response>
+    <D:href>http://www.example.com/container/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:lockdiscovery>
+          <D:activelock>
+            <D:locktype><D:write/></D:locktype>
+            <D:lockscope><D:exclusive/></D:lockscope>
+            <D:depth>0</D:depth>
+            <D:owner>Jane Smith</D:owner>
+            <D:timeout>Infinite</D:timeout>
+            <D:locktoken>
+              <D:href>urn:uuid:f81de2ad-7f3d-a1b2-4f3c-00a0c91a9d76</D:href>
+            </D:locktoken>
+            <D:lockroot>
+              <D:href>http://www.example.com/container/</D:href>
+            </D:lockroot>
+          </D:activelock>
+        </D:lockdiscovery>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>
+'''
+          .trim();
+
+      Future<bool> expectedResponse(HttpRequest event) async {
+        event.response.statusCode = HttpStatus.multiStatus;
+        event.response.headers.contentType =
+            ContentType.parse('application/xml; charset="utf-8"');
+        event.response.contentLength = responseBody.length;
+        event.response.write(responseBody);
+        return true;
+      }
+
+      server.expectedResponse = expectedResponse;
+
+      final activeLockParser = BaseActiveLockElementParser(
+          lockScopeParser: BaseLockScopeElementParser(),
+          lockTypeParser: BaseWriteLockElementParser(),
+          depthParser: DepthElementParser(),
+          ownerParser: BaseStringParser(),
+          timeoutParser: TimeoutElementParser(),
+          lockTokenParser:
+              NestedHrefElementParser(hrefParser: BaseHrefElementParser()),
+          lockRootParser:
+              NestedHrefElementParser(hrefParser: BaseHrefElementParser()));
+      final lockdiscoveryParser =
+          LockDiscoveryPropParser(pieceParser: activeLockParser);
+      final propParsers = Map.of(kStdPropParserManager);
+      propParsers[(name: "lockdiscovery", ns: kDavNamespaceUrlStr)] =
+          lockdiscoveryParser;
+
+      final propstatParser = BasePropstatElementParser(
+          parserManger: WebDavResposneDataParserManger(parsers: propParsers),
+          statusParser: const BaseHttpStatusElementParser(),
+          errorParser: const BaseErrorElementParser());
+      final responseParser = BaseResponseElementParser(
+          hrefParser: const BaseHrefElementParser(),
+          statusParser: const BaseHttpStatusElementParser(),
+          propstatParser: propstatParser,
+          errorParser: const BaseErrorElementParser(),
+          locationParser: const BaseHrefElementParser());
+      final multistatParser =
+          BaseMultistatusElementParser(responseParser: responseParser);
+
+      final parsers = Map.of(kStdElementParserManager);
+      parsers[(name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr)] =
+          multistatParser;
+
+      final resultParser = BaseRespMultiResultParser(
+          parserManger: WebDavResposneDataParserManger(parsers: parsers));
+
+      final request = await client
+          .dispatch(addr, responseResultParser: resultParser)
+          .findProps(props: [
+        PropfindRequestProp.dav("lockdiscovery"),
+      ]);
+
+      Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers["Depth"], isNull);
+        expect(event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()));
+        final body = await utf8.decodeStream(event);
+        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
+      }
+
+      server.serverSideChecker = serverSideChecker;
+
+      final response = await request.close();
+      expect(response.body, isNull);
+      final result = await response.parse();
+      expect(response.body, equals(responseBody));
+      expect(result!.length, 1);
+      expect(result.first.status, HttpStatus.multiStatus);
+      expect(result.first.path, Uri.parse("http://www.example.com/container/"));
+      expect(result.first.error, isNull);
+      expect(result.first.props.length, 1);
+      final props = result.first.props.toList();
+      // bigbox
+      expect(props[0].name, "lockdiscovery");
+      expect(props[0].namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+      expect(props[0].status, HttpStatus.ok);
+      final locks = props[0] as WebDavStdResourceProp<LockDiscovery<String>>;
+      expect(locks.status, HttpStatus.ok);
+      expect(locks.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+      expect(locks.desc, isNull);
+      expect(locks.error, isNull);
+      expect(locks.value!.length, 1);
+      final lock = locks.value!.first;
+      expect(lock.isWriteLock, isTrue);
+      expect(lock.lockScope, LockScope.exclusive);
+      expect(lock.depth, Depth.resource);
+      expect(lock.owner, equals("Jane Smith"));
+      expect(lock.timeout, equals(double.infinity));
+      expect(lock.lockToken,
+          equals(Uri.parse("urn:uuid:f81de2ad-7f3d-a1b2-4f3c-00a0c91a9d76")));
+      expect(lock.lockRoot,
+          equals(Uri.parse("http://www.example.com/container/")));
+    });
+    test(
+        "RFC4918 15.10.1 Retrieving DAV:lockdiscovery, "
+        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-15.10.1",
+        () async {
+      final requestBody = '''
+<?xml version="1.0" encoding="utf-8"?>
+<a1:propfind xmlns:a1="DAV:">
+  <a1:prop>
+    <a1:supportedlock/>
+  </a1:prop>
+</a1:propfind>
+'''
+          .trim();
+
+      final responseBody = '''
+<?xml version="1.0" encoding="utf-8" ?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>http://www.example.com/container/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:supportedlock>
+          <D:lockentry>
+            <D:lockscope><D:exclusive/></D:lockscope>
+            <D:locktype><D:write/></D:locktype>
+          </D:lockentry>
+          <D:lockentry>
+            <D:lockscope><D:shared/></D:lockscope>
+            <D:locktype><D:write/></D:locktype>
+          </D:lockentry>
+        </D:supportedlock>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>
+'''
+          .trim();
+
+      Future<bool> expectedResponse(HttpRequest event) async {
+        event.response.statusCode = HttpStatus.multiStatus;
+        event.response.headers.contentType =
+            ContentType.parse('application/xml; charset="utf-8"');
+        event.response.contentLength = responseBody.length;
+        event.response.write(responseBody);
+        return true;
+      }
+
+      server.expectedResponse = expectedResponse;
+
+      final request = await client.dispatch(addr).findProps(props: [
+        PropfindRequestProp.dav("supportedlock"),
+      ]);
+
+      Future<void> serverSideChecker(HttpRequest event) async {
+        expect(event.headers["Depth"], isNull);
+        expect(event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()));
+        final body = await utf8.decodeStream(event);
+        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
+      }
+
+      server.serverSideChecker = serverSideChecker;
+
+      final response = await request.close();
+      expect(response.body, isNull);
+      final result = await response.parse();
+      expect(response.body, equals(responseBody));
+      expect(result!.length, 1);
+      expect(result.first.status, HttpStatus.multiStatus);
+      expect(result.first.path, Uri.parse("http://www.example.com/container/"));
+      expect(result.first.error, isNull);
+      expect(result.first.props.length, 1);
+      final props = result.first.props.toList();
+      // bigbox
+      expect(props[0].name, "supportedlock");
+      expect(props[0].namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+      expect(props[0].status, HttpStatus.ok);
+      final locks = props[0] as WebDavStdResourceProp<SupportedLock>;
+      expect(locks.status, HttpStatus.ok);
+      expect(locks.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+      expect(locks.desc, isNull);
+      expect(locks.error, isNull);
+      expect(locks.value!.length, 2);
+      final l1 = locks.value!.first;
+      expect(l1.isWriteLock, isTrue);
+      expect(l1.lockScope, LockScope.exclusive);
+      final l2 = locks.value!.last;
+      expect(l2.isWriteLock, isTrue);
+      expect(l2.lockScope, LockScope.shared);
     });
   });
 }

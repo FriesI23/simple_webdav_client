@@ -102,4 +102,40 @@ void main() {
           ' (<http://example.com/3> Not [W/"<etag_value333>"])');
     });
   });
+  group("test if.toString examples on RFC4918", () {
+    test('"No-Tag-List" format', () {
+      final ifOr = IfOr.notag([
+        IfAnd.notag([
+          IfCondition.token(
+              Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"))
+        ])
+      ]);
+      expect(
+          ifOr.toString(), "(<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)");
+    });
+    test('"Tagged-List" format, for "http://example.com/locked/":', () {
+      final ifOr = IfOr.tagged([
+        IfAnd.tagged(Uri.parse("http://example.com/locked/"), [
+          IfCondition.token(
+              Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"))
+        ])
+      ]);
+      expect(
+          ifOr.toString(),
+          "<http://example.com/locked/>"
+          " (<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)");
+    });
+    test('"Tagged-List" format, for "http://example.com/locked/member":', () {
+      final ifOr = IfOr.tagged([
+        IfAnd.tagged(Uri.parse("http://example.com/locked/member"), [
+          IfCondition.token(
+              Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"))
+        ])
+      ]);
+      expect(
+          ifOr.toString(),
+          "<http://example.com/locked/member>"
+          " (<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)");
+    });
+  });
 }
