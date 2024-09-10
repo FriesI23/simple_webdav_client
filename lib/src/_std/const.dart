@@ -3,6 +3,8 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+import 'dart:convert';
+
 import '../const.dart';
 import '../dav/element.dart';
 import 'decoder_mgr.dart';
@@ -10,29 +12,6 @@ import 'parser.dart';
 import 'parser_mgr.dart';
 
 const kStdDecoderManager = ResponseBodyDecoderManager(decoders: {});
-
-const kStdPropParserManager = WebDavResposneDataParserManger(parsers: {
-  (name: WebDavElementNames.creationdate, ns: kDavNamespaceUrlStr):
-      DateTimePropParser(),
-  (name: WebDavElementNames.displayname, ns: kDavNamespaceUrlStr):
-      StringPropParser(),
-  (name: WebDavElementNames.getcontentlanguage, ns: kDavNamespaceUrlStr):
-      StringPropParser(),
-  (name: WebDavElementNames.getcontentlength, ns: kDavNamespaceUrlStr):
-      NumPropParser(),
-  (name: WebDavElementNames.getcontenttype, ns: kDavNamespaceUrlStr):
-      ContentTypePropParser(),
-  (name: WebDavElementNames.getetag, ns: kDavNamespaceUrlStr):
-      StringPropParser(),
-  (name: WebDavElementNames.getlastmodified, ns: kDavNamespaceUrlStr):
-      HttpDatePropParser(),
-  (name: WebDavElementNames.lockdiscovery, ns: kDavNamespaceUrlStr):
-      _lockDiscoveryParser,
-  (name: WebDavElementNames.resourcetype, ns: kDavNamespaceUrlStr):
-      ResourceTypePropParser(),
-  (name: WebDavElementNames.supportedlock, ns: kDavNamespaceUrlStr):
-      _supporedtLockParser,
-});
 
 const kStdElementParserManager = WebDavResposneDataParserManger(parsers: {
   (name: WebDavElementNames.error, ns: kDavNamespaceUrlStr): _errorParser,
@@ -44,7 +23,11 @@ const kStdElementParserManager = WebDavResposneDataParserManger(parsers: {
   (name: WebDavElementNames.propstat, ns: kDavNamespaceUrlStr): _propstatParser,
   (name: WebDavElementNames.response, ns: kDavNamespaceUrlStr): _responseParser,
   (name: WebDavElementNames.status, ns: kDavNamespaceUrlStr): _statusParser,
+  ..._propParsers,
 });
+
+const kStdPropParserManager =
+    WebDavResposneDataParserManger(parsers: _propParsers);
 
 const kStdResponseResultParser = BaseRespResultParser(
   singleResDecoder:
@@ -93,3 +76,26 @@ const _responseParser = BaseResponseElementParser(
 
 const _multistatusParser =
     BaseMultistatusElementParser(responseParser: _responseParser);
+
+const Map<({String name, String? ns}), Converter> _propParsers = {
+  (name: WebDavElementNames.creationdate, ns: kDavNamespaceUrlStr):
+      DateTimePropParser(),
+  (name: WebDavElementNames.displayname, ns: kDavNamespaceUrlStr):
+      StringPropParser(),
+  (name: WebDavElementNames.getcontentlanguage, ns: kDavNamespaceUrlStr):
+      StringPropParser(),
+  (name: WebDavElementNames.getcontentlength, ns: kDavNamespaceUrlStr):
+      NumPropParser(),
+  (name: WebDavElementNames.getcontenttype, ns: kDavNamespaceUrlStr):
+      ContentTypePropParser(),
+  (name: WebDavElementNames.getetag, ns: kDavNamespaceUrlStr):
+      StringPropParser(),
+  (name: WebDavElementNames.getlastmodified, ns: kDavNamespaceUrlStr):
+      HttpDatePropParser(),
+  (name: WebDavElementNames.lockdiscovery, ns: kDavNamespaceUrlStr):
+      _lockDiscoveryParser,
+  (name: WebDavElementNames.resourcetype, ns: kDavNamespaceUrlStr):
+      ResourceTypePropParser(),
+  (name: WebDavElementNames.supportedlock, ns: kDavNamespaceUrlStr):
+      _supporedtLockParser,
+};

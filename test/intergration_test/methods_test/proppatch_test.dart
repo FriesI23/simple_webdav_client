@@ -45,7 +45,7 @@ void main() {
 
     tearDownAll(() async {
       client.close();
-      server.close();
+      await server.close();
     });
 
     setUp(() {

@@ -14,7 +14,7 @@ import '../server.dart';
 void main() {
   group("test unlock", () {
     late final TestUsagedHttpServer server;
-    late final WebDavStdClient client;
+    late WebDavStdClient client;
     late Uri addr;
 
     setUpAll(() async {
@@ -25,7 +25,7 @@ void main() {
     });
 
     tearDownAll(() async {
-      server.close();
+      await server.close();
     });
 
     setUp(() {
