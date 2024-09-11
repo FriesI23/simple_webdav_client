@@ -10,4 +10,4 @@
 coverage/
 
 # examples
-examples/server/bytemark_webdav/dav/
+example/server/bytemark_webdav/dav/
