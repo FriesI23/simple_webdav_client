@@ -34,53 +34,124 @@ abstract interface class WebDavStdRequestDispatcher {
       StdRequestDispatcherImpl(client, from,
           respDecoder: respDecoder, respParser: respParser);
 
+  /// Retrieves properties defined on resource identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.1 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.1.3
   Future<WebDavStdRequest<PropfindPropRequestParam<P>>>
       findProps<P extends PropfindRequestProp>(
           {required Iterable<P> props, Depth? depth});
 
+  /// Retrieves all properties values defined on resource
+  /// (defined in [RFC4918], at a minimum) identified by [from].
+  ///
+  /// Use [includes] to obtain additional live properties.
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.1 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.1.5
   Future<WebDavStdRequest<PropfindAllRequestParam<P>>>
       findAllProps<P extends PropfindRequestProp>(
           {Iterable<P> includes, Depth? depth});
 
+  /// Retrieves all properties name defined on resource
+  /// (defined in [RFC4918], at a minimum) identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.1 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.1.4
   Future<WebDavStdRequest<PropfindNameRequestParam>> findPropNames(
       {Depth? depth});
 
+  /// Update (set/remove) properties defined on resource identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.2 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.2.2
   Future<WebDavStdRequest<ProppatchRequestParam<P>>>
       updateProps<P extends ProppatchRequestProp>(
           {required List<P> operations, IfOr? condition});
 
+  /// Get file's data which identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.4
   Future<WebDavStdRequest<GetRequestParam>> get();
 
+  /// Create new file at the location specified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.7
   Future<WebDavStdRequest<PutRequestParam<T>>> create<T>(
       {T? data, IfOr? condition});
 
+  /// Creates a new directory at the location specified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.3 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.3.2
   Future<WebDavStdRequest<MkcolRequestParam>> createDir({IfOr? condition});
 
+  /// Delete file at the location specified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.6 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.6.2
   Future<WebDavStdRequest<DeleteRequestParam>> delete({IfOr? condition});
 
+  /// Delete directory at the location specified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.6.1
   Future<WebDavStdRequest<DeleteRequestParam>> deleteDir({IfOr? condition});
 
+  /// Creates a duplicate of the source file "[to]" identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.8.1 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.8.6
   Future<WebDavStdRequest<CopyRequestParam>> copy(
       {required Uri to, bool? overwrite, IfOr? condition});
 
+  /// Creates a duplicate of the source directory "[to]" recursively
+  /// identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.8 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.8.8
   Future<WebDavStdRequest<CopyRequestParam>> copyDir(
       {required Uri to, bool? overwrite, IfOr? condition});
 
+  /// Move source file identified by [from] to new location [to].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.9 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.9.5
   Future<WebDavStdRequest<MoveRequestParam>> move(
       {required Uri to, bool? overwrite, IfOr? condition});
 
+  /// Move source directory identified by [from] to new location [to]
+  /// recursively.
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.9 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.9.5
   Future<WebDavStdRequest<MoveRequestParam>> moveDir(
       {required Uri to, bool? overwrite, IfOr? condition});
 
+  /// Locked resource identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.7
   Future<WebDavStdRequest<LockRequestParam>> createLock(
       {required LockInfo info, DavTimeout? timeout, IfOr? condition});
 
+  /// Locked resource recursively identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.3 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.7
   Future<WebDavStdRequest<LockRequestParam>> createDirLock(
       {required LockInfo info, DavTimeout? timeout, IfOr? condition});
 
+  /// Refresh existed lock.
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.2 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.8
   Future<WebDavStdRequest<LockRequestParam>> renewLock(
       {required IfOr condition, DavTimeout? timeout});
 
+  /// Unlock resource identified by [from].
+  ///
+  /// see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.11 and
+  /// https://datatracker.ietf.org/doc/html/rfc4918#section-9.11.2
   Future<WebDavStdRequest<UnlockRequestParam>> unlock({required Uri token});
 }
 

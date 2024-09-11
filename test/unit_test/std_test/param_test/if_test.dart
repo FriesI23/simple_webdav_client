@@ -103,6 +103,59 @@ void main() {
     });
   });
   group("test if.toString examples on RFC4918", () {
+    test("No-tag Production", () {
+      final ifOr = IfOr.notag([
+        IfAnd.notag([
+          IfCondition.token(
+              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2")),
+          IfCondition.etag('"I am an ETag"')
+        ]),
+        IfAnd.notag([IfCondition.etag('"I am another ETag"')])
+      ]);
+      expect(
+          ifOr.toString(),
+          '(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> ["I am an ETag"])'
+          ' (["I am another ETag"])');
+    });
+    test('Using "Not" with No-tag Production', () {
+      final ifOr = IfOr.notag([
+        IfAnd.notag([
+          IfCondition.notToken(
+              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2")),
+          IfCondition.token(
+              Uri.parse("urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092"))
+        ])
+      ]);
+      expect(
+          ifOr.toString(),
+          '(Not <urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>'
+          ' <urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092>)');
+    });
+    test("Causing a Condition to Always Evaluate to True", () {
+      final ifOr = IfOr.notag([
+        IfAnd.notag([
+          IfCondition.token(
+              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"))
+        ]),
+        IfAnd.notag([IfCondition.notToken(Uri(scheme: "DAV", path: "no-lock"))])
+      ]);
+      expect(
+          ifOr.toString(),
+          '(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)'
+          ' (Not <dav:no-lock>)');
+    });
+    test("Tagged List", () {
+      final ifOr = IfOr.tagged([
+        IfAnd.tagged(Uri.parse("http://www.example.com/specs/"), [
+          IfCondition.token(
+              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"))
+        ])
+      ]);
+      expect(
+          ifOr.toString(),
+          '<http://www.example.com/specs/>'
+          ' (<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)');
+    });
     test('"No-Tag-List" format', () {
       final ifOr = IfOr.notag([
         IfAnd.notag([

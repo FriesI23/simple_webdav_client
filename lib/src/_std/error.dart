@@ -5,6 +5,8 @@
 
 import '../error.dart';
 
+/// Available Precondition/Postcondition defined in [RFC4918].
+/// see: https://datatracker.ietf.org/doc/html/rfc4918#section-16
 enum StdResErrorCond {
   lockTokenMatchesRequestUri("lock-token-matches-request-uri"),
   lockTokenSubmitted("lock-token-submitted"),

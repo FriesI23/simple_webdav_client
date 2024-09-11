@@ -5,6 +5,28 @@
 
 import 'dart:io';
 
+/// If header makes requests conditional based on state lists, tokens
+/// and ETags. The request succeeds only if at least one condition is met;
+/// otherwise, it fails with a 412 status. It also indicates that
+/// the client has submitted and is aware of the state token, with semantics
+/// depending on its type (e.g., lock tokens).
+///
+/// see https://datatracker.ietf.org/doc/html/rfc4918#section-10.4
+///
+/// Example(https://datatracker.ietf.org/doc/html/rfc4918#section-10.4.6):
+///
+/// ```dart
+/// // (<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> ["I am an ETag"])
+/// // (["I am another ETag"])
+/// IfOr.notag([
+///   IfAnd.notag([
+///     IfCondition.token(
+///         Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2")),
+///     IfCondition.etag('"I am an ETag"')
+///   ]),
+///   IfAnd.notag([IfCondition.etag('"I am another ETag"')])
+/// ]);
+///```
 class IfOr {
   final Iterable<IfAnd> _tagList;
   final bool _tagged;
