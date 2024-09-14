@@ -4,10 +4,10 @@
 // https://opensource.org/licenses/MIT
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:simple_webdav_client/client.dart';
 import 'package:test/test.dart';
+import 'package:universal_io/io.dart';
 
 import '../server.dart';
 

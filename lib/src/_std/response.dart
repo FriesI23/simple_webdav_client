@@ -5,9 +5,9 @@
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:io';
 
 import '../error.dart';
+import '../io.dart';
 import '../method.dart';
 import '../response.dart';
 import 'decoder_mgr.dart';

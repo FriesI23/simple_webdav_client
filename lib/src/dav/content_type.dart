@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
+import '../io.dart';
 
 abstract final class XmlContentType {
   static final textXml = ContentType("text", "xml", charset: "utf-8");

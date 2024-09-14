@@ -4,7 +4,6 @@
 // https://opensource.org/licenses/MIT
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -13,6 +12,7 @@ import 'package:simple_webdav_client/src/_std/parser.dart';
 import 'package:simple_webdav_client/src/_std/resource.dart';
 import 'package:simple_webdav_client/src/_std/response.dart';
 import 'package:simple_webdav_client/src/error.dart';
+import 'package:simple_webdav_client/src/io.dart';
 import 'package:simple_webdav_client/src/method.dart';
 import 'package:test/test.dart';
 

@@ -4,7 +4,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i11;
-import 'dart:io' as _i2;
+import 'dart:io' as _i12;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i4;
@@ -12,6 +12,7 @@ import 'package:simple_webdav_client/src/_std/lock.dart' as _i9;
 import 'package:simple_webdav_client/src/_std/prop.dart' as _i10;
 import 'package:simple_webdav_client/src/_std/propfind.dart' as _i3;
 import 'package:simple_webdav_client/src/_std/proppatch.dart' as _i8;
+import 'package:simple_webdav_client/src/io.dart' as _i2;
 import 'package:simple_webdav_client/src/namespace.dart' as _i6;
 import 'package:simple_webdav_client/src/utils.dart' as _i7;
 import 'package:xml/xml.dart' as _i5;
@@ -243,7 +244,7 @@ class MockHttpClient extends _i1.Mock implements _i2.HttpClient {
 
   @override
   set connectionFactory(
-          _i11.Future<_i2.ConnectionTask<_i2.Socket>> Function(
+          _i11.Future<_i12.ConnectionTask<_i12.Socket>> Function(
             Uri,
             String?,
             int?,
@@ -284,7 +285,7 @@ class MockHttpClient extends _i1.Mock implements _i2.HttpClient {
   @override
   set badCertificateCallback(
           bool Function(
-            _i2.X509Certificate,
+            _i12.X509Certificate,
             String,
             int,
           )? callback) =>

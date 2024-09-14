@@ -5,7 +5,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i11;
 import 'dart:convert' as _i2;
-import 'dart:io' as _i12;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i9;
@@ -14,6 +13,7 @@ import 'package:simple_webdav_client/src/_std/parser.dart' as _i10;
 import 'package:simple_webdav_client/src/_std/parser_mgr.dart' as _i4;
 import 'package:simple_webdav_client/src/_std/resource.dart' as _i3;
 import 'package:simple_webdav_client/src/_std/response.dart' as _i8;
+import 'package:simple_webdav_client/src/io.dart' as _i12;
 import 'package:simple_webdav_client/src/response.dart' as _i7;
 import 'package:xml/xml.dart' as _i5;
 

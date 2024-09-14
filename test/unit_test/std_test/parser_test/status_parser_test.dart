@@ -3,9 +3,8 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
-
 import 'package:simple_webdav_client/src/_std/parser.dart';
+import 'package:simple_webdav_client/src/io.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';
 

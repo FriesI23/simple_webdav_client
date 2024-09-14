@@ -3,10 +3,9 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
-
 import 'package:xml/xml.dart';
 
+import 'io.dart';
 import 'namespace.dart';
 
 abstract interface class ToXmlCapable {

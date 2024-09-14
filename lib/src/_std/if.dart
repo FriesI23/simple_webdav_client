@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
+import '../io.dart';
 
 /// If header makes requests conditional based on state lists, tokens
 /// and ETags. The request succeeds only if at least one condition is met;
@@ -46,6 +46,7 @@ class IfOr {
       .join(' ');
 }
 
+/// part of [IfOr]
 class IfAnd {
   final Uri? _resourceTag;
   final List<IfCondition> _conditions;
@@ -71,6 +72,7 @@ class IfAnd {
   }
 }
 
+/// part of [IfAnd]
 class IfCondition {
   final bool _not;
   final String? _etag;

@@ -3,9 +3,8 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
-
 import '../dav/content_type.dart';
+import '../io.dart';
 import '../request.dart';
 import '../utils.dart';
 import 'depth.dart';

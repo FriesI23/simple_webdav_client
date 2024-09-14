@@ -3,8 +3,6 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
-
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:simple_webdav_client/src/_std/_param.dart';
@@ -17,6 +15,7 @@ import 'package:simple_webdav_client/src/_std/mkcol.dart';
 import 'package:simple_webdav_client/src/_std/move.dart';
 import 'package:simple_webdav_client/src/_std/post.dart';
 import 'package:simple_webdav_client/src/_std/put.dart';
+import 'package:simple_webdav_client/src/io.dart';
 import 'package:test/test.dart';
 
 @GenerateMocks([

@@ -3,13 +3,12 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
-
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:simple_webdav_client/src/_std/if.dart';
 import 'package:simple_webdav_client/src/_std/namespace_mgr.dart';
 import 'package:simple_webdav_client/src/_std/proppatch.dart';
+import 'package:simple_webdav_client/src/io.dart';
 import 'package:simple_webdav_client/src/utils.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';

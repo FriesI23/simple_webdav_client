@@ -3,13 +3,13 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
 import 'dart:math';
 
 import 'package:simple_webdav_client/client.dart';
 import 'package:simple_webdav_client/dav.dart';
 import 'package:simple_webdav_client/src/_std/error.dart';
 import 'package:simple_webdav_client/utils.dart';
+import 'package:universal_io/io.dart';
 import 'package:xml/xml.dart';
 
 class TestUsagedHttpServer {

@@ -13,6 +13,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  universal_io: ^2.2.2
   xml: ^6.5.0
 
 dev_dependencies:

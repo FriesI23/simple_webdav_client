@@ -3,8 +3,6 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import 'dart:io';
-
 import 'package:mockito/annotations.dart';
 import 'package:simple_webdav_client/src/_std/client.dart';
 import 'package:simple_webdav_client/src/_std/client_dispatcher.dart';
@@ -21,6 +19,7 @@ import 'package:simple_webdav_client/src/_std/proppatch.dart';
 import 'package:simple_webdav_client/src/_std/put.dart';
 import 'package:simple_webdav_client/src/_std/timeout.dart';
 import 'package:simple_webdav_client/src/_std/unlock.dart';
+import 'package:simple_webdav_client/src/io.dart';
 import 'package:simple_webdav_client/src/method.dart';
 import 'package:test/test.dart';
 

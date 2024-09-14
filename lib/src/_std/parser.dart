@@ -4,7 +4,6 @@
 // https://opensource.org/licenses/MIT
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:xml/xml.dart';
 
@@ -12,6 +11,7 @@ import '../codec/timeout.dart';
 import '../const.dart';
 import '../dav/element.dart';
 import '../error.dart';
+import '../io.dart';
 import '../utils.dart';
 import 'depth.dart';
 import 'error.dart';
@@ -193,6 +193,7 @@ typedef LockEntryElementParser = Converter<XmlElement, LockEntry?>;
 /// ```
 typedef ActiveLockElementParser<O> = Converter<XmlElement, ActiveLock<O>?>;
 
+/// Mixed parser, supports both single resource and multistatus XML responses.
 final class BaseRespResultParser
     extends ResponseResultParser<WebDavStdResResultView> {
   final ResponseResultParser<WebDavStdResResultView> singleResDecoder;
@@ -215,6 +216,8 @@ final class BaseRespResultParser
   }
 }
 
+/// Single resource response parser, supports empty body or
+/// a root element with 'error', 'propstat', or 'prop'.
 final class BaseRespSingleResultParser
     extends ResponseResultParser<WebDavStdResResultView> {
   final WebDavResposneDataParserManger parserManger;
@@ -320,6 +323,14 @@ final class BaseRespMultiResultParser
   }
 }
 
+/// Parser for [multistatus] element, required [ResponseElementParser].
+///
+/// ```xml
+/// <multistatus>
+///   <response> ... </response>
+///   <response> ... </response>
+/// </multistatus>
+/// ```
 final class BaseMultistatusElementParser extends MultiStatusElementParser {
   final ResponseElementParser _responseParser;
 
@@ -340,6 +351,29 @@ final class BaseMultistatusElementParser extends MultiStatusElementParser {
   }
 }
 
+/// Parser for [response] element, required parsers for child elements.
+///
+/// for single resource:
+/// ```xml
+/// <response>
+///   <href> ... </href>
+///   <propstat> ... </propstat>
+///   <propstat> ... </propstat>
+///   <error> ... </error>
+///   <location> ... </location>
+/// </response>
+/// ```
+///
+/// for multi resources:
+/// ```xml
+/// <response>
+///   <href> ... </href>
+///   <href> ... </href>
+///   <status> ... </status>
+///   <error> ... </error>
+///   <location> ... </location>
+/// </response>
+/// ```
 final class BaseResponseElementParser extends ResponseElementParser {
   final HrefElementParser hrefParser;
   final HttpStatusElementParser statusParser;
@@ -419,6 +453,11 @@ final class BaseResponseElementParser extends ResponseElementParser {
   }
 }
 
+/// Parser for [href] element.
+///
+/// ```xml
+/// <href>http://example.com</href>
+/// ```
 final class BaseHrefElementParser extends HrefElementParser {
   const BaseHrefElementParser();
 
@@ -428,6 +467,11 @@ final class BaseHrefElementParser extends HrefElementParser {
   }
 }
 
+/// Parser for nested [href] elements.
+///
+/// ```xml
+/// <location><href>http://example.com</href></location>
+/// ```
 class NestedHrefElementParser extends HrefElementParser {
   final HrefElementParser _hrefParser;
 
@@ -443,6 +487,11 @@ class NestedHrefElementParser extends HrefElementParser {
   }
 }
 
+/// Parser for [error] element.
+///
+/// ```xml
+/// <error> ... </error>
+/// ```
 final class BaseErrorElementParser extends ErrorElementParser {
   const BaseErrorElementParser();
 
@@ -457,6 +506,11 @@ final class BaseErrorElementParser extends ErrorElementParser {
   }
 }
 
+/// Parser for [status] element.
+///
+/// ```xml
+/// <status> ... </status>
+/// ```
 final class BaseHttpStatusElementParser extends HttpStatusElementParser {
   const BaseHttpStatusElementParser();
 
@@ -466,6 +520,19 @@ final class BaseHttpStatusElementParser extends HttpStatusElementParser {
   }
 }
 
+/// Parser for the [propstat] element, requires parsers for [status],
+/// [error], and [prop].
+/// Parsers for [prop] are specifically managed by [BasePropstatElementParser].
+///
+/// ```xml
+/// <propstat>
+///   <error> ... </error>
+///   <status> ... </status>
+///   <prop>
+///     <p1/><p2/><p3/>
+///   </prop>
+/// </propstat>
+/// ```
 final class BasePropstatElementParser extends PropstatElementParser {
   final HttpStatusElementParser _statusParser;
   final ErrorElementParser? _errorParser;
@@ -540,6 +607,9 @@ abstract class _PropElementParser<T>
   }
 }
 
+/// Parser for [RFC3339] defined properties.
+///
+/// - [cretiondata](https://datatracker.ietf.org/doc/html/rfc4918#section-15.1)
 final class DateTimePropParser extends _PropElementParser<DateTime> {
   const DateTimePropParser();
 
@@ -548,6 +618,9 @@ final class DateTimePropParser extends _PropElementParser<DateTime> {
       DateTime.tryParse(node.innerText.trim());
 }
 
+/// Parser for [RFC1123] defined properties.
+///
+/// - [getlastmodified](https://datatracker.ietf.org/doc/html/rfc4918#section-15.7)
 final class HttpDatePropParser extends _PropElementParser<DateTime> {
   const HttpDatePropParser();
 
@@ -558,6 +631,11 @@ final class HttpDatePropParser extends _PropElementParser<DateTime> {
   }
 }
 
+/// Parser for string properties.
+///
+/// - [displayname](https://datatracker.ietf.org/doc/html/rfc4918#section-15.2)
+/// - [getcontentlanguage](https://datatracker.ietf.org/doc/html/rfc4918#section-15.3)
+/// - [getetag](https://datatracker.ietf.org/doc/html/rfc4918#section-15.6)
 final class StringPropParser extends _PropElementParser<String> {
   const StringPropParser();
 
@@ -565,6 +643,9 @@ final class StringPropParser extends _PropElementParser<String> {
   String convertValue(XmlElement node) => node.innerText.trim();
 }
 
+/// Parser for number properties.
+///
+/// - [getcontentlength](https://datatracker.ietf.org/doc/html/rfc4918#section-15.4)
 final class NumPropParser extends _PropElementParser<num> {
   const NumPropParser();
 
@@ -572,6 +653,9 @@ final class NumPropParser extends _PropElementParser<num> {
   num? convertValue(XmlElement node) => num.tryParse(node.innerText.trim());
 }
 
+/// Parser for html content type.
+///
+/// - [getcontenttype](https://datatracker.ietf.org/doc/html/rfc4918#section-15.5)
 final class ContentTypePropParser extends _PropElementParser<ContentType> {
   const ContentTypePropParser();
 
@@ -582,6 +666,9 @@ final class ContentTypePropParser extends _PropElementParser<ContentType> {
   }
 }
 
+/// Parser for resource types.
+///
+/// - [resourcetype](https://datatracker.ietf.org/doc/html/rfc4918#section-15.9)
 final class ResourceTypePropParser extends _PropElementParser<ResourceTypes> {
   const ResourceTypePropParser();
 
@@ -592,6 +679,11 @@ final class ResourceTypePropParser extends _PropElementParser<ResourceTypes> {
           .toList());
 }
 
+/// Parser for [lockscope] element.
+///
+/// ```xml
+/// <lockscope><shared/></lockscope>
+/// ```
 final class BaseLockScopeElementParser extends LockScopeElementParser {
   const BaseLockScopeElementParser();
 
@@ -603,6 +695,11 @@ final class BaseLockScopeElementParser extends LockScopeElementParser {
   }
 }
 
+/// Parser for [locktype] element.
+///
+/// ```xml
+/// <locktype><write/></locktype>
+/// ```
 final class BaseWriteLockElementParser extends WriteLockElementParser {
   const BaseWriteLockElementParser();
 
@@ -611,6 +708,9 @@ final class BaseWriteLockElementParser extends WriteLockElementParser {
       input.getElement("write", namespace: input.namespaceUri) != null;
 }
 
+/// Parser for supported locks.
+///
+/// - [supportedlock](https://datatracker.ietf.org/doc/html/rfc4918#section-15.10)
 final class SupportedLockPropParser extends _PropElementParser<SupportedLock> {
   final LockEntryElementParser pieceParser;
 
@@ -624,6 +724,15 @@ final class SupportedLockPropParser extends _PropElementParser<SupportedLock> {
       .toList());
 }
 
+/// Parser for [lockentry] element, required parsers for [lockscope] and
+/// [locktype].
+///
+/// ```xml
+/// <lockentry>
+///   <lockscope> ... </lockscope>
+///   <locktype> ... </locktype>
+/// </lockentry>
+/// ```
 final class BaseLockEntryElementParser extends LockEntryElementParser {
   final LockScopeElementParser lockScopeParser;
   final WriteLockElementParser lockTypeParser;
@@ -649,6 +758,9 @@ final class BaseLockEntryElementParser extends LockEntryElementParser {
   }
 }
 
+/// Parser for lock discovery.
+///
+/// - [lockdiscovery](https://datatracker.ietf.org/doc/html/rfc4918#section-15.8)
 final class LockDiscoveryPropParser<O>
     extends _PropElementParser<LockDiscovery<O>> {
   final ActiveLockElementParser<O> pieceParser;
@@ -663,6 +775,20 @@ final class LockDiscoveryPropParser<O>
       .toList());
 }
 
+/// Parser for [activelock] element, required parsers for [lockscope],
+/// [locktype], [depth], [owner], [timeout], [locktoken] and [lockroot].
+///
+/// ```xml
+/// <activelock>
+///   <lockscope> ... </lockscope>
+///   <locktype> ... </locktype>
+///   <depth> ... </depth>
+///   <owner> ... </owner>
+///   <timeout> ... </timeout>
+///   <locktoken> ... </locktoken>
+///   <lockroot> ... </lockroot>
+/// </activelock>
+/// ```
 final class BaseActiveLockElementParser<O> extends ActiveLockElementParser<O> {
   final LockScopeElementParser lockScopeParser;
   final WriteLockElementParser lockTypeParser;
@@ -726,6 +852,11 @@ final class BaseActiveLockElementParser<O> extends ActiveLockElementParser<O> {
   }
 }
 
+/// Parser for [depth] element.
+///
+/// ```xml
+/// <depth> 1 </depth>
+/// ```
 final class DepthElementParser extends Converter<XmlElement, Depth?> {
   const DepthElementParser();
 
@@ -734,6 +865,11 @@ final class DepthElementParser extends Converter<XmlElement, Depth?> {
       Depth.fromName(input.innerText.trim().toLowerCase());
 }
 
+/// Parser for [timeout] element.
+///
+/// ```xml
+/// <timeout> Second-123 </timeout>
+/// ```
 final class TimeoutElementParser extends Converter<XmlElement, double?> {
   const TimeoutElementParser();
 

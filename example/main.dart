@@ -212,11 +212,10 @@
 // Exited.
 //
 
-import 'dart:io';
-
 import 'package:simple_webdav_client/client.dart';
 import 'package:simple_webdav_client/dav.dart';
 import 'package:simple_webdav_client/utils.dart';
+import 'package:universal_io/io.dart';
 
 BaseRespResultParser generateParser() {
   final propParsers = Map.of(kStdPropParserManager);
