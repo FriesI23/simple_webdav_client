@@ -34,35 +34,163 @@ class ResponseResultParserParam {
   });
 }
 
+/// Parser used for the response body, see [WebDavStdResponse.parse].
+///
+/// Three parsers are implemented by default:
+///
+/// - [BaseRespResultParser]
+/// - [BaseRespSingleResultParser]
+/// - [BaseRespMultiResultParser]
 typedef ResponseResultParser<O extends WebDavStdResResultView>
     = Converter<ResponseResultParserParam, O>;
 
+/// Parser used for <error> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.5].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseErrorElementParser]
+///
+/// ```bnf
+/// <!ELEMENT error ANY >
+/// ```
 typedef ErrorElementParser = Converter<XmlElement, WebDavStdResError?>;
 
+/// Parser used for <prop> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.18]
+///
+/// There's a parser implemented by default:
+///
+/// - [DateTimePropParser]
+/// - [HttpDatePropParser]
+/// - [StringPropParser]
+/// - [NumPropParser]
+/// - [ContentTypePropParser]
+/// - [ResourceTypePropParser]
+/// - [SupportedLockPropParser]
+/// - [LockDiscoveryPropParser]
+///
+/// ```bnf
+/// <!ELEMENT prop ANY >
+/// ```
 typedef PropElementParser<T extends WebDavStdResourceProp> = Converter<
     ({XmlElement node, int status, WebDavStdResError? error, String? desc}),
     T?>;
 
+/// Parser used for <propstat> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.22].
+///
+/// There's a parser implemented by default:
+///
+/// - [BasePropstatElementParser]
+///
+/// ```bnf
+/// <!ELEMENT propstat (prop, status, error?, responsedescription?) >
+/// ```
 typedef PropstatElementParser = Converter<
     ({XmlElement node, WebDavStdResource resource}),
     Iterable<WebDavStdResourceProp>>;
 
+/// Parser used for <response> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.24].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseResponseElementParser]
+///
+/// ```bnf
+/// <!ELEMENT response (href, ((href*, status)|(propstat+)),
+///                     error?, responsedescription? , location?) >
+/// ```
 typedef ResponseElementParser
     = Converter<XmlElement, Iterable<WebDavStdResource>>;
 
+/// Parser used for <multistatus> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.16].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseMultistatusElementParser]
+///
+/// ```bnf
+/// <!ELEMENT multistatus (response*, responsedescription?)  >
+/// ```
 typedef MultiStatusElementParser
     = Converter<XmlElement, WebDavStdResResultView?>;
 
+/// Parser used for <href> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.7].
+///
+/// There're two parsers implemented by default:
+///
+/// - [BaseHrefElementParser]
+/// - [NestedHrefElementParser]
+///
+/// ```bnf
+/// <!ELEMENT multistatus (response*, responsedescription?)  >
+/// ```
 typedef HrefElementParser = Converter<XmlElement, Uri?>;
 
+/// Parser used for <status> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.28].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseHttpStatusElementParser]
+///
+/// ```bnf
+/// ; value: status-line [RFC2616#6.1]
+/// <!ELEMENT status (#PCDATA) >
+/// ```
 typedef HttpStatusElementParser = Converter<XmlElement, int?>;
 
+/// Parser used for <lockscope> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.13].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseLockScopeElementParser]
+///
+/// ```bnf
+/// <!ELEMENT lockscope (exclusive | shared) >
+/// ```
 typedef LockScopeElementParser = Converter<XmlElement, LockScope?>;
 
+/// Parser used for <locktype> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.15].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseWriteLockElementParser]
+///
+/// ```bnf
+/// <!ELEMENT locktype (write) >
+/// ```
 typedef WriteLockElementParser = Converter<XmlElement, bool?>;
 
+/// Parser used for <lockentry> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.10].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseLockEntryElementParser]
+///
+/// ```bnf
+/// <!ELEMENT lockentry (lockscope, locktype) >
+/// ```
 typedef LockEntryElementParser = Converter<XmlElement, LockEntry?>;
 
+/// Parser used for <activelock> element,
+/// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.1].
+///
+/// There's a parser implemented by default:
+///
+/// - [BaseActiveLockElementParser]
+///
+/// ```bnf
+/// <!ELEMENT activelock (lockscope, locktype, depth, owner?, timeout?,
+///           locktoken?, lockroot)>
+/// ```
 typedef ActiveLockElementParser<O> = Converter<XmlElement, ActiveLock<O>?>;
 
 final class BaseRespResultParser
