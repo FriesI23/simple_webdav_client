@@ -3,7 +3,7 @@ description: |
   A Dart WebDAV client with full RFC 4918 support, including file operations,
   property management, and locking (LOCK/UNLOCK).
   Ideal for these needing complete WebDAV functionality.
-version: 0.1.0
+version: 0.2.0
 homepage: https://github.com/FriesI23/simple_webdav_client
 repository: https://github.com/FriesI23/simple_webdav_client
 issue_tracker: https://github.com/FriesI23/simple_webdav_client/issues
