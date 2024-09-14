@@ -3,7 +3,6 @@
 .dart_tool/
 
 # dark sdk
-.dart_sdk
 .dart_sdk/
 
 # coverage

@@ -2,6 +2,215 @@
 //
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
+//
+// Output (Example):
+// -----------------------------------
+// [Step1]: put new file at http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:201,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step2]: set custom prop on http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // /new-file.txt
+//   WebDavStdResource{
+//     path:/new-file.txt | status:207,
+//     props(1):
+//       [custom:]author: WebDavStdResourceProp<String>{name:author,ns:custom:,status:200,value:},
+//   }
+// }
+//
+//
+// [Step3]: get prop names from http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // /new-file.txt
+//   WebDavStdResource{
+//     path:/new-file.txt | status:207,
+//     props(9):
+//       [custom:]author: WebDavStdResourceProp<String>{name:author,ns:custom:,status:200,value:},
+//       [dav:]resourcetype: WebDavStdResourceProp<ResourceTypes>{name:resourcetype,ns:dav:,status:200,value:()},
+//       [dav:]creationdate: WebDavStdResourceProp<DateTime>{name:creationdate,ns:dav:,status:200,value:null},
+//       [dav:]getcontentlength: WebDavStdResourceProp<num>{name:getcontentlength,ns:dav:,status:200,value:null},
+//       [dav:]getlastmodified: WebDavStdResourceProp<DateTime>{name:getlastmodified,ns:dav:,status:200,value:null},
+//       [dav:]getetag: WebDavStdResourceProp<String>{name:getetag,ns:dav:,status:200,value:},
+//       [dav:]supportedlock: WebDavStdResourceProp<List<LockEntry>>{name:supportedlock,ns:dav:,status:200,value:[]},
+//       [dav:]lockdiscovery: WebDavStdResourceProp<List<ActiveLock<Null>>>{name:lockdiscovery,ns:dav:,status:200,value:[]},
+//       [dav:]getcontenttype: WebDavStdResourceProp<ContentType>{name:getcontenttype,ns:dav:,status:200,value:null},
+//   }
+// }
+//
+//
+// [Step4]: get props attributes from http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // /new-file.txt
+//   WebDavStdResource{
+//     path:/new-file.txt | status:207,
+//     props(9):
+//       [custom:]author: WebDavStdResourceProp<String>{name:author,ns:custom:,status:200,value:zigzag},
+//       [dav:]resourcetype: WebDavStdResourceProp<ResourceTypes>{name:resourcetype,ns:dav:,status:200,value:()},
+//       [dav:]creationdate: WebDavStdResourceProp<DateTime>{name:creationdate,ns:dav:,status:200,value:2024-09-14 07:15:01.000Z},
+//       [dav:]getcontentlength: WebDavStdResourceProp<num>{name:getcontentlength,ns:dav:,status:200,value:0},
+//       [dav:]getlastmodified: WebDavStdResourceProp<DateTime>{name:getlastmodified,ns:dav:,status:200,value:2024-09-14 07:15:01.000Z},
+//       [dav:]getetag: WebDavStdResourceProp<String>{name:getetag,ns:dav:,status:200,value:"0-6220f191f7916"},
+//       [dav:]supportedlock: WebDavStdResourceProp<List<LockEntry>>{name:supportedlock,ns:dav:,status:200,value:[Instance of 'LockEntry', Instance of 'LockEntry']},
+//       [dav:]lockdiscovery: WebDavStdResourceProp<List<ActiveLock<Null>>>{name:lockdiscovery,ns:dav:,status:200,value:[]},
+//       [dav:]getcontenttype: WebDavStdResourceProp<ContentType>{name:getcontenttype,ns:dav:,status:200,value:text/plain},
+//   }
+// }
+//
+//
+// [Step5]: make new dir http://localhost/path/
+// WebDavStdResponseResult{
+//   // http://localhost/path/
+//   WebDavStdResource{
+//     path:http://localhost/path/ | status:201,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step6]: copy http://localhost/new-file.txt to http://localhost/path/new-file-copyed.txt
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:201,
+//     props(0):
+//   }
+// }
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:201,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step7]: remove custom prop on http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // /new-file.txt
+//   WebDavStdResource{
+//     path:/new-file.txt | status:207,
+//     props(1):
+//       [custom:]author: WebDavStdResourceProp<String>{name:author,ns:custom:,status:200,value:},
+//   }
+// }
+//
+//
+// [Step8]: get props attributes from http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // /new-file.txt
+//   WebDavStdResource{
+//     path:/new-file.txt | status:207,
+//     props(3):
+//       [dav:]getlastmodified: WebDavStdResourceProp<DateTime>{name:getlastmodified,ns:dav:,status:200,value:2024-09-14 07:15:01.000Z},
+//       [dav:]getetag: WebDavStdResourceProp<String>{name:getetag,ns:dav:,status:200,value:"0-6220f191f7916"},
+//       [custom:]author: WebDavStdResourceProp<String>{name:author,ns:custom:,status:404,value:},
+//   }
+// }
+//
+//
+// [Step9]: move http://localhost/path/new-file-copyed.txt to http://localhost/path/new-file-moved.txt
+// WebDavStdResponseResult{
+//   // http://localhost/path/new-file-copyed.txt
+//   WebDavStdResource{
+//     path:http://localhost/path/new-file-copyed.txt | status:201,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step10]: get props attributes from http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // /path/new-file-moved.txt
+//   WebDavStdResource{
+//     path:/path/new-file-moved.txt | status:207,
+//     props(3):
+//       [custom:]author: WebDavStdResourceProp<String>{name:author,ns:custom:,status:200,value:zigzag},
+//       [dav:]getlastmodified: WebDavStdResourceProp<DateTime>{name:getlastmodified,ns:dav:,status:200,value:2024-09-14 07:15:01.000Z},
+//       [dav:]getetag: WebDavStdResourceProp<String>{name:getetag,ns:dav:,status:200,value:"0-6220f1920bcc2"},
+//   }
+// }
+//
+//
+// [Step11]: delete dir http://localhost/path/
+// WebDavStdResponseResult{
+//   // http://localhost/path/
+//   WebDavStdResource{
+//     path:http://localhost/path/ | status:204,
+//     props(0):
+//   }
+// }
+// WebDavStdResponseResult{
+//   // http://localhost/path/
+//   WebDavStdResource{
+//     path:http://localhost/path/ | status:404,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step12]: lock file http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:200,
+//     props(1):
+//       [dav:]lockdiscovery: WebDavStdResourceProp<List<ActiveLock<Null>>>{name:lockdiscovery,ns:dav:,status:200,value:[Instance of 'ActiveLock<Null>']},
+//   }
+// }
+//
+//
+// [Step13]: delete file http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:423,
+//     props(0):
+//   }
+// }
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:200,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step13]: unlock file http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:204,
+//     props(0):
+//   }
+// }
+//
+//
+// [Step15]: delete file http://localhost/new-file.txt
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:204,
+//     props(0):
+//   }
+// }
+// WebDavStdResponseResult{
+//   // http://localhost/new-file.txt
+//   WebDavStdResource{
+//     path:http://localhost/new-file.txt | status:404,
+//     props(0):
+//   }
+// }
+//
+// Exited.
+//
 
 import 'dart:io';
 
