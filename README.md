@@ -11,7 +11,7 @@ property management (PROPFIND/PROPUPDATE), and locking (LOCK/UNLOCK).
 Ideal for these needing complete WebDAV functionality.
 
 Client's API invocation style is similar to `HttpClient` and works more easily with async programming.
-refer to [here](./example/main.dart) for more exmaples.
+refer to [here](./example/main.dart) for more examples.
 
 ## Features
 
