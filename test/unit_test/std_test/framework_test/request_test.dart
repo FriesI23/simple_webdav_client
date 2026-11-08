@@ -41,8 +41,10 @@ void main() {
   group("test WebDavStdRequest", () {
     test("constructor", () {
       final request = WebDavStdRequest<WebDavRequestParam>(
-          request: MockHttpClientRequest(), param: null);
-      expect(request.request, equals(TypeMatcher<HttpClientRequest>()));
+        request: MockHttpClientRequest(),
+        param: null,
+      );
+      expect(request.request, equals(const TypeMatcher<HttpClientRequest>()));
       expect(request.responseBodyDecoders, isNull);
       expect(request.responseResultParser, isNull);
       expect(request.param, isNull);
@@ -54,25 +56,35 @@ void main() {
         responseBodyDecoders: MockResponseBodyDecoderManager(),
         responseResultParser: MockResponseResultParser(),
       );
-      expect(request.request, equals(TypeMatcher<HttpClientRequest>()));
-      expect(request.responseBodyDecoders,
-          equals(TypeMatcher<ResponseBodyDecoderManager>()));
-      expect(request.responseResultParser,
-          equals(TypeMatcher<ResponseResultParser>()));
-      expect(request.param, equals(TypeMatcher<WebDavRequestParam>()));
+      expect(request.request, equals(const TypeMatcher<HttpClientRequest>()));
+      expect(
+        request.responseBodyDecoders,
+        equals(const TypeMatcher<ResponseBodyDecoderManager>()),
+      );
+      expect(
+        request.responseResultParser,
+        equals(const TypeMatcher<ResponseResultParser>()),
+      );
+      expect(request.param, equals(const TypeMatcher<WebDavRequestParam>()));
     });
     test("close", () async {
-      final method = WebDavMethod.get;
+      const method = WebDavMethod.get;
       final httpRequest = MockHttpClientRequest();
       when(httpRequest.uri).thenReturn(Uri.base);
       when(httpRequest.method).thenReturn(method.name);
-      when(httpRequest.close())
-          .thenAnswer((_) => Future.value(MockHttpClientResponse()));
+      when(
+        httpRequest.close(),
+      ).thenAnswer((_) => Future.value(MockHttpClientResponse()));
       final request = WebDavStdRequest<WebDavRequestParam>(
-          request: httpRequest, param: null);
+        request: httpRequest,
+        param: null,
+      );
       final response = await request.close();
-      expect(response, equals(TypeMatcher<WebDavStdResponse>()));
-      expect(response.response, equals(TypeMatcher<HttpClientResponse>()));
+      expect(response, equals(const TypeMatcher<WebDavStdResponse>()));
+      expect(
+        response.response,
+        equals(const TypeMatcher<HttpClientResponse>()),
+      );
       expect(response.path, equals(Uri.base));
       expect(response.method, equals(method));
       expect(response.bodyDecoders, kStdDecoderManager);
@@ -83,24 +95,29 @@ void main() {
       when(param.toRequestBody()).thenReturn('123');
       final bodyDecoderMgr = MockResponseBodyDecoderManager();
       final resultParserMgr = MockResponseResultParser();
-      final method = WebDavMethod.get;
+      const method = WebDavMethod.get;
       final httpRequest = MockHttpClientRequest();
       when(httpRequest.uri).thenReturn(Uri.base);
       when(httpRequest.method).thenReturn(method.name);
       when(httpRequest.write('123')).thenReturn(null);
-      when(httpRequest.close())
-          .thenAnswer((_) => Future.value(MockHttpClientResponse()));
+      when(
+        httpRequest.close(),
+      ).thenAnswer((_) => Future.value(MockHttpClientResponse()));
       final request = WebDavStdRequest<WebDavRequestParam>(
-          request: httpRequest,
-          param: param,
-          responseBodyDecoders: bodyDecoderMgr,
-          responseResultParser: resultParserMgr);
+        request: httpRequest,
+        param: param,
+        responseBodyDecoders: bodyDecoderMgr,
+        responseResultParser: resultParserMgr,
+      );
       final response = await request.close();
       verify(param.beforeAddRequestBody(httpRequest)).called(1);
       verify(param.toRequestBody()).called(1);
       verify(httpRequest.write("123")).called(1);
-      expect(response, equals(TypeMatcher<WebDavStdResponse>()));
-      expect(response.response, equals(TypeMatcher<HttpClientResponse>()));
+      expect(response, equals(const TypeMatcher<WebDavStdResponse>()));
+      expect(
+        response.response,
+        equals(const TypeMatcher<HttpClientResponse>()),
+      );
       expect(response.method, equals(method));
       expect(response.path, equals(Uri.base));
       expect(response.bodyDecoders, same(bodyDecoderMgr));
@@ -112,13 +129,15 @@ void main() {
       final obj = _ToXmlMixinStub(
         toXmlFunc: (context, nsmgr) {
           context.element("test");
-          expect(nsmgr, equals(TypeMatcher<NamespaceManager>()));
+          expect(nsmgr, equals(const TypeMatcher<NamespaceManager>()));
         },
       );
       final builder = obj.processXmlData();
       final result = builder.buildDocument();
-      expect(result.toXmlString(),
-          '<?xml version="1.0" encoding="utf-8"?><test/>');
+      expect(
+        result.toXmlString(),
+        '<?xml version="1.0" encoding="utf-8"?><test/>',
+      );
     });
   });
 }

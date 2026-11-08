@@ -16,34 +16,32 @@ import 'package:simple_webdav_client/src/utils.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';
 
-@GenerateMocks([
-  HttpClientRequest,
-  HttpHeaders,
-  ToXmlCapable,
-])
+@GenerateMocks([HttpClientRequest, HttpHeaders, ToXmlCapable])
 import 'lock_test.mocks.dart';
 
 void main() {
   group("test LockInfo", () {
     test("constructor", () {
-      final info = LockInfo(lockScope: LockScope.exclusive);
+      const info = LockInfo(lockScope: LockScope.exclusive);
       expect(info.lockScope, LockScope.exclusive);
       expect(info.owner, isNull);
     });
     test("constructor with params", () {
-      final info =
-          LockInfo(lockScope: LockScope.shared, owner: MockToXmlCapable());
+      final info = LockInfo(
+        lockScope: LockScope.shared,
+        owner: MockToXmlCapable(),
+      );
       expect(info.lockScope, LockScope.shared);
-      expect(info.owner, TypeMatcher<ToXmlCapable>());
+      expect(info.owner, const TypeMatcher<ToXmlCapable>());
     });
     test("toXml", () {
       final context = XmlBuilder();
       final nsmgr = StdNamespaceManger();
-      final info = LockInfo(lockScope: LockScope.exclusive);
+      const info = LockInfo(lockScope: LockScope.exclusive);
       info.toXml(context, nsmgr);
       expect(
-          context.buildDocument().toXmlString(pretty: true),
-          """
+        context.buildDocument().toXmlString(pretty: true),
+        """
 <a1:lockinfo xmlns:a1="DAV:">
   <a1:lockscope>
     <a1:exclusive/>
@@ -54,7 +52,8 @@ void main() {
 </a1:lockinfo>
 
   """
-              .trim());
+            .trim(),
+      );
     });
     test("toXml with params", () {
       final context = XmlBuilder();
@@ -66,8 +65,8 @@ void main() {
       final info = LockInfo(lockScope: LockScope.shared, owner: owner);
       info.toXml(context, nsmgr);
       expect(
-          context.buildDocument().toXmlString(pretty: true),
-          """
+        context.buildDocument().toXmlString(pretty: true),
+        """
 <a1:lockinfo xmlns:a1="DAV:">
   <a1:lockscope>
     <a1:shared/>
@@ -78,7 +77,8 @@ void main() {
   <a1:owner>mock-test</a1:owner>
 </a1:lockinfo>
   """
-              .trim());
+            .trim(),
+      );
     });
   });
   group("test LockRequestParam", () {
@@ -93,46 +93,48 @@ void main() {
     });
 
     test("constructor", () {
-      final param =
-          LockRequestParam(lockInfo: LockInfo(lockScope: LockScope.exclusive));
+      const param = LockRequestParam(
+        lockInfo: LockInfo(lockScope: LockScope.exclusive),
+      );
       expect(param.lockInfo!.lockScope, LockScope.exclusive);
       expect(param.condition, isNull);
       expect(param.depth, isNull);
       expect(param.timeout, isNull);
     });
     test("constructor with param", () {
-      final param = LockRequestParam(
+      const param = LockRequestParam(
         lockInfo: LockInfo(lockScope: LockScope.exclusive),
         timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: IfOr.tagged([]),
       );
       expect(param.lockInfo!.lockScope, LockScope.exclusive);
-      expect(param.condition, TypeMatcher<IfOr>());
+      expect(param.condition, const TypeMatcher<IfOr>());
       expect(param.depth, Depth.all);
       expect(param.timeout, equals([double.infinity, 123]));
     });
     test("constructor.renew", () {
-      final param = LockRequestParam.renew(
+      const param = LockRequestParam.renew(
         timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: IfOr.tagged([]),
       );
       expect(param.lockInfo, isNull);
-      expect(param.condition, TypeMatcher<IfOr>());
+      expect(param.condition, const TypeMatcher<IfOr>());
       expect(param.depth, Depth.all);
       expect(param.timeout, equals([double.infinity, 123]));
     });
     test("beforeAddRequestBody", () {
-      LockRequestParam(lockInfo: LockInfo(lockScope: LockScope.exclusive))
-          .beforeAddRequestBody(request);
+      const LockRequestParam(
+        lockInfo: LockInfo(lockScope: LockScope.exclusive),
+      ).beforeAddRequestBody(request);
       verifyNever(headers.add('Depth', any));
       verifyNever(headers.add('Timeout', any));
       verifyNever(headers.add('If', any));
     });
     test("beforeAddRequestBody with params", () {
-      final ifOr = IfOr.tagged([]);
-      LockRequestParam(
+      const ifOr = IfOr.tagged([]);
+      const LockRequestParam(
         lockInfo: LockInfo(lockScope: LockScope.exclusive),
         timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
@@ -145,11 +147,12 @@ void main() {
     test("toXml", () {
       final context = XmlBuilder();
       final nsmgr = StdNamespaceManger();
-      LockRequestParam(lockInfo: LockInfo(lockScope: LockScope.exclusive))
-          .toXml(context, nsmgr);
+      const LockRequestParam(
+        lockInfo: LockInfo(lockScope: LockScope.exclusive),
+      ).toXml(context, nsmgr);
       expect(
-          context.buildDocument().toXmlString(pretty: true),
-          '''
+        context.buildDocument().toXmlString(pretty: true),
+        '''
 <a1:lockinfo xmlns:a1="DAV:">
   <a1:lockscope>
     <a1:exclusive/>
@@ -159,12 +162,13 @@ void main() {
   </a1:locktype>
 </a1:lockinfo>
 '''
-              .trim());
+            .trim(),
+      );
     });
     test("toXml renew", () {
       final context = XmlBuilder();
       final nsmgr = StdNamespaceManger();
-      LockRequestParam.renew(
+      const LockRequestParam.renew(
         timeout: davto.DavTimeout([double.infinity, 123]),
         recursive: true,
         condition: IfOr.tagged([]),
@@ -172,19 +176,23 @@ void main() {
       expect(context.buildDocument().toXmlString(pretty: true), '');
     });
     test("toRequestBody", () {
-      final result =
-          LockRequestParam(lockInfo: LockInfo(lockScope: LockScope.exclusive))
-              .toRequestBody();
+      final result = const LockRequestParam(
+        lockInfo: LockInfo(lockScope: LockScope.exclusive),
+      ).toRequestBody();
       expect(
-          result,
-          '<?xml version="1.0" encoding="utf-8"?>'
-          '<a1:lockinfo xmlns:a1="DAV:">'
-          '<a1:lockscope><a1:exclusive/></a1:lockscope>'
-          '<a1:locktype><a1:write/></a1:locktype></a1:lockinfo>');
+        result,
+        [
+          '<?xml version="1.0" encoding="utf-8"?>',
+          '<a1:lockinfo xmlns:a1="DAV:">',
+          '<a1:lockscope><a1:exclusive/></a1:lockscope>',
+          '<a1:locktype><a1:write/></a1:locktype></a1:lockinfo>',
+        ].join(),
+      );
     });
     test("toRequestBody renew", () {
-      final result =
-          LockRequestParam.renew(condition: IfOr.tagged([])).toRequestBody();
+      final result = const LockRequestParam.renew(
+        condition: IfOr.tagged([]),
+      ).toRequestBody();
       expect(result, isNull);
     });
   });

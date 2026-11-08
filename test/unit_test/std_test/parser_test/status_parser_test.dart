@@ -13,33 +13,44 @@ void main() {
     late BaseHttpStatusElementParser parser;
 
     setUp(() {
-      parser = BaseHttpStatusElementParser();
+      parser = const BaseHttpStatusElementParser();
     });
 
     test("convert", () {
       expect(
-          parser.convert(
-              XmlDocument.parse("<r>HTTP/1.1 500 Internal Server Error</r>")
-                  .rootElement),
-          HttpStatus.internalServerError);
+        parser.convert(
+          XmlDocument.parse(
+            "<r>HTTP/1.1 500 Internal Server Error</r>",
+          ).rootElement,
+        ),
+        HttpStatus.internalServerError,
+      );
       expect(
-          parser
-              .convert(XmlDocument.parse("<p>HTTP/1.1 200 OK</p>").rootElement),
-          HttpStatus.ok);
+        parser.convert(XmlDocument.parse("<p>HTTP/1.1 200 OK</p>").rootElement),
+        HttpStatus.ok,
+      );
     });
     test("convert error", () {
       expect(
-          parser.convert(
-              XmlDocument.parse("<r>HTTP/1.1 xxx Internal Server Error</r>")
-                  .rootElement),
-          isNull);
+        parser.convert(
+          XmlDocument.parse(
+            "<r>HTTP/1.1 xxx Internal Server Error</r>",
+          ).rootElement,
+        ),
+        isNull,
+      );
       expect(
-          parser.convert(
-              XmlDocument.parse("<r>HTTP/1.1 500.0 Internal Server Error</r>")
-                  .rootElement),
-          isNull);
-      expect(() => parser.convert(XmlDocument.parse("<r>500</r>").rootElement),
-          throwsA(TypeMatcher<RangeError>()));
+        parser.convert(
+          XmlDocument.parse(
+            "<r>HTTP/1.1 500.0 Internal Server Error</r>",
+          ).rootElement,
+        ),
+        isNull,
+      );
+      expect(
+        () => parser.convert(XmlDocument.parse("<r>500</r>").rootElement),
+        throwsA(const TypeMatcher<RangeError>()),
+      );
     });
   });
 }

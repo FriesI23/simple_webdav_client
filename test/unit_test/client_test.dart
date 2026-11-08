@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   test("test std", () {
     final client = WebDavClient.std();
-    expect(client, TypeMatcher<WebDavClient>());
-    expect(client, TypeMatcher<WebDavStdClient>());
+    expect(client, const TypeMatcher<WebDavClient>());
+    expect(client, const TypeMatcher<WebDavStdClient>());
   });
 }

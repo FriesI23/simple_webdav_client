@@ -26,7 +26,9 @@ enum WebDavMethod {
 
   static WebDavMethod fromName(String name) {
     name = name.toUpperCase();
-    return WebDavMethod.values
-        .singleWhere((e) => e.name == name, orElse: () => unknown);
+    return WebDavMethod.values.singleWhere(
+      (e) => e.name == name,
+      orElse: () => unknown,
+    );
   }
 }

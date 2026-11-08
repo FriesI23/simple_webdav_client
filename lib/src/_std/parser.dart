@@ -41,10 +41,10 @@ class ResponseResultParserParam {
 /// - [BaseRespResultParser]
 /// - [BaseRespSingleResultParser]
 /// - [BaseRespMultiResultParser]
-typedef ResponseResultParser<O extends WebDavStdResResultView>
-    = Converter<ResponseResultParserParam, O>;
+typedef ResponseResultParser<O extends WebDavStdResResultView> =
+    Converter<ResponseResultParserParam, O>;
 
-/// Parser used for <error> element,
+/// Parser used for `<error>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.5].
 ///
 /// There's a parser implemented by default:
@@ -56,7 +56,7 @@ typedef ResponseResultParser<O extends WebDavStdResResultView>
 /// ```
 typedef ErrorElementParser = Converter<XmlElement, WebDavStdResError?>;
 
-/// Parser used for <prop> element,
+/// Parser used for `<prop>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.18]
 ///
 /// There's a parser implemented by default:
@@ -73,11 +73,13 @@ typedef ErrorElementParser = Converter<XmlElement, WebDavStdResError?>;
 /// ```bnf
 /// <!ELEMENT prop ANY >
 /// ```
-typedef PropElementParser<T extends WebDavStdResourceProp> = Converter<
-    ({XmlElement node, int status, WebDavStdResError? error, String? desc}),
-    T?>;
+typedef PropElementParser<T extends WebDavStdResourceProp> =
+    Converter<
+      ({XmlElement node, int status, WebDavStdResError? error, String? desc}),
+      T?
+    >;
 
-/// Parser used for <propstat> element,
+/// Parser used for `<propstat>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.22].
 ///
 /// There's a parser implemented by default:
@@ -87,11 +89,13 @@ typedef PropElementParser<T extends WebDavStdResourceProp> = Converter<
 /// ```bnf
 /// <!ELEMENT propstat (prop, status, error?, responsedescription?) >
 /// ```
-typedef PropstatElementParser = Converter<
-    ({XmlElement node, WebDavStdResource resource}),
-    Iterable<WebDavStdResourceProp>>;
+typedef PropstatElementParser =
+    Converter<
+      ({XmlElement node, WebDavStdResource resource}),
+      Iterable<WebDavStdResourceProp>
+    >;
 
-/// Parser used for <response> element,
+/// Parser used for `<response>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.24].
 ///
 /// There's a parser implemented by default:
@@ -102,10 +106,10 @@ typedef PropstatElementParser = Converter<
 /// <!ELEMENT response (href, ((href*, status)|(propstat+)),
 ///                     error?, responsedescription? , location?) >
 /// ```
-typedef ResponseElementParser
-    = Converter<XmlElement, Iterable<WebDavStdResource>>;
+typedef ResponseElementParser =
+    Converter<XmlElement, Iterable<WebDavStdResource>>;
 
-/// Parser used for <multistatus> element,
+/// Parser used for `<multistatus>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.16].
 ///
 /// There's a parser implemented by default:
@@ -115,10 +119,10 @@ typedef ResponseElementParser
 /// ```bnf
 /// <!ELEMENT multistatus (response*, responsedescription?)  >
 /// ```
-typedef MultiStatusElementParser
-    = Converter<XmlElement, WebDavStdResResultView?>;
+typedef MultiStatusElementParser =
+    Converter<XmlElement, WebDavStdResResultView?>;
 
-/// Parser used for <href> element,
+/// Parser used for `<href>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.7].
 ///
 /// There're two parsers implemented by default:
@@ -131,7 +135,7 @@ typedef MultiStatusElementParser
 /// ```
 typedef HrefElementParser = Converter<XmlElement, Uri?>;
 
-/// Parser used for <status> element,
+/// Parser used for `<status>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.28].
 ///
 /// There's a parser implemented by default:
@@ -144,7 +148,7 @@ typedef HrefElementParser = Converter<XmlElement, Uri?>;
 /// ```
 typedef HttpStatusElementParser = Converter<XmlElement, int?>;
 
-/// Parser used for <lockscope> element,
+/// Parser used for `<lockscope>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.13].
 ///
 /// There's a parser implemented by default:
@@ -156,7 +160,7 @@ typedef HttpStatusElementParser = Converter<XmlElement, int?>;
 /// ```
 typedef LockScopeElementParser = Converter<XmlElement, LockScope?>;
 
-/// Parser used for <locktype> element,
+/// Parser used for `<locktype>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.15].
 ///
 /// There's a parser implemented by default:
@@ -168,7 +172,7 @@ typedef LockScopeElementParser = Converter<XmlElement, LockScope?>;
 /// ```
 typedef WriteLockElementParser = Converter<XmlElement, bool?>;
 
-/// Parser used for <lockentry> element,
+/// Parser used for `<lockentry>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.10].
 ///
 /// There's a parser implemented by default:
@@ -180,7 +184,7 @@ typedef WriteLockElementParser = Converter<XmlElement, bool?>;
 /// ```
 typedef LockEntryElementParser = Converter<XmlElement, LockEntry?>;
 
-/// Parser used for <activelock> element,
+/// Parser used for `<activelock>` element,
 /// see [https://datatracker.ietf.org/doc/html/rfc4918#section-14.1].
 ///
 /// There's a parser implemented by default:
@@ -222,33 +226,37 @@ final class BaseRespSingleResultParser
     extends ResponseResultParser<WebDavStdResResultView> {
   final WebDavResposneDataParserManger parserManger;
 
-  const BaseRespSingleResultParser({
-    required this.parserManger,
-  });
+  const BaseRespSingleResultParser({required this.parserManger});
 
   (WebDavStdResError?, String?, Iterable<WebDavStdResourceProp>) convertProp(
-      XmlElement root, WebDavStdResource resource) {
+    XmlElement root,
+    WebDavStdResource resource,
+  ) {
     switch ((root.namespaceUri, root.localName)) {
       case (null, "error"):
       case (kDavNamespaceUrlStr, "error"):
         final error = parserManger.error?.convert(root);
         return (error, null, const []);
       case (kDavNamespaceUrlStr, "propstat"):
-        final props =
-            parserManger.propstat?.convert((node: root, resource: resource));
+        final props = parserManger.propstat?.convert((
+          node: root,
+          resource: resource,
+        ));
         if (props == null) break;
         return (null, null, props);
       case (kDavNamespaceUrlStr, "prop"):
         final props = root
             .findElements("*", namespace: root.namespaceUri)
-            .map((e) => parserManger
-                    .fetchPropParser(e.localName, e.namespaceUri)
-                    ?.convert((
-                  node: e,
-                  status: resource.status,
-                  error: resource.error,
-                  desc: resource.desc
-                )))
+            .map(
+              (e) => parserManger
+                  .fetchPropParser(e.localName, e.namespaceUri)
+                  ?.convert((
+                    node: e,
+                    status: resource.status,
+                    error: resource.error,
+                    desc: resource.desc,
+                  )),
+            )
             .whereNotNull();
         return (null, null, props);
     }
@@ -272,20 +280,24 @@ final class BaseRespSingleResultParser
         desc = resource?.desc;
         props = resource?.props ?? const [];
       case (_, _):
-        final resourceTemplate =
-            WebDavStdResource(path: path, status: status, redirect: redirect);
+        final resourceTemplate = WebDavStdResource(
+          path: path,
+          status: status,
+          redirect: redirect,
+        );
         (error, desc, props) = root != null
             ? convertProp(root, resourceTemplate)
             : const (null, null, <WebDavStdResourceProp>[]);
     }
 
     return WebDavStdResource.fromProps(
-        path: path,
-        status: status,
-        error: error,
-        desc: desc,
-        redirect: redirect,
-        props: props);
+      path: path,
+      status: status,
+      error: error,
+      desc: desc,
+      redirect: redirect,
+      props: props,
+    );
   }
 
   @override
@@ -294,11 +306,14 @@ final class BaseRespSingleResultParser
     final doc = (input.headers.contentType?.isXml ?? false)
         ? XmlDocument.parse(input.data)
         : null;
-    return WebDavStdResponseResult()
-      ..add(convertResource(doc?.rootElement,
-          path: input.path,
-          status: input.status,
-          redirect: redirect != null ? Uri.tryParse(redirect) : null));
+    return WebDavStdResponseResult()..add(
+      convertResource(
+        doc?.rootElement,
+        path: input.path,
+        status: input.status,
+        redirect: redirect != null ? Uri.tryParse(redirect) : null,
+      ),
+    );
   }
 }
 
@@ -306,9 +321,7 @@ final class BaseRespMultiResultParser
     extends ResponseResultParser<WebDavStdResResultView> {
   final WebDavResposneDataParserManger parserManger;
 
-  const BaseRespMultiResultParser({
-    required this.parserManger,
-  });
+  const BaseRespMultiResultParser({required this.parserManger});
 
   @override
   WebDavStdResResultView convert(ResponseResultParserParam input) {
@@ -318,7 +331,7 @@ final class BaseRespMultiResultParser
     final multistatusParser = parserManger.multistatus;
     return doc != null && multistatusParser != null
         ? multistatusParser.convert(doc.rootElement) ??
-            WebDavStdResponseResult()
+              WebDavStdResponseResult()
         : WebDavStdResponseResult();
   }
 }
@@ -341,12 +354,16 @@ final class BaseMultistatusElementParser extends MultiStatusElementParser {
   @override
   WebDavStdResResultView convert(XmlElement input) {
     return WebDavStdResponseResult.fromMap(
-      Map.fromEntries(input
-          .findElements(WebDavElementNames.response,
-              namespace: input.namespaceUri)
-          .map((e) => _responseParser.convert(e))
-          .expand((e) => e)
-          .map((e) => MapEntry(e.path, e))),
+      Map.fromEntries(
+        input
+            .findElements(
+              WebDavElementNames.response,
+              namespace: input.namespaceUri,
+            )
+            .map(_responseParser.convert)
+            .expand((e) => e)
+            .map((e) => MapEntry(e.path, e)),
+      ),
     );
   }
 }
@@ -391,27 +408,39 @@ final class BaseResponseElementParser extends ResponseElementParser {
 
   @override
   Iterable<WebDavStdResource> convert(XmlElement input) {
-    final pathNode = input.getElement(WebDavElementNames.href,
-        namespace: input.namespaceUri);
+    final pathNode = input.getElement(
+      WebDavElementNames.href,
+      namespace: input.namespaceUri,
+    );
     if (pathNode == null) {
-      throw WebDavParserDataError(
-          "response node must contain ${WebDavElementNames.href}");
+      throw const WebDavParserDataError(
+        "response node must contain ${WebDavElementNames.href}",
+      );
     }
-    final statusNode = input.getElement(WebDavElementNames.status,
-        namespace: input.namespaceUri);
-    final errorNode = input.getElement(WebDavElementNames.error,
-        namespace: input.namespaceUri);
-    final locationNode = input.getElement(WebDavElementNames.location,
-        namespace: input.namespaceUri);
-    final descNode = input.getElement(WebDavElementNames.responsedescription,
-        namespace: input.namespaceUri);
+    final statusNode = input.getElement(
+      WebDavElementNames.status,
+      namespace: input.namespaceUri,
+    );
+    final errorNode = input.getElement(
+      WebDavElementNames.error,
+      namespace: input.namespaceUri,
+    );
+    final locationNode = input.getElement(
+      WebDavElementNames.location,
+      namespace: input.namespaceUri,
+    );
+    final descNode = input.getElement(
+      WebDavElementNames.responsedescription,
+      namespace: input.namespaceUri,
+    );
 
     final status = statusNode != null
         ? statusParser.convert(statusNode)
         : HttpStatus.multiStatus;
     final error = errorNode != null ? errorParser?.convert(errorNode) : null;
-    final redirect =
-        locationNode != null ? locationParser?.convert(locationNode) : null;
+    final redirect = locationNode != null
+        ? locationParser?.convert(locationNode)
+        : null;
     final desc = descNode?.innerText.trim();
 
     switch (status) {
@@ -420,8 +449,11 @@ final class BaseResponseElementParser extends ResponseElementParser {
       case HttpStatus.multiStatus:
         final path = hrefParser.convert(pathNode);
         if (path == null) return const [];
-        final resourceTemplate =
-            WebDavStdResource(path: path, status: status, redirect: redirect);
+        final resourceTemplate = WebDavStdResource(
+          path: path,
+          status: status,
+          redirect: redirect,
+        );
         return [
           WebDavStdResource.fromProps(
             path: path,
@@ -430,25 +462,36 @@ final class BaseResponseElementParser extends ResponseElementParser {
             redirect: redirect,
             desc: desc,
             props: input
-                .findElements(WebDavElementNames.propstat,
-                    namespace: input.namespaceUri)
-                .map((e) => propstatParser
-                    .convert((node: e, resource: resourceTemplate)))
+                .findElements(
+                  WebDavElementNames.propstat,
+                  namespace: input.namespaceUri,
+                )
+                .map(
+                  (e) => propstatParser.convert((
+                    node: e,
+                    resource: resourceTemplate,
+                  )),
+                )
                 .expand((e) => e),
-          )
+          ),
         ];
       default:
         return input
-            .findElements(WebDavElementNames.href,
-                namespace: input.namespaceUri)
-            .map((e) => hrefParser.convert(e))
+            .findElements(
+              WebDavElementNames.href,
+              namespace: input.namespaceUri,
+            )
+            .map(hrefParser.convert)
             .whereNotNull()
-            .map((e) => WebDavStdResource(
+            .map(
+              (e) => WebDavStdResource(
                 path: e,
                 status: status,
                 error: error,
                 redirect: redirect,
-                desc: desc));
+                desc: desc,
+              ),
+            );
     }
   }
 }
@@ -475,14 +518,15 @@ final class BaseHrefElementParser extends HrefElementParser {
 class NestedHrefElementParser extends HrefElementParser {
   final HrefElementParser _hrefParser;
 
-  const NestedHrefElementParser({
-    required HrefElementParser hrefParser,
-  }) : _hrefParser = hrefParser;
+  const NestedHrefElementParser({required HrefElementParser hrefParser})
+    : _hrefParser = hrefParser;
 
   @override
   Uri? convert(XmlElement input) {
-    final hrefNode = input.getElement(WebDavElementNames.href,
-        namespace: input.namespaceUri);
+    final hrefNode = input.getElement(
+      WebDavElementNames.href,
+      namespace: input.namespaceUri,
+    );
     return hrefNode != null ? _hrefParser.convert(hrefNode) : null;
   }
 }
@@ -497,12 +541,14 @@ final class BaseErrorElementParser extends ErrorElementParser {
 
   @override
   WebDavStdResError convert(XmlElement input) {
-    return WebDavStdResError("",
-        conditions: input
-            .findElements("*", namespace: input.namespaceUri)
-            .map((e) => StdResErrorCond.fromName(e.localName))
-            .whereNotNull()
-            .toList());
+    return WebDavStdResError(
+      "",
+      conditions: input
+          .findElements("*", namespace: input.namespaceUri)
+          .map((e) => StdResErrorCond.fromName(e.localName))
+          .whereNotNull()
+          .toList(),
+    );
   }
 }
 
@@ -542,24 +588,33 @@ final class BasePropstatElementParser extends PropstatElementParser {
     required WebDavResposneDataParserManger parserManger,
     required HttpStatusElementParser statusParser,
     required ErrorElementParser? errorParser,
-  })  : _parserManager = parserManger,
-        _errorParser = errorParser,
-        _statusParser = statusParser;
+  }) : _parserManager = parserManger,
+       _errorParser = errorParser,
+       _statusParser = statusParser;
 
   @override
   Iterable<WebDavStdResourceProp> convert(
-      ({XmlElement node, WebDavStdResource resource}) input) {
-    final statusNode = input.node.getElement(WebDavElementNames.status,
-        namespace: input.node.namespaceUri);
-    final errorNode = input.node.getElement(WebDavElementNames.error,
-        namespace: input.node.namespaceUri);
-    final propNode = input.node.getElement(WebDavElementNames.prop,
-        namespace: input.node.namespaceUri);
+    ({XmlElement node, WebDavStdResource resource}) input,
+  ) {
+    final statusNode = input.node.getElement(
+      WebDavElementNames.status,
+      namespace: input.node.namespaceUri,
+    );
+    final errorNode = input.node.getElement(
+      WebDavElementNames.error,
+      namespace: input.node.namespaceUri,
+    );
+    final propNode = input.node.getElement(
+      WebDavElementNames.prop,
+      namespace: input.node.namespaceUri,
+    );
     final descNode = input.node.getElement(
-        WebDavElementNames.responsedescription,
-        namespace: input.node.namespaceUri);
-    final status =
-        statusNode != null ? _statusParser.convert(statusNode) : null;
+      WebDavElementNames.responsedescription,
+      namespace: input.node.namespaceUri,
+    );
+    final status = statusNode != null
+        ? _statusParser.convert(statusNode)
+        : null;
     if (status == null && input.resource.status == HttpStatus.multiStatus) {
       throw WebDavParserDataError("Can't parse status", data: input.node);
     }
@@ -567,15 +622,19 @@ final class BasePropstatElementParser extends PropstatElementParser {
     final desc = descNode?.innerText;
     if (propNode == null) return const [];
     return propNode.childElements
-        .map((e) => _parserManager
-                .fetchPropParser<WebDavStdResourceProp>(
-                    e.localName, e.namespaceUri)
-                ?.convert((
-              node: e,
-              status: status ?? input.resource.status,
-              error: error ?? input.resource.error,
-              desc: desc ?? input.resource.desc,
-            )))
+        .map(
+          (e) => _parserManager
+              .fetchPropParser<WebDavStdResourceProp>(
+                e.localName,
+                e.namespaceUri,
+              )
+              ?.convert((
+                node: e,
+                status: status ?? input.resource.status,
+                error: error ?? input.resource.error,
+                desc: desc ?? input.resource.desc,
+              )),
+        )
         .whereNotNull();
   }
 }
@@ -588,12 +647,9 @@ abstract class _PropElementParser<T>
 
   @override
   WebDavStdResourceProp<T> convert(
-      ({
-        String? desc,
-        WebDavStdResError? error,
-        XmlElement node,
-        int status
-      }) input) {
+    ({String? desc, WebDavStdResError? error, XmlElement node, int status})
+    input,
+  ) {
     final nsurl = input.node.namespaceUri;
     return WebDavStdResourceProp<T>(
       name: input.node.localName.trim(),
@@ -673,10 +729,11 @@ final class ResourceTypePropParser extends _PropElementParser<ResourceTypes> {
   const ResourceTypePropParser();
 
   @override
-  ResourceTypes convertValue(XmlElement node) =>
-      ResourceTypes(node.childElements
-          .map((e) => (name: e.localName, ns: e.namespaceUri))
-          .toList());
+  ResourceTypes convertValue(XmlElement node) => ResourceTypes(
+    node.childElements
+        .map((e) => (name: e.localName, ns: e.namespaceUri))
+        .toList(),
+  );
 }
 
 /// Parser for [lockscope] element.
@@ -717,11 +774,16 @@ final class SupportedLockPropParser extends _PropElementParser<SupportedLock> {
   const SupportedLockPropParser({required this.pieceParser});
 
   @override
-  SupportedLock convertValue(XmlElement node) => SupportedLock.from(node
-      .findElements(WebDavElementNames.lockentry, namespace: node.namespaceUri)
-      .map((e) => pieceParser.convert(e))
-      .whereNotNull()
-      .toList());
+  SupportedLock convertValue(XmlElement node) => SupportedLock.from(
+    node
+        .findElements(
+          WebDavElementNames.lockentry,
+          namespace: node.namespaceUri,
+        )
+        .map(pieceParser.convert)
+        .whereNotNull()
+        .toList(),
+  );
 }
 
 /// Parser for [lockentry] element, required parsers for [lockscope] and
@@ -737,24 +799,33 @@ final class BaseLockEntryElementParser extends LockEntryElementParser {
   final LockScopeElementParser lockScopeParser;
   final WriteLockElementParser lockTypeParser;
 
-  const BaseLockEntryElementParser(
-      {required this.lockScopeParser, required this.lockTypeParser});
+  const BaseLockEntryElementParser({
+    required this.lockScopeParser,
+    required this.lockTypeParser,
+  });
 
   @override
   LockEntry? convert(XmlElement input) {
-    final lockScopeNode = input.getElement(WebDavElementNames.lockscope,
-        namespace: input.namespaceUri);
-    final lockTypeNode = input.getElement(WebDavElementNames.locktype,
-        namespace: input.namespaceUri);
+    final lockScopeNode = input.getElement(
+      WebDavElementNames.lockscope,
+      namespace: input.namespaceUri,
+    );
+    final lockTypeNode = input.getElement(
+      WebDavElementNames.locktype,
+      namespace: input.namespaceUri,
+    );
     if (!(lockScopeNode != null && lockTypeNode != null)) return null;
     final lockScope = lockScopeParser.convert(lockScopeNode);
     if (lockScope == null) {
-      throw WebDavParserDataError("Can't parse ${WebDavElementNames.lockscope}",
-          data: input);
+      throw WebDavParserDataError(
+        "Can't parse ${WebDavElementNames.lockscope}",
+        data: input,
+      );
     }
     return LockEntry(
-        lockScope: lockScope,
-        isWriteLock: lockTypeParser.convert(lockTypeNode) ?? false);
+      lockScope: lockScope,
+      isWriteLock: lockTypeParser.convert(lockTypeNode) ?? false,
+    );
   }
 }
 
@@ -768,11 +839,16 @@ final class LockDiscoveryPropParser<O>
   const LockDiscoveryPropParser({required this.pieceParser});
 
   @override
-  LockDiscovery<O> convertValue(XmlElement node) => LockDiscovery.from(node
-      .findElements(WebDavElementNames.activelock, namespace: node.namespaceUri)
-      .map((e) => pieceParser.convert(e))
-      .whereNotNull()
-      .toList());
+  LockDiscovery<O> convertValue(XmlElement node) => LockDiscovery.from(
+    node
+        .findElements(
+          WebDavElementNames.activelock,
+          namespace: node.namespaceUri,
+        )
+        .map(pieceParser.convert)
+        .whereNotNull()
+        .toList(),
+  );
 }
 
 /// Parser for [activelock] element, required parsers for [lockscope],
@@ -810,32 +886,50 @@ final class BaseActiveLockElementParser<O> extends ActiveLockElementParser<O> {
 
   @override
   ActiveLock<O>? convert(XmlElement input) {
-    final lockScopeNode = input.getElement(WebDavElementNames.lockscope,
-        namespace: input.namespaceUri);
-    final lockTypeNode = input.getElement(WebDavElementNames.locktype,
-        namespace: input.namespaceUri);
-    final depthNode = input.getElement(WebDavElementNames.depth,
-        namespace: input.namespaceUri);
-    final ownerNode = input.getElement(WebDavElementNames.owner,
-        namespace: input.namespaceUri);
-    final timeoutNode = input.getElement(WebDavElementNames.timeout,
-        namespace: input.namespaceUri);
-    final lockTokenNode = input.getElement(WebDavElementNames.locktoken,
-        namespace: input.namespaceUri);
-    final lockRootNode = input.getElement(WebDavElementNames.lockroot,
-        namespace: input.namespaceUri);
+    final lockScopeNode = input.getElement(
+      WebDavElementNames.lockscope,
+      namespace: input.namespaceUri,
+    );
+    final lockTypeNode = input.getElement(
+      WebDavElementNames.locktype,
+      namespace: input.namespaceUri,
+    );
+    final depthNode = input.getElement(
+      WebDavElementNames.depth,
+      namespace: input.namespaceUri,
+    );
+    final ownerNode = input.getElement(
+      WebDavElementNames.owner,
+      namespace: input.namespaceUri,
+    );
+    final timeoutNode = input.getElement(
+      WebDavElementNames.timeout,
+      namespace: input.namespaceUri,
+    );
+    final lockTokenNode = input.getElement(
+      WebDavElementNames.locktoken,
+      namespace: input.namespaceUri,
+    );
+    final lockRootNode = input.getElement(
+      WebDavElementNames.lockroot,
+      namespace: input.namespaceUri,
+    );
     if (!(lockScopeNode != null && lockTypeNode != null && depthNode != null)) {
       return null;
     }
     final lockScope = lockScopeParser.convert(lockScopeNode);
     if (lockScope == null) {
-      throw WebDavParserDataError("Can't parse ${WebDavElementNames.lockscope}",
-          data: input);
+      throw WebDavParserDataError(
+        "Can't parse ${WebDavElementNames.lockscope}",
+        data: input,
+      );
     }
     final depth = depthParser.convert(depthNode);
     if (depth == null) {
-      throw WebDavParserDataError("Can't parse ${WebDavElementNames.depth}",
-          data: input);
+      throw WebDavParserDataError(
+        "Can't parse ${WebDavElementNames.depth}",
+        data: input,
+      );
     }
     return ActiveLock(
       lockScope: lockScope,
@@ -846,8 +940,9 @@ final class BaseActiveLockElementParser<O> extends ActiveLockElementParser<O> {
       lockToken: lockTokenNode != null
           ? lockTokenParser?.convert(lockTokenNode)
           : null,
-      lockRoot:
-          lockRootNode != null ? lockRootParser.convert(lockRootNode) : null,
+      lockRoot: lockRootNode != null
+          ? lockRootParser.convert(lockRootNode)
+          : null,
     );
   }
 }

@@ -13,48 +13,58 @@ void main() {
       expect(cond.isEtag, isFalse);
       expect(cond.value, "http://example.com");
       expect(cond.toString(), '<http://example.com>');
-      expect(cond.not().toString(),
-          IfCondition.notToken(Uri.parse("http://example.com")).toString());
+      expect(
+        cond.not().toString(),
+        IfCondition.notToken(Uri.parse("http://example.com")).toString(),
+      );
     });
     test("IfCondition.notToken", () {
       final cond = IfCondition.notToken(Uri.parse("http://example.com"));
       expect(cond.isEtag, isFalse);
       expect(cond.value, "http://example.com");
       expect(cond.toString(), 'Not <http://example.com>');
-      expect(cond.not().toString(),
-          IfCondition.token(Uri.parse("http://example.com")).toString());
+      expect(
+        cond.not().toString(),
+        IfCondition.token(Uri.parse("http://example.com")).toString(),
+      );
     });
     test("IfCondition.etag", () {
-      final cond = IfCondition.etag('W/"<etag_value>"');
+      const cond = IfCondition.etag('W/"<etag_value>"');
       expect(cond.isEtag, isTrue);
       expect(cond.value, 'W/"<etag_value>"');
       expect(cond.toString(), '[W/"<etag_value>"]');
-      expect(cond.not().toString(),
-          IfCondition.notEtag('W/"<etag_value>"').toString());
+      expect(
+        cond.not().toString(),
+        const IfCondition.notEtag('W/"<etag_value>"').toString(),
+      );
     });
     test("IfCondition.notEtag", () {
-      final cond = IfCondition.notEtag('"<etag_value>"');
+      const cond = IfCondition.notEtag('"<etag_value>"');
       expect(cond.isEtag, isTrue);
       expect(cond.value, '"<etag_value>"');
       expect(cond.toString(), 'Not ["<etag_value>"]');
       expect(
-          cond.not().toString(), IfCondition.etag('"<etag_value>"').toString());
+        cond.not().toString(),
+        const IfCondition.etag('"<etag_value>"').toString(),
+      );
     });
   });
   group("test IfAnd", () {
     test("IfAnd.tagged", () {
       final obj = IfAnd.tagged(Uri.parse("http://example.com"), [
-        IfCondition.etag('W/"<etag_value>"'),
+        const IfCondition.etag('W/"<etag_value>"'),
         IfCondition.notToken(Uri.parse("http://example.com")),
       ]);
-      expect(obj.toString(),
-          '<http://example.com> ([W/"<etag_value>"] Not <http://example.com>)');
+      expect(
+        obj.toString(),
+        '<http://example.com> ([W/"<etag_value>"] Not <http://example.com>)',
+      );
       expect(obj.tagged, isTrue);
     });
     test("IfAnd.notag", () {
       final obj = IfAnd.notag([
         IfCondition.notToken(Uri.parse("http://example.com")),
-        IfCondition.etag('W/"<etag_value>"'),
+        const IfCondition.etag('W/"<etag_value>"'),
       ]);
       expect(obj.toString(), '(Not <http://example.com> [W/"<etag_value>"])');
       expect(obj.tagged, isFalse);
@@ -64,42 +74,44 @@ void main() {
     test("test IfOr.tagged", () {
       final obj = IfOr.tagged([
         IfAnd.tagged(Uri.parse("http://example.com"), [
-          IfCondition.etag('W/"<etag_value>"'),
+          const IfCondition.etag('W/"<etag_value>"'),
           IfCondition.notToken(Uri.parse("http://example.com")),
         ]),
         IfAnd.tagged(Uri.parse("http://example.com/2"), [
-          IfCondition.notEtag('W/"<teg_222>"'),
+          const IfCondition.notEtag('W/"<teg_222>"'),
         ]),
         // notag list will be ignored
         IfAnd.notag([
           IfCondition.notToken(Uri.parse("http://example.com/3")),
-          IfCondition.etag('W/"<etag_value333>"'),
-        ])
+          const IfCondition.etag('W/"<etag_value333>"'),
+        ]),
       ]);
       expect(
-          obj.toString(),
-          '<http://example.com> ([W/"<etag_value>"] Not <http://example.com>)'
-          ' <http://example.com/2> (Not [W/"<teg_222>"])');
+        obj.toString(),
+        '<http://example.com> ([W/"<etag_value>"] Not <http://example.com>)'
+        ' <http://example.com/2> (Not [W/"<teg_222>"])',
+      );
     });
     test("test IfOr.notag", () {
       final obj = IfOr.notag([
         IfAnd.notag([
-          IfCondition.etag('W/"<etag_value>"'),
+          const IfCondition.etag('W/"<etag_value>"'),
           IfCondition.notToken(Uri.parse("http://example.com")),
         ]),
         // tagged list will be ignored
         IfAnd.tagged(Uri.parse("http://example.com/2"), [
-          IfCondition.notEtag('W/"<teg_222>"'),
+          const IfCondition.notEtag('W/"<teg_222>"'),
         ]),
         IfAnd.notag([
           IfCondition.token(Uri.parse("http://example.com/3")),
-          IfCondition.notEtag('W/"<etag_value333>"'),
-        ])
+          const IfCondition.notEtag('W/"<etag_value333>"'),
+        ]),
       ]);
       expect(
-          obj.toString(),
-          '([W/"<etag_value>"] Not <http://example.com>)'
-          ' (<http://example.com/3> Not [W/"<etag_value333>"])');
+        obj.toString(),
+        '([W/"<etag_value>"] Not <http://example.com>)'
+        ' (<http://example.com/3> Not [W/"<etag_value333>"])',
+      );
     });
   });
   group("test if.toString examples on RFC4918", () {
@@ -107,88 +119,106 @@ void main() {
       final ifOr = IfOr.notag([
         IfAnd.notag([
           IfCondition.token(
-              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2")),
-          IfCondition.etag('"I am an ETag"')
+            Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"),
+          ),
+          const IfCondition.etag('"I am an ETag"'),
         ]),
-        IfAnd.notag([IfCondition.etag('"I am another ETag"')])
+        const IfAnd.notag([IfCondition.etag('"I am another ETag"')]),
       ]);
       expect(
-          ifOr.toString(),
-          '(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> ["I am an ETag"])'
-          ' (["I am another ETag"])');
+        ifOr.toString(),
+        '(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2> ["I am an ETag"])'
+        ' (["I am another ETag"])',
+      );
     });
     test('Using "Not" with No-tag Production', () {
       final ifOr = IfOr.notag([
         IfAnd.notag([
           IfCondition.notToken(
-              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2")),
+            Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"),
+          ),
           IfCondition.token(
-              Uri.parse("urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092"))
-        ])
+            Uri.parse("urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092"),
+          ),
+        ]),
       ]);
       expect(
-          ifOr.toString(),
-          '(Not <urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>'
-          ' <urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092>)');
+        ifOr.toString(),
+        '(Not <urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>'
+        ' <urn:uuid:58f202ac-22cf-11d1-b12d-002035b29092>)',
+      );
     });
     test("Causing a Condition to Always Evaluate to True", () {
       final ifOr = IfOr.notag([
         IfAnd.notag([
           IfCondition.token(
-              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"))
+            Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"),
+          ),
         ]),
-        IfAnd.notag([IfCondition.notToken(Uri(scheme: "DAV", path: "no-lock"))])
+        IfAnd.notag([
+          IfCondition.notToken(Uri(scheme: "DAV", path: "no-lock")),
+        ]),
       ]);
       expect(
-          ifOr.toString(),
-          '(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)'
-          ' (Not <dav:no-lock>)');
+        ifOr.toString(),
+        '(<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)'
+        ' (Not <dav:no-lock>)',
+      );
     });
     test("Tagged List", () {
       final ifOr = IfOr.tagged([
         IfAnd.tagged(Uri.parse("http://www.example.com/specs/"), [
           IfCondition.token(
-              Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"))
-        ])
+            Uri.parse("urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"),
+          ),
+        ]),
       ]);
       expect(
-          ifOr.toString(),
-          '<http://www.example.com/specs/>'
-          ' (<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)');
+        ifOr.toString(),
+        '<http://www.example.com/specs/>'
+        ' (<urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2>)',
+      );
     });
     test('"No-Tag-List" format', () {
       final ifOr = IfOr.notag([
         IfAnd.notag([
           IfCondition.token(
-              Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"))
-        ])
+            Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"),
+          ),
+        ]),
       ]);
       expect(
-          ifOr.toString(), "(<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)");
+        ifOr.toString(),
+        "(<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)",
+      );
     });
     test('"Tagged-List" format, for "http://example.com/locked/":', () {
       final ifOr = IfOr.tagged([
         IfAnd.tagged(Uri.parse("http://example.com/locked/"), [
           IfCondition.token(
-              Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"))
-        ])
+            Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"),
+          ),
+        ]),
       ]);
       expect(
-          ifOr.toString(),
-          "<http://example.com/locked/>"
-          " (<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)");
+        ifOr.toString(),
+        "<http://example.com/locked/>"
+        " (<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)",
+      );
     });
     test('"Tagged-List" format, for "http://example.com/locked/member":', () {
       final ifOr = IfOr.tagged([
         IfAnd.tagged(Uri.parse("http://example.com/locked/member"), [
           IfCondition.token(
-              Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"))
-        ])
+            Uri.parse("urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf"),
+          ),
+        ]),
       ]);
       expect(
-          ifOr.toString(),
-          "<http://example.com/locked/member>"
-          " (<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)");
+        ifOr.toString(),
+        "<http://example.com/locked/member>"
+        " (<urn:uuid:150852e2-3847-42d5-8cbe-0f4f296f26cf>)",
+      );
     });
   });
 }

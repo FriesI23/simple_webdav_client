@@ -5,8 +5,10 @@
 
 import '../error.dart';
 
-abstract interface class WebDavResource<P extends WebDavResourceProp,
-    E extends WebDavResourceError> {
+abstract interface class WebDavResource<
+  P extends WebDavResourceProp,
+  E extends WebDavResourceError
+> {
   Uri? get path;
   int? get status;
   E? get error;

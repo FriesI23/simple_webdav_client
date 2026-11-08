@@ -53,7 +53,7 @@ final class DavTimeoutEncoder extends Converter<Iterable<double>, String> {
 
   @override
   String convert(Iterable<double> input) =>
-      input.map((e) => typeEncoder.convert(e)).join(', ');
+      input.map(typeEncoder.convert).join(', ');
 }
 
 final class DavTimeoutDecoder extends Converter<String, Iterable<double>> {
@@ -63,5 +63,5 @@ final class DavTimeoutDecoder extends Converter<String, Iterable<double>> {
 
   @override
   Iterable<double> convert(String input) =>
-      input.split(",").map((e) => e.trim()).map((e) => typeDecoder.convert(e));
+      input.split(",").map((e) => e.trim()).map(typeDecoder.convert);
 }

@@ -9,23 +9,28 @@ import 'package:test/test.dart';
 void main() {
   group("test DavTimeout", () {
     test("constructor", () {
-      final timeout = DavTimeout([]);
+      const timeout = DavTimeout([]);
       expect(timeout, isEmpty);
       expect(timeout.toString(), "");
     });
     test("constructor with timeouts", () {
-      final timeout = DavTimeout([double.infinity, 1234, 23, 12.3, 8.7, 0]);
+      const timeout = DavTimeout([double.infinity, 1234, 23, 12.3, 8.7, 0]);
       expect(timeout, isNotEmpty);
-      expect(timeout.toString(),
-          "Infinite, Second-1234, Second-23, Second-12, Second-9, Second-0");
+      expect(
+        timeout.toString(),
+        "Infinite, Second-1234, Second-23, Second-12, Second-9, Second-0",
+      );
     });
     test("reset length", () {
-      final timeout = DavTimeout([double.infinity, 1234, 23, 12.3, 8.7, 0]);
-      expect(() => timeout.length = 190,
-          throwsA(TypeMatcher<UnimplementedError>()));
+      const timeout = DavTimeout([double.infinity, 1234, 23, 12.3, 8.7, 0]);
+      expect(
+        () => timeout.length = 190,
+        throwsA(const TypeMatcher<UnimplementedError>()),
+      );
     });
     test("operators", () {
-      final timeout = DavTimeout([]);
+      final values = <double>[];
+      final timeout = DavTimeout(values);
       expect(timeout.length, 0);
       expect(timeout.isEmpty, isTrue);
       timeout.add(double.infinity);

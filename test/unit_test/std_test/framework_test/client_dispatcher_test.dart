@@ -59,20 +59,24 @@ void main() {
 
     test("findProps", () async {
       final props = [MockPropfindRequestProp(), MockPropfindRequestProp()];
-      final request =
-          await dispatcher.findProps(props: props, depth: Depth.all);
+      final request = await dispatcher.findProps(
+        props: props,
+        depth: Depth.all,
+      );
       expect(request.method, WebDavMethod.propfind);
-      expect(request.param, TypeMatcher<PropfindPropRequestParam>());
+      expect(request.param, const TypeMatcher<PropfindPropRequestParam>());
       expect(request.param!.props, equals(props));
       expect(request.param!.depth, Depth.all);
     });
 
     test("findAllProps", () async {
       final includes = [MockPropfindRequestProp(), MockPropfindRequestProp()];
-      final request =
-          await dispatcher.findAllProps(includes: includes, depth: Depth.all);
+      final request = await dispatcher.findAllProps(
+        includes: includes,
+        depth: Depth.all,
+      );
       expect(request.method, WebDavMethod.propfind);
-      expect(request.param, TypeMatcher<PropfindAllRequestParam>());
+      expect(request.param, const TypeMatcher<PropfindAllRequestParam>());
       expect(request.param!.includes, equals(includes));
       expect(request.param!.depth, Depth.all);
     });
@@ -80,20 +84,22 @@ void main() {
     test("findPropNames", () async {
       final request = await dispatcher.findPropNames(depth: Depth.members);
       expect(request.method, WebDavMethod.propfind);
-      expect(request.param, TypeMatcher<PropfindNameRequestParam>());
+      expect(request.param, const TypeMatcher<PropfindNameRequestParam>());
       expect(request.param!.depth, Depth.members);
     });
 
     test("updateProps", () async {
       final operations = [
         MockProppatchRequestProp(),
-        MockProppatchRequestProp()
+        MockProppatchRequestProp(),
       ];
-      final condition = IfOr.notag([]);
+      const condition = IfOr.notag([]);
       final request = await dispatcher.updateProps(
-          operations: operations, condition: condition);
+        operations: operations,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.proppatch);
-      expect(request.param, TypeMatcher<ProppatchRequestParam>());
+      expect(request.param, const TypeMatcher<ProppatchRequestParam>());
       expect(request.param!.operations, same(operations));
       expect(request.param!.condition, same(condition));
     });
@@ -101,54 +107,57 @@ void main() {
     test("get", () async {
       final request = await dispatcher.get();
       expect(request.method, WebDavMethod.get);
-      expect(request.param, TypeMatcher<GetRequestParam>());
+      expect(request.param, const TypeMatcher<GetRequestParam>());
       expect(request.param!.data, isNull);
     });
 
     test("create", () async {
-      final data = "some data";
-      final condition = IfOr.notag([]);
+      const data = "some data";
+      const condition = IfOr.notag([]);
       final request = await dispatcher.create(data: data, condition: condition);
       expect(request.method, WebDavMethod.put);
-      expect(request.param, TypeMatcher<PutRequestParam>());
+      expect(request.param, const TypeMatcher<PutRequestParam>());
       expect(request.param!.data, same(data));
       expect(request.param!.condition, same(condition));
     });
 
     test("createDir", () async {
-      final condition = IfOr.notag([]);
+      const condition = IfOr.notag([]);
       final request = await dispatcher.createDir(condition: condition);
       expect(request.method, WebDavMethod.mkcol);
-      expect(request.param, TypeMatcher<MkcolRequestParam>());
+      expect(request.param, const TypeMatcher<MkcolRequestParam>());
       expect(request.param!.condition, same(condition));
     });
 
     test("delete", () async {
-      final condition = IfOr.notag([]);
+      const condition = IfOr.notag([]);
       final request = await dispatcher.delete(condition: condition);
       expect(request.method, WebDavMethod.delete);
-      expect(request.param, TypeMatcher<DeleteRequestParam>());
+      expect(request.param, const TypeMatcher<DeleteRequestParam>());
       expect(request.param!.condition, same(condition));
       expect(request.param!.depth, Depth.resource);
     });
 
     test("deleteDir", () async {
-      final condition = IfOr.notag([]);
+      const condition = IfOr.notag([]);
       final request = await dispatcher.deleteDir(condition: condition);
       expect(request.method, WebDavMethod.delete);
-      expect(request.param, TypeMatcher<DeleteRequestParam>());
+      expect(request.param, const TypeMatcher<DeleteRequestParam>());
       expect(request.param!.condition, same(condition));
       expect(request.param!.depth, Depth.all);
     });
 
     test("copy", () async {
       final to = Uri.base;
-      final overwrite = true;
-      final condition = IfOr.notag([]);
+      const overwrite = true;
+      const condition = IfOr.notag([]);
       final request = await dispatcher.copy(
-          to: to, overwrite: overwrite, condition: condition);
+        to: to,
+        overwrite: overwrite,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.copy);
-      expect(request.param, TypeMatcher<CopyRequestParam>());
+      expect(request.param, const TypeMatcher<CopyRequestParam>());
       expect(request.param!.destination, same(to));
       expect(request.param!.overwrite, isTrue);
       expect(request.param!.condition, same(condition));
@@ -157,12 +166,15 @@ void main() {
 
     test("copyDir", () async {
       final to = Uri.base;
-      final overwrite = false;
-      final condition = IfOr.notag([]);
+      const overwrite = false;
+      const condition = IfOr.notag([]);
       final request = await dispatcher.copyDir(
-          to: to, overwrite: overwrite, condition: condition);
+        to: to,
+        overwrite: overwrite,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.copy);
-      expect(request.param, TypeMatcher<CopyRequestParam>());
+      expect(request.param, const TypeMatcher<CopyRequestParam>());
       expect(request.param!.destination, same(to));
       expect(request.param!.overwrite, isFalse);
       expect(request.param!.condition, same(condition));
@@ -171,12 +183,15 @@ void main() {
 
     test("move", () async {
       final to = Uri.base;
-      final overwrite = true;
-      final condition = IfOr.notag([]);
+      const overwrite = true;
+      const condition = IfOr.notag([]);
       final request = await dispatcher.move(
-          to: to, overwrite: overwrite, condition: condition);
+        to: to,
+        overwrite: overwrite,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.move);
-      expect(request.param, TypeMatcher<MoveRequestParam>());
+      expect(request.param, const TypeMatcher<MoveRequestParam>());
       expect(request.param!.destination, same(to));
       expect(request.param!.overwrite, isTrue);
       expect(request.param!.condition, same(condition));
@@ -185,12 +200,15 @@ void main() {
 
     test("moveDir", () async {
       final to = Uri.base;
-      final overwrite = false;
-      final condition = IfOr.notag([]);
+      const overwrite = false;
+      const condition = IfOr.notag([]);
       final request = await dispatcher.moveDir(
-          to: to, overwrite: overwrite, condition: condition);
+        to: to,
+        overwrite: overwrite,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.move);
-      expect(request.param, TypeMatcher<MoveRequestParam>());
+      expect(request.param, const TypeMatcher<MoveRequestParam>());
       expect(request.param!.destination, same(to));
       expect(request.param!.overwrite, isFalse);
       expect(request.param!.condition, same(condition));
@@ -199,12 +217,15 @@ void main() {
 
     test("createLock", () async {
       final info = MockLockInfo();
-      final timeout = DavTimeout([]);
-      final condition = IfOr.notag([]);
+      const timeout = DavTimeout([]);
+      const condition = IfOr.notag([]);
       final request = await dispatcher.createLock(
-          info: info, timeout: timeout, condition: condition);
+        info: info,
+        timeout: timeout,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.lock);
-      expect(request.param, TypeMatcher<LockRequestParam>());
+      expect(request.param, const TypeMatcher<LockRequestParam>());
       expect(request.param!.lockInfo, same(info));
       expect(request.param!.timeout, same(timeout));
       expect(request.param!.condition, same(condition));
@@ -213,12 +234,15 @@ void main() {
 
     test("createDirLock", () async {
       final info = MockLockInfo();
-      final timeout = DavTimeout([]);
-      final condition = IfOr.notag([]);
+      const timeout = DavTimeout([]);
+      const condition = IfOr.notag([]);
       final request = await dispatcher.createDirLock(
-          info: info, timeout: timeout, condition: condition);
+        info: info,
+        timeout: timeout,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.lock);
-      expect(request.param, TypeMatcher<LockRequestParam>());
+      expect(request.param, const TypeMatcher<LockRequestParam>());
       expect(request.param!.lockInfo, same(info));
       expect(request.param!.timeout, same(timeout));
       expect(request.param!.condition, same(condition));
@@ -226,12 +250,14 @@ void main() {
     });
 
     test("renewLock", () async {
-      final timeout = DavTimeout([]);
-      final condition = IfOr.notag([]);
-      final request =
-          await dispatcher.renewLock(timeout: timeout, condition: condition);
+      const timeout = DavTimeout([]);
+      const condition = IfOr.notag([]);
+      final request = await dispatcher.renewLock(
+        timeout: timeout,
+        condition: condition,
+      );
       expect(request.method, WebDavMethod.lock);
-      expect(request.param, TypeMatcher<LockRequestParam>());
+      expect(request.param, const TypeMatcher<LockRequestParam>());
       expect(request.param!.lockInfo, isNull);
       expect(request.param!.timeout, same(timeout));
       expect(request.param!.condition, same(condition));
@@ -242,7 +268,7 @@ void main() {
       final token = Uri.base;
       final request = await dispatcher.unlock(token: token);
       expect(request.method, WebDavMethod.unlock);
-      expect(request.param, TypeMatcher<UnlockRequestParam>());
+      expect(request.param, const TypeMatcher<UnlockRequestParam>());
       expect(request.param!.lockToken, same(token));
     });
   });

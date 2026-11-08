@@ -36,15 +36,19 @@ void main() {
       final singleParser = MockResponseResultParser();
       final multiParser = MockResponseResultParser();
       final parser = BaseRespResultParser(
-          singleResDecoder: singleParser, multiResDecoder: multiParser);
+        singleResDecoder: singleParser,
+        multiResDecoder: multiParser,
+      );
       final param = ResponseResultParserParam(
-          path: Uri.base,
-          status: HttpStatus.accepted,
-          headers: MockHttpHeaders(),
-          data: "mock data");
+        path: Uri.base,
+        status: HttpStatus.accepted,
+        headers: MockHttpHeaders(),
+        data: "mock data",
+      );
       provideDummy<WebDavStdResResultView>(MockWebDavStdResResultView());
-      when(singleParser.convert(param))
-          .thenReturn(MockWebDavStdResResultView());
+      when(
+        singleParser.convert(param),
+      ).thenReturn(MockWebDavStdResResultView());
       parser.convert(param);
       verify(singleParser.convert(param)).called(1);
       verifyNever(multiParser.convert(any));
@@ -53,12 +57,15 @@ void main() {
       final singleParser = MockResponseResultParser();
       final multiParser = MockResponseResultParser();
       final parser = BaseRespResultParser(
-          singleResDecoder: singleParser, multiResDecoder: multiParser);
+        singleResDecoder: singleParser,
+        multiResDecoder: multiParser,
+      );
       final param = ResponseResultParserParam(
-          path: Uri.base,
-          status: HttpStatus.multiStatus,
-          headers: MockHttpHeaders(),
-          data: "mock data");
+        path: Uri.base,
+        status: HttpStatus.multiStatus,
+        headers: MockHttpHeaders(),
+        data: "mock data",
+      );
       provideDummy<WebDavStdResResultView>(MockWebDavStdResResultView());
       when(multiParser.convert(param)).thenReturn(MockWebDavStdResResultView());
       parser.convert(param);
@@ -73,14 +80,18 @@ void main() {
       when(errorParser.convert(any)).thenReturn(WebDavStdResError("test-msg"));
       when(parserMgr.error).thenReturn(errorParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <error>
   <lock-token-submitted/>
 </error>
 """
-          .trim());
-      final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
+            .trim(),
+      );
+      final resource = WebDavStdResource(
+        path: Uri.base,
+        status: HttpStatus.accepted,
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1!.message, equals("test-msg"));
       expect(result.$2, isNull);
@@ -92,14 +103,18 @@ void main() {
       when(errorParser.convert(any)).thenReturn(WebDavStdResError("test-msg"));
       when(parserMgr.error).thenReturn(errorParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:error xmlns:D="DAV:">
   <D:lock-token-submitted/>
 </D:error>
 """
-          .trim());
-      final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
+            .trim(),
+      );
+      final resource = WebDavStdResource(
+        path: Uri.base,
+        status: HttpStatus.accepted,
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1!.message, equals("test-msg"));
       expect(result.$2, isNull);
@@ -109,14 +124,18 @@ void main() {
       final parserMgr = MockWebDavResposneDataParserManger();
       when(parserMgr.error).thenReturn(null);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:error xmlns:D="CUSTOM:">
   <D:lock-token-submitted/>
 </D:error>
 """
-          .trim());
-      final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
+            .trim(),
+      );
+      final resource = WebDavStdResource(
+        path: Uri.base,
+        status: HttpStatus.accepted,
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1, isNull);
       expect(result.$2, isNull);
@@ -126,14 +145,18 @@ void main() {
       final parserMgr = MockWebDavResposneDataParserManger();
       when(parserMgr.error).thenReturn(null);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <error>
   <lock-token-submitted/>
 </error>
 """
-          .trim());
-      final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
+            .trim(),
+      );
+      final resource = WebDavStdResource(
+        path: Uri.base,
+        status: HttpStatus.accepted,
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1, isNull);
       expect(result.$2, isNull);
@@ -146,14 +169,18 @@ void main() {
       when(propstatParser.convert(any)).thenReturn(props);
       when(parserMgr.propstat).thenReturn(propstatParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:propstat xmlns:D="DAV:">
   <D:data/>
 </D:propstat>
 """
-          .trim());
-      final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
+            .trim(),
+      );
+      final resource = WebDavStdResource(
+        path: Uri.base,
+        status: HttpStatus.accepted,
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1, isNull);
       expect(result.$2, isNull);
@@ -163,7 +190,8 @@ void main() {
       final parserMgr = MockWebDavResposneDataParserManger();
       when(parserMgr.propstat).thenReturn(null);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:propstat xmlns:D="DAV:">
   <D:prop>
     <D:getetag>"123456789"</D:getetag>
@@ -171,9 +199,12 @@ void main() {
   </D:prop>
 </D:propstat>
 """
-          .trim());
-      final resource =
-          WebDavStdResource(path: Uri.base, status: HttpStatus.accepted);
+            .trim(),
+      );
+      final resource = WebDavStdResource(
+        path: Uri.base,
+        status: HttpStatus.accepted,
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1, isNull);
       expect(result.$2, isNull);
@@ -191,7 +222,8 @@ void main() {
       when(parserMgr.fetchPropParser("data1", "DAV:")).thenReturn(propParser1);
       when(parserMgr.fetchPropParser("data2", "DAV:")).thenReturn(propParser2);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
@@ -199,48 +231,57 @@ void main() {
   <data3/>
 </D:prop>
 """
-          .trim());
+            .trim(),
+      );
       final resource = WebDavStdResource(
-          path: Uri.base,
-          status: HttpStatus.accepted,
-          error: error,
-          desc: "mock desc");
+        path: Uri.base,
+        status: HttpStatus.accepted,
+        error: error,
+        desc: "mock desc",
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1, isNull);
       expect(result.$2, isNull);
       expect(result.$3.toList(), equals([prop1, prop2]));
       verify(parserMgr.fetchPropParser("data1", "DAV:")).called(1);
       verify(parserMgr.fetchPropParser("data2", "DAV:")).called(1);
-      verify(propParser1.convert((
-        node: root.rootElement.getElement("data1", namespace: "DAV:")!,
-        status: HttpStatus.accepted,
-        error: error,
-        desc: "mock desc"
-      ))).called(1);
-      verify(propParser2.convert((
-        node: root.rootElement.getElement("data2", namespace: "DAV:")!,
-        status: HttpStatus.accepted,
-        error: error,
-        desc: "mock desc"
-      ))).called(1);
+      verify(
+        propParser1.convert((
+          node: root.rootElement.getElement("data1", namespace: "DAV:")!,
+          status: HttpStatus.accepted,
+          error: error,
+          desc: "mock desc",
+        )),
+      ).called(1);
+      verify(
+        propParser2.convert((
+          node: root.rootElement.getElement("data2", namespace: "DAV:")!,
+          status: HttpStatus.accepted,
+          error: error,
+          desc: "mock desc",
+        )),
+      ).called(1);
     });
     test("prop with not parser", () {
       final parserMgr = MockWebDavResposneDataParserManger();
       final error = WebDavStdResError("test");
       when(parserMgr.fetchPropParser(any, "DAV:")).thenReturn(null);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-          .trim());
+            .trim(),
+      );
       final resource = WebDavStdResource(
-          path: Uri.base,
-          status: HttpStatus.accepted,
-          error: error,
-          desc: "mock desc");
+        path: Uri.base,
+        status: HttpStatus.accepted,
+        error: error,
+        desc: "mock desc",
+      );
       final result = parser.convertProp(root.rootElement, resource);
       expect(result.$1, isNull);
       expect(result.$2, isNull);
@@ -252,30 +293,36 @@ void main() {
   group("test BaseRespSingleResultParser.convertResource", () {
     test("resposne", () {
       final resource = WebDavStdResource(
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          desc: "test mock",
-          error: WebDavStdResError("test"),
-          props: {
-            (name: "data", ns: "DAV:"): WebDavStdResourceProp(
-                name: "data",
-                namespace: Uri.parse("DAV:"),
-                status: HttpStatus.badGateway)
-          });
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        desc: "test mock",
+        error: WebDavStdResError("test"),
+        props: {
+          (name: "data", ns: "DAV:"): WebDavStdResourceProp(
+            name: "data",
+            namespace: Uri.parse("DAV:"),
+            status: HttpStatus.badGateway,
+          ),
+        },
+      );
       final parserMgr = MockWebDavResposneDataParserManger();
       final responseParser = MockResponseElementParser();
       when(parserMgr.response).thenReturn(responseParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:response xmlns:D="DAV:">
 </D:response>
 """
-          .trim());
+            .trim(),
+      );
       when(responseParser.convert(root.rootElement)).thenReturn([resource]);
-      final result = parser.convertResource(root.rootElement,
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          redirect: Uri.parse("http://example.com/redirect"));
+      final result = parser.convertResource(
+        root.rootElement,
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        redirect: Uri.parse("http://example.com/redirect"),
+      );
       expect(result.path, equals(resource.path));
       expect(result.status, equals(resource.status));
       expect(result.desc, equals(resource.desc));
@@ -286,15 +333,19 @@ void main() {
       final parserMgr = MockWebDavResposneDataParserManger();
       when(parserMgr.response).thenReturn(null);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:response xmlns:D="DAV:">
 </D:response>
 """
-          .trim());
-      final result = parser.convertResource(root.rootElement,
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          redirect: Uri.parse("http://example.com/redirect"));
+            .trim(),
+      );
+      final result = parser.convertResource(
+        root.rootElement,
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        redirect: Uri.parse("http://example.com/redirect"),
+      );
       expect(result.path, equals(Uri.parse("http://example.com/resource")));
       expect(result.status, equals(HttpStatus.accepted));
       expect(result.desc, isNull);
@@ -306,15 +357,19 @@ void main() {
       final responseParser = MockResponseElementParser();
       when(parserMgr.response).thenReturn(responseParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:other xmlns:D="DAV:">
 </D:other>
 """
-          .trim());
-      final result = parser.convertResource(root.rootElement,
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          redirect: Uri.parse("http://example.com/redirect"));
+            .trim(),
+      );
+      final result = parser.convertResource(
+        root.rootElement,
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        redirect: Uri.parse("http://example.com/redirect"),
+      );
       expect(result.path, equals(Uri.parse("http://example.com/resource")));
       expect(result.status, equals(HttpStatus.accepted));
       expect(result.desc, isNull);
@@ -326,10 +381,12 @@ void main() {
       final responseParser = MockResponseElementParser();
       when(parserMgr.response).thenReturn(responseParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final result = parser.convertResource(null,
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          redirect: Uri.parse("http://example.com/redirect"));
+      final result = parser.convertResource(
+        null,
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        redirect: Uri.parse("http://example.com/redirect"),
+      );
       expect(result.path, equals(Uri.parse("http://example.com/resource")));
       expect(result.status, equals(HttpStatus.accepted));
       expect(result.desc, isNull);
@@ -341,26 +398,32 @@ void main() {
       final propstatParser = MockPropstatElementParser();
       final props = [
         WebDavStdResourceProp(
-            name: "data1",
-            namespace: Uri.parse("DAV:"),
-            status: HttpStatus.badGateway),
+          name: "data1",
+          namespace: Uri.parse("DAV:"),
+          status: HttpStatus.badGateway,
+        ),
         WebDavStdResourceProp(
-            name: "data2",
-            namespace: Uri.parse("CUSTOM:"),
-            status: HttpStatus.locked)
+          name: "data2",
+          namespace: Uri.parse("CUSTOM:"),
+          status: HttpStatus.locked,
+        ),
       ];
       when(propstatParser.convert(any)).thenReturn(props);
       when(parserMgr.propstat).thenReturn(propstatParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:propstat xmlns:D="DAV:">
 </D:propstat>
 """
-          .trim());
-      final result = parser.convertResource(root.rootElement,
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          redirect: Uri.parse("http://example.com/redirect"));
+            .trim(),
+      );
+      final result = parser.convertResource(
+        root.rootElement,
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        redirect: Uri.parse("http://example.com/redirect"),
+      );
       expect(result.path, equals(Uri.parse("http://example.com/resource")));
       expect(result.status, equals(HttpStatus.accepted));
       expect(result.desc, isNull);
@@ -374,15 +437,19 @@ void main() {
       when(errorParser.convert(any)).thenReturn(error);
       when(parserMgr.error).thenReturn(errorParser);
       final parser = BaseRespSingleResultParser(parserManger: parserMgr);
-      final root = XmlDocument.parse("""
+      final root = XmlDocument.parse(
+        """
 <D:error xmlns:D="DAV:">
 </D:error>
 """
-          .trim());
-      final result = parser.convertResource(root.rootElement,
-          path: Uri.parse("http://example.com/resource"),
-          status: HttpStatus.accepted,
-          redirect: Uri.parse("http://example.com/redirect"));
+            .trim(),
+      );
+      final result = parser.convertResource(
+        root.rootElement,
+        path: Uri.parse("http://example.com/resource"),
+        status: HttpStatus.accepted,
+        redirect: Uri.parse("http://example.com/redirect"),
+      );
       expect(result.path, equals(Uri.parse("http://example.com/resource")));
       expect(result.status, equals(HttpStatus.accepted));
       expect(result.desc, isNull);
@@ -404,21 +471,27 @@ void main() {
     test("not xml | no redirect", () {
       when(headers.value(HttpHeaders.locationHeader)).thenReturn(null);
       when(headers.contentType).thenReturn(null);
-      final result = parser.convert(ResponseResultParserParam(
+      final result = parser.convert(
+        ResponseResultParserParam(
           path: Uri.parse("http://example.com/resource"),
           status: HttpStatus.accepted,
           headers: headers,
-          data: """
+          data:
+              """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-              .trim()));
-      expect(result, equals(TypeMatcher<WebDavStdResResultView>()));
+                  .trim(),
+        ),
+      );
+      expect(result, equals(const TypeMatcher<WebDavStdResResultView>()));
       expect(result.length, 1);
       expect(
-          result.first.path, equals(Uri.parse("http://example.com/resource")));
+        result.first.path,
+        equals(Uri.parse("http://example.com/resource")),
+      );
       expect(result.first.status, equals(HttpStatus.accepted));
       expect(result.first.error, isNull);
       expect(result.first.desc, isNull);
@@ -426,34 +499,44 @@ void main() {
       expect(result.first.redirect, isNull);
     });
     test("not xml | with redirect", () {
-      when(headers.value(HttpHeaders.locationHeader))
-          .thenReturn("http://example.com/redirect");
+      when(
+        headers.value(HttpHeaders.locationHeader),
+      ).thenReturn("http://example.com/redirect");
       when(headers.contentType).thenReturn(null);
-      final result = parser.convert(ResponseResultParserParam(
+      final result = parser.convert(
+        ResponseResultParserParam(
           path: Uri.parse("http://example.com/resource"),
           status: HttpStatus.accepted,
           headers: headers,
-          data: """
+          data:
+              """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-              .trim()));
-      expect(result, equals(TypeMatcher<WebDavStdResResultView>()));
+                  .trim(),
+        ),
+      );
+      expect(result, equals(const TypeMatcher<WebDavStdResResultView>()));
       expect(result.length, 1);
       expect(
-          result.first.path, equals(Uri.parse("http://example.com/resource")));
+        result.first.path,
+        equals(Uri.parse("http://example.com/resource")),
+      );
       expect(result.first.status, equals(HttpStatus.accepted));
       expect(result.first.error, isNull);
       expect(result.first.desc, isNull);
       expect(result.first.props, isEmpty);
-      expect(result.first.redirect,
-          equals(Uri.parse("http://example.com/redirect")));
+      expect(
+        result.first.redirect,
+        equals(Uri.parse("http://example.com/redirect")),
+      );
     });
     test("is xml | with redirect", () {
-      when(headers.value(HttpHeaders.locationHeader))
-          .thenReturn("http://example.com/redirect");
+      when(
+        headers.value(HttpHeaders.locationHeader),
+      ).thenReturn("http://example.com/redirect");
       when(headers.contentType).thenReturn(ContentType("custom", "xml"));
       final propParser1 = MockPropElementParser();
       final propParser2 = MockPropElementParser();
@@ -467,28 +550,36 @@ void main() {
       when(propParser2.convert(any)).thenReturn(prop2);
       when(parserMgr.fetchPropParser("data1", "DAV:")).thenReturn(propParser1);
       when(parserMgr.fetchPropParser("data2", "DAV:")).thenReturn(propParser2);
-      final result = parser.convert(ResponseResultParserParam(
+      final result = parser.convert(
+        ResponseResultParserParam(
           path: Uri.parse("http://example.com/resource"),
           status: HttpStatus.accepted,
           headers: headers,
-          data: """
+          data:
+              """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
   <data3/>
 </D:prop>
 """
-              .trim()));
-      expect(result, equals(TypeMatcher<WebDavStdResResultView>()));
+                  .trim(),
+        ),
+      );
+      expect(result, equals(const TypeMatcher<WebDavStdResResultView>()));
       expect(result.length, 1);
       expect(
-          result.first.path, equals(Uri.parse("http://example.com/resource")));
+        result.first.path,
+        equals(Uri.parse("http://example.com/resource")),
+      );
       expect(result.first.status, equals(HttpStatus.accepted));
       expect(result.first.error, isNull);
       expect(result.first.desc, isNull);
       expect(result.first.props, unorderedEquals([prop2, prop1]));
-      expect(result.first.redirect,
-          equals(Uri.parse("http://example.com/redirect")));
+      expect(
+        result.first.redirect,
+        equals(Uri.parse("http://example.com/redirect")),
+      );
     });
   });
   group("test BaseRespMultiResultParser", () {
@@ -505,52 +596,64 @@ void main() {
     test("convert not xml | no parser", () {
       when(headers.contentType).thenReturn(null);
       when(parserMgr.multistatus).thenReturn(null);
-      final result = parser.convert(ResponseResultParserParam(
+      final result = parser.convert(
+        ResponseResultParserParam(
           path: Uri.parse("http://example.com/resource"),
           status: HttpStatus.accepted,
           headers: headers,
-          data: """
+          data:
+              """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-              .trim()));
-      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+                  .trim(),
+        ),
+      );
+      expect(result, equals(const TypeMatcher<WebDavResponseResult>()));
       expect(result, isEmpty);
     });
     test("convert not xml | with parser", () {
       when(headers.contentType).thenReturn(null);
       when(parserMgr.multistatus).thenReturn(MockMultiStatusElementParser());
-      final result = parser.convert(ResponseResultParserParam(
+      final result = parser.convert(
+        ResponseResultParserParam(
           path: Uri.parse("http://example.com/resource"),
           status: HttpStatus.accepted,
           headers: headers,
-          data: """
+          data:
+              """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-              .trim()));
-      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+                  .trim(),
+        ),
+      );
+      expect(result, equals(const TypeMatcher<WebDavResponseResult>()));
       expect(result, isEmpty);
     });
     test("convert with xml | no parser", () {
       when(headers.contentType).thenReturn(XmlContentType.applicationXml);
       when(parserMgr.multistatus).thenReturn(null);
-      final result = parser.convert(ResponseResultParserParam(
+      final result = parser.convert(
+        ResponseResultParserParam(
           path: Uri.parse("http://example.com/resource"),
           status: HttpStatus.accepted,
           headers: headers,
-          data: """
+          data:
+              """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-              .trim()));
-      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+                  .trim(),
+        ),
+      );
+      expect(result, equals(const TypeMatcher<WebDavResponseResult>()));
       expect(result, isEmpty);
     });
     test("convert with xml and parser", () {
@@ -560,32 +663,42 @@ void main() {
       when(headers.contentType).thenReturn(XmlContentType.applicationXml);
       when(parserMgr.multistatus).thenReturn(multiParser);
       expect(
-          parser.convert(ResponseResultParserParam(
-              path: Uri.parse("http://example.com/resource"),
-              status: HttpStatus.accepted,
-              headers: headers,
-              data: """
+        parser.convert(
+          ResponseResultParserParam(
+            path: Uri.parse("http://example.com/resource"),
+            status: HttpStatus.accepted,
+            headers: headers,
+            data:
+                """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-                  .trim())),
-          same(result));
+                    .trim(),
+          ),
+        ),
+        same(result),
+      );
       when(multiParser.convert(any)).thenReturn(null);
       expect(
-          parser.convert(ResponseResultParserParam(
-              path: Uri.parse("http://example.com/resource"),
-              status: HttpStatus.accepted,
-              headers: headers,
-              data: """
+        parser.convert(
+          ResponseResultParserParam(
+            path: Uri.parse("http://example.com/resource"),
+            status: HttpStatus.accepted,
+            headers: headers,
+            data:
+                """
 <D:prop xmlns:D="DAV:">
   <D:data1/>
   <D:data2/>
 </D:prop>
 """
-                  .trim())),
-          equals(TypeMatcher<WebDavResponseResultView>()));
+                    .trim(),
+          ),
+        ),
+        equals(const TypeMatcher<WebDavResponseResultView>()),
+      );
     });
   });
 }

@@ -6,7 +6,10 @@
   "debug.openDebug": "openOnDebugBreak",
   "debug.internalConsoleOptions": "openOnSessionStart",
   "dart.addSdkToTerminalPath": true,
-  "dart.sdkPath": ".dart_sdk/3.3.4",
+  "dart.getDartSdkCommand": {
+    "executable": "asdf",
+    "args": ["where", "dart"]
+  },
   "dart.analysisExcludedFolders": [
     ".dart_sdk"
   ],

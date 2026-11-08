@@ -222,26 +222,31 @@ BaseRespResultParser generateParser() {
   propParsers[(name: "author", ns: "CUSTOM:")] = const StringPropParser();
 
   final propstatParser = BasePropstatElementParser(
-      parserManger: WebDavResposneDataParserManger(parsers: propParsers),
-      statusParser: const BaseHttpStatusElementParser(),
-      errorParser: const BaseErrorElementParser());
+    parserManger: WebDavResposneDataParserManger(parsers: propParsers),
+    statusParser: const BaseHttpStatusElementParser(),
+    errorParser: const BaseErrorElementParser(),
+  );
   final responseParser = BaseResponseElementParser(
-      hrefParser: const BaseHrefElementParser(),
-      statusParser: const BaseHttpStatusElementParser(),
-      propstatParser: propstatParser,
-      errorParser: const BaseErrorElementParser(),
-      locationParser: const BaseHrefElementParser());
-  final multistatParser =
-      BaseMultistatusElementParser(responseParser: responseParser);
+    hrefParser: const BaseHrefElementParser(),
+    statusParser: const BaseHttpStatusElementParser(),
+    propstatParser: propstatParser,
+    errorParser: const BaseErrorElementParser(),
+    locationParser: const BaseHrefElementParser(),
+  );
+  final multistatParser = BaseMultistatusElementParser(
+    responseParser: responseParser,
+  );
 
   final parsers = Map.of(kStdElementParserManager);
   parsers[(name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr)] =
       multistatParser;
 
   return BaseRespResultParser(
-      singleResDecoder: kStdResponseResultParser.singleResDecoder,
-      multiResDecoder: BaseRespMultiResultParser(
-          parserManger: WebDavResposneDataParserManger(parsers: parsers)));
+    singleResDecoder: kStdResponseResultParser.singleResDecoder,
+    multiResDecoder: BaseRespMultiResultParser(
+      parserManger: WebDavResposneDataParserManger(parsers: parsers),
+    ),
+  );
 }
 
 void main() async {
@@ -252,8 +257,11 @@ void main() async {
   BaseRespResultParser parser;
 
   client = WebDavClient.std();
-  client.addCredentials(Uri.parse('http://localhost'), "WebDAV",
-      HttpClientDigestCredentials("admin", "123456"));
+  client.addCredentials(
+    Uri.parse('http://localhost'),
+    "WebDAV",
+    HttpClientDigestCredentials("admin", "123456"),
+  );
   parser = generateParser();
 
   newFilePath = Uri.parse("http://localhost/new-file.txt");
@@ -268,12 +276,15 @@ void main() async {
   print('\n');
   print('[Step2]: set custom prop on $newFilePath');
   await dispatcher
-      .updateProps(operations: [
-        ProppatchRequestProp.set(
+      .updateProps(
+        operations: [
+          const ProppatchRequestProp.set(
             name: "author",
             namespace: "CUSTOM:",
-            value: ProppatchRequestPropBaseValue("zigzag"))
-      ])
+            value: ProppatchRequestPropBaseValue("zigzag"),
+          ),
+        ],
+      )
       .then((request) => request.close())
       .then((response) => response.parse())
       .then((result) => print(result?.toDebugString()));
@@ -289,7 +300,7 @@ void main() async {
   print('\n');
   print('[Step4]: get props attributes from $newFilePath');
   await dispatcher
-      .findAllProps(includes: [PropfindRequestProp('author', 'CUSTOM:')])
+      .findAllProps(includes: [const PropfindRequestProp('author', 'CUSTOM:')])
       .then((request) => request.close())
       .then((response) => response.parse())
       .then((result) => print(result?.toDebugString()));
@@ -323,9 +334,14 @@ void main() async {
   print('\n');
   print('[Step7]: remove custom prop on $newFilePath');
   await dispatcher
-      .updateProps(operations: [
-        ProppatchRequestProp.remove(name: "author", namespace: "CUSTOM:")
-      ])
+      .updateProps(
+        operations: [
+          const ProppatchRequestProp.remove(
+            name: "author",
+            namespace: "CUSTOM:",
+          ),
+        ],
+      )
       .then((request) => request.close())
       .then((response) => response.parse())
       .then((result) => print(result?.toDebugString()));
@@ -333,11 +349,13 @@ void main() async {
   print('\n');
   print('[Step8]: get props attributes from $newFilePath');
   await dispatcher
-      .findProps(props: [
-        PropfindRequestProp('author', 'CUSTOM:'),
-        PropfindRequestProp.dav("getlastmodified"),
-        PropfindRequestProp.dav("getetag")
-      ])
+      .findProps(
+        props: [
+          const PropfindRequestProp('author', 'CUSTOM:'),
+          const PropfindRequestProp.dav("getlastmodified"),
+          const PropfindRequestProp.dav("getetag"),
+        ],
+      )
       .then((request) => request.close())
       .then((response) => response.parse())
       .then((result) => print(result?.toDebugString()));
@@ -356,11 +374,13 @@ void main() async {
   print('[Step10]: get props attributes from $newFilePath');
   await client
       .dispatch(movedFilePath, responseResultParser: parser)
-      .findProps(props: [
-        PropfindRequestProp('author', 'CUSTOM:'),
-        PropfindRequestProp.dav("getlastmodified"),
-        PropfindRequestProp.dav("getetag")
-      ])
+      .findProps(
+        props: [
+          const PropfindRequestProp('author', 'CUSTOM:'),
+          const PropfindRequestProp.dav("getlastmodified"),
+          const PropfindRequestProp.dav("getetag"),
+        ],
+      )
       .then((request) => request.close())
       .then((response) => response.parse())
       .then((result) => print(result?.toDebugString()));
@@ -385,18 +405,18 @@ void main() async {
 
   Uri? lockToken;
   await dispatcher
-      .createLock(info: LockInfo(lockScope: LockScope.exclusive))
+      .createLock(info: const LockInfo(lockScope: LockScope.exclusive))
       .then((request) => request.close())
       .then((response) => response.parse())
       .then((result) {
-    print(result?.toDebugString());
-    lockToken = result?.firstOrNull?.props
-        .whereType<WebDavStdResourceProp<LockDiscovery>>()
-        .firstOrNull
-        ?.value
-        ?.firstOrNull
-        ?.lockToken;
-  });
+        print(result?.toDebugString());
+        lockToken = result?.firstOrNull?.props
+            .whereType<WebDavStdResourceProp<LockDiscovery>>()
+            .firstOrNull
+            ?.value
+            ?.firstOrNull
+            ?.lockToken;
+      });
 
   print('\n');
   print('[Step13]: delete file $newFilePath');

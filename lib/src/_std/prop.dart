@@ -32,9 +32,7 @@ class ResourceTypes
   const ResourceTypes(List<({String name, String? ns})> types) : _types = types;
 
   ResourceTypes.collection()
-      : _types = [
-          (name: WebDavElementNames.collection, ns: kDavNamespaceUrlStr)
-        ];
+    : _types = [(name: WebDavElementNames.collection, ns: kDavNamespaceUrlStr)];
 
   @override
   int get length => _types.length;
@@ -43,9 +41,11 @@ class ResourceTypes
   Iterator<({String name, String? ns})> get iterator => _types.iterator;
 
   bool get isCollection => _types
-      .where((e) =>
-          e.ns == kDavNamespaceUrlStr &&
-          e.name == WebDavElementNames.collection)
+      .where(
+        (e) =>
+            e.ns == kDavNamespaceUrlStr &&
+            e.name == WebDavElementNames.collection,
+      )
       .isNotEmpty;
 
   @override
@@ -79,12 +79,13 @@ class ActiveLock<O> {
   final Uri? lockToken;
   final Uri? lockRoot;
 
-  const ActiveLock(
-      {required this.lockScope,
-      required this.isWriteLock,
-      required this.depth,
-      this.owner,
-      this.timeout,
-      this.lockToken,
-      this.lockRoot});
+  const ActiveLock({
+    required this.lockScope,
+    required this.isWriteLock,
+    required this.depth,
+    this.owner,
+    this.timeout,
+    this.lockToken,
+    this.lockRoot,
+  });
 }

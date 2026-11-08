@@ -8,5 +8,8 @@
 # coverage
 coverage/
 
+# Machine-readable test reports
+test-results/
+
 # examples
 example/server/bytemark_webdav/dav/

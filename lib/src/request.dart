@@ -7,8 +7,10 @@ import 'io.dart';
 import 'method.dart';
 import 'response.dart';
 
-abstract interface class WebDavRequest<T extends WebDavResponse,
-    P extends WebDavRequestParam> {
+abstract interface class WebDavRequest<
+  T extends WebDavResponse,
+  P extends WebDavRequestParam
+> {
   P? get param;
   WebDavMethod get method;
 

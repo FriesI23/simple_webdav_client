@@ -5,10 +5,32 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
 
+permissions:
+  contents: read
+
 jobs:
+  testing:
+    name: Test
+    uses: ./.github/workflows/_test.yml
+
   publish:
+    name: Publish to pub.dev
+    needs: testing
+    runs-on: ubuntu-latest
     permissions:
-      id-token: write # Required for authentication using OIDC
-    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
-    # with:
-    #   working-directory: path/to/package/within/repository
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read the pinned SDK
+        id: sdk
+        run: echo "version=$(awk '$1 == "dart" { print $2 }' .tool-versions)" >> "$GITHUB_OUTPUT"
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ steps.sdk.outputs.version }}
+      - name: Resolve the lockfile
+        run: make bootstrap
+      - name: Validate publishing
+        run: make publish-dry-run
+      - name: Publish
+        run: dart pub publish --force

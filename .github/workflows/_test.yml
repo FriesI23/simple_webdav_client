@@ -1,0 +1,96 @@
+name: Test CI
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Dart 3.8.3 quality and publishing checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read the pinned SDK
+        id: sdk
+        run: echo "version=$(awk '$1 == "dart" { print $2 }' .tool-versions)" >> "$GITHUB_OUTPUT"
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ steps.sdk.outputs.version }}
+      - name: Resolve the lockfile
+        run: make bootstrap
+      - name: Verify generated code is reproducible
+        run: |
+          make gen
+          make format
+          git diff --exit-code -- lib test example
+          test -z "$(git ls-files --others --exclude-standard -- lib test example)"
+      - name: Check formatting
+        run: make format-check
+      - name: Require zero analyzer diagnostics
+        if: success() || failure()
+        run: make analyze
+      - name: Run all tests
+        if: success() || failure()
+        run: make test CI=1 MACHINE_OUT=test-results/package_test.log
+      - name: Validate publishing
+        if: success() || failure()
+        run: make publish-dry-run
+      - uses: actions/upload-artifact@v7
+        if: success() || failure()
+        with:
+          name: dart-test-results-quality
+          path: test-results/package_test.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  compatibility:
+    name: Dart ${{ matrix.sdk }} compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['3.8.0', stable]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+      - name: Resolve compatible dependencies
+        run: dart pub upgrade
+      - name: Require zero analyzer diagnostics
+        run: make analyze
+      - name: Run all tests
+        if: success() || failure()
+        run: make test CI=1 MACHINE_OUT=test-results/package_test.log
+      - uses: actions/upload-artifact@v7
+        if: success() || failure()
+        with:
+          name: dart-test-results-${{ matrix.sdk }}
+          path: test-results/package_test.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  downgraded:
+    name: Dart 3.8.0 minimum dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.8.0'
+      - name: Resolve minimum dependencies
+        run: dart pub downgrade
+      - name: Require zero analyzer diagnostics
+        run: make analyze
+      - name: Run all tests
+        if: success() || failure()
+        run: make test CI=1 MACHINE_OUT=test-results/package_test.log
+      - uses: actions/upload-artifact@v7
+        if: success() || failure()
+        with:
+          name: dart-test-results-downgraded
+          path: test-results/package_test.log
+          if-no-files-found: warn
+          retention-days: 7

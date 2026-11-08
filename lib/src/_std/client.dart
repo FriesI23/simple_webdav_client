@@ -48,34 +48,38 @@ class WebDavStdClient implements WebDavClient {
   /// ```
   @override
   void setAuthenticate(
-          Future<bool> Function(Uri url, String scheme, String? realm)? f) =>
-      client.authenticate = f;
+    Future<bool> Function(Uri url, String scheme, String? realm)? f,
+  ) => client.authenticate = f;
 
   /// Sets the function to be called when a proxy is requesting authentication.
   ///
   /// Pass through setter of [HttpClient.authenticateProxy].
   @override
   void setAuthenticateProxy(
-          Future<bool> Function(
-                  String host, int port, String scheme, String? realm)?
-              f) =>
-      client.authenticateProxy = f;
+    Future<bool> Function(String host, int port, String scheme, String? realm)?
+    f,
+  ) => client.authenticateProxy = f;
 
   /// Add credentials to be used for authorizing requests.
   ///
   /// Pass through setter of [HttpClient.addCredentials].
   @override
   void addCredentials(
-          Uri url, String realm, HttpClientCredentials credentials) =>
-      client.addCredentials(url, realm, credentials);
+    Uri url,
+    String realm,
+    HttpClientCredentials credentials,
+  ) => client.addCredentials(url, realm, credentials);
 
   /// Add credentials to be used for authorizing proxies.
   ///
   /// Pass through setter of [HttpClient.addProxyCredentials].
   @override
-  void addProxyCredentials(String host, int port, String realm,
-          HttpClientCredentials credentials) =>
-      client.addProxyCredentials(host, port, realm, credentials);
+  void addProxyCredentials(
+    String host,
+    int port,
+    String realm,
+    HttpClientCredentials credentials,
+  ) => client.addProxyCredentials(host, port, realm, credentials);
 
   @override
   bool get closed => _closing;
@@ -107,12 +111,16 @@ class WebDavStdClient implements WebDavClient {
     required P param,
     ResponseBodyDecoderManager? responseBodyDecoders,
     ResponseResultParser<WebDavStdResResultView>? responseResultParser,
-  }) =>
-      client.openUrl(method.name, url).then((request) => WebDavStdRequest<P>(
+  }) => client
+      .openUrl(method.name, url)
+      .then(
+        (request) => WebDavStdRequest<P>(
           request: request,
           param: param,
           responseBodyDecoders: responseBodyDecoders,
-          responseResultParser: responseResultParser));
+          responseResultParser: responseResultParser,
+        ),
+      );
 
   /// Creates a [WebDavStdRequestDispatcher] for handling WebDAV requests.
   ///
@@ -126,10 +134,10 @@ class WebDavStdClient implements WebDavClient {
     Uri from, {
     ResponseBodyDecoderManager? responseBodyDecoders,
     ResponseResultParser<WebDavStdResResultView>? responseResultParser,
-  }) =>
-      WebDavStdRequestDispatcher(
-          client: this,
-          from: from,
-          respDecoder: responseBodyDecoders,
-          respParser: responseResultParser);
+  }) => WebDavStdRequestDispatcher(
+    client: this,
+    from: from,
+    respDecoder: responseBodyDecoders,
+    respParser: responseResultParser,
+  );
 }

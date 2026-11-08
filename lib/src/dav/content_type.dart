@@ -7,6 +7,9 @@ import '../io.dart';
 
 abstract final class XmlContentType {
   static final textXml = ContentType("text", "xml", charset: "utf-8");
-  static final applicationXml =
-      ContentType("application", "xml", charset: "utf-8");
+  static final applicationXml = ContentType(
+    "application",
+    "xml",
+    charset: "utf-8",
+  );
 }

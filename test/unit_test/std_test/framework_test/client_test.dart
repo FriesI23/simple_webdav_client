@@ -74,8 +74,11 @@ void main() {
     });
     test("setAuthenticateProxy", () {
       Future<bool> mockFunc(
-              String host, int port, String scheme, String? realm) async =>
-          true;
+        String host,
+        int port,
+        String scheme,
+        String? realm,
+      ) async => true;
 
       final client = WebDavStdClient();
       client.setAuthenticateProxy(mockFunc);
@@ -99,23 +102,27 @@ void main() {
       final client = WebDavStdClient();
       final credentials = HttpClientBasicCredentials("admin", "123456");
       client.addProxyCredentials("localhost", 1234, "", credentials);
-      verify(client.client
-              .addProxyCredentials("localhost", 1234, "", credentials))
-          .called(1);
+      verify(
+        client.client.addProxyCredentials("localhost", 1234, "", credentials),
+      ).called(1);
     });
     test("openUrl", () async {
       final client = WebDavStdClient();
-      final method = WebDavMethod.get;
+      const method = WebDavMethod.get;
       final url = Uri.parse("http://www.example.com");
       final param = MockWebDavRequestParam();
       final httpRequest = MockHttpClientRequest();
       when(httpRequest.uri).thenReturn(url);
       when(httpRequest.method).thenReturn(method.name);
-      when(client.client.openUrl(method.name, url))
-          .thenAnswer((_) => Future.value(httpRequest));
-      final request =
-          await client.openUrl(method: method, url: url, param: param);
-      expect(request.request, equals(TypeMatcher<HttpClientRequest>()));
+      when(
+        client.client.openUrl(method.name, url),
+      ).thenAnswer((_) => Future.value(httpRequest));
+      final request = await client.openUrl(
+        method: method,
+        url: url,
+        param: param,
+      );
+      expect(request.request, equals(const TypeMatcher<HttpClientRequest>()));
       expect(request.method, equals(method));
       expect(request.param, equals(param));
       expect(request.responseBodyDecoders, isNull);
@@ -123,14 +130,15 @@ void main() {
     });
     test("openUrl with params", () async {
       final client = WebDavStdClient();
-      final method = WebDavMethod.get;
+      const method = WebDavMethod.get;
       final url = Uri.parse("http://www.example.com");
       final param = MockWebDavRequestParam();
       final httpRequest = MockHttpClientRequest();
       when(httpRequest.uri).thenReturn(url);
       when(httpRequest.method).thenReturn(method.name);
-      when(client.client.openUrl(method.name, url))
-          .thenAnswer((_) => Future.value(httpRequest));
+      when(
+        client.client.openUrl(method.name, url),
+      ).thenAnswer((_) => Future.value(httpRequest));
       final request = await client.openUrl(
         method: method,
         url: url,
@@ -138,16 +146,21 @@ void main() {
         responseBodyDecoders: MockResponseBodyDecoderManager(),
         responseResultParser: MockResponseResultParser(),
       );
-      expect(request.request, equals(TypeMatcher<HttpClientRequest>()));
+      expect(request.request, equals(const TypeMatcher<HttpClientRequest>()));
       expect(request.method, equals(method));
       expect(request.param, equals(param));
-      expect(request.responseBodyDecoders,
-          equals(TypeMatcher<ResponseBodyDecoderManager>()));
-      expect(request.responseResultParser, TypeMatcher<ResponseResultParser>());
+      expect(
+        request.responseBodyDecoders,
+        equals(const TypeMatcher<ResponseBodyDecoderManager>()),
+      );
+      expect(
+        request.responseResultParser,
+        const TypeMatcher<ResponseResultParser>(),
+      );
     });
     test("dispatch", () {
       final dispatcher = WebDavStdClient().dispatch(Uri.base);
-      expect(dispatcher, TypeMatcher<WebDavStdRequestDispatcher>());
+      expect(dispatcher, const TypeMatcher<WebDavStdRequestDispatcher>());
     });
   });
 }

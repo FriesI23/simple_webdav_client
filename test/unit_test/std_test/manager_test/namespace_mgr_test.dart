@@ -59,8 +59,11 @@ void main() {
       // generate(noprefix) CUSTOM1: -> ""
       expect(mgr.generate("CUSTOM_1:", noPrefix: true), "");
       expect(mgr.namespaces, {"DAV:": "a1", "CUSTOM:": "a2", "CUSTOM_1:": ""});
-      expect(
-          mgr.reversedCache, {"a1": "DAV:", "a2": "CUSTOM:", "": "CUSTOM_1:"});
+      expect(mgr.reversedCache, {
+        "a1": "DAV:",
+        "a2": "CUSTOM:",
+        "": "CUSTOM_1:",
+      });
       expect(mgr.getPrefix("CUSTOM_1:"), "");
       expect(mgr.getUri(""), "CUSTOM_1:");
       expect(mgr.all.length, 3);
@@ -70,8 +73,11 @@ void main() {
       // generate(noprefix|duplicated) CUSTOM_2: -> ""
       expect(mgr.generate("CUSTOM_2:", noPrefix: true), null);
       expect(mgr.namespaces, {"DAV:": "a1", "CUSTOM:": "a2", "CUSTOM_1:": ""});
-      expect(
-          mgr.reversedCache, {"a1": "DAV:", "a2": "CUSTOM:", "": "CUSTOM_1:"});
+      expect(mgr.reversedCache, {
+        "a1": "DAV:",
+        "a2": "CUSTOM:",
+        "": "CUSTOM_1:",
+      });
       expect(mgr.getPrefix("CUSTOM_1:"), "");
       expect(mgr.getPrefix("CUSTOM_2:"), isNull);
       expect(mgr.getUri(""), "CUSTOM_1:");

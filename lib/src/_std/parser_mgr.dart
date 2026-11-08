@@ -36,7 +36,9 @@ class WebDavResposneDataParserManger
   Converter? remove(Object? key) => _parsers.remove(key);
 
   PropElementParser<T>? fetchPropParser<T extends WebDavStdResourceProp>(
-      String name, String? namespace) {
+    String name,
+    String? namespace,
+  ) {
     final Converter? result = _parsers[(name: name, ns: namespace)];
     return result is PropElementParser<T> ? result : null;
   }
@@ -47,50 +49,68 @@ class WebDavResposneDataParserManger
   ErrorElementParser? get error =>
       _parsers[const (name: WebDavElementNames.error, ns: kDavNamespaceUrlStr)]
           as ErrorElementParser?;
-  set error(ErrorElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.error, ns: kDavNamespaceUrlStr), parser);
+  set error(ErrorElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.error,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 
-  PropstatElementParser? get propstat => _parsers[const (
-        name: WebDavElementNames.propstat,
-        ns: kDavNamespaceUrlStr
-      )] as PropstatElementParser?;
-  set propstat(PropstatElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.propstat, ns: kDavNamespaceUrlStr),
-      parser);
+  PropstatElementParser? get propstat =>
+      _parsers[const (
+            name: WebDavElementNames.propstat,
+            ns: kDavNamespaceUrlStr,
+          )]
+          as PropstatElementParser?;
+  set propstat(PropstatElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.propstat,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 
-  ResponseElementParser? get response => _parsers[const (
-        name: WebDavElementNames.response,
-        ns: kDavNamespaceUrlStr
-      )] as ResponseElementParser?;
-  set response(ResponseElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.response, ns: kDavNamespaceUrlStr),
-      parser);
+  ResponseElementParser? get response =>
+      _parsers[const (
+            name: WebDavElementNames.response,
+            ns: kDavNamespaceUrlStr,
+          )]
+          as ResponseElementParser?;
+  set response(ResponseElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.response,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 
-  MultiStatusElementParser? get multistatus => _parsers[const (
-        name: WebDavElementNames.multistatus,
-        ns: kDavNamespaceUrlStr
-      )] as MultiStatusElementParser?;
-  set multistatus(MultiStatusElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr),
-      parser);
+  MultiStatusElementParser? get multistatus =>
+      _parsers[const (
+            name: WebDavElementNames.multistatus,
+            ns: kDavNamespaceUrlStr,
+          )]
+          as MultiStatusElementParser?;
+  set multistatus(MultiStatusElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.multistatus,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 
   HrefElementParser? get href =>
       _parsers[const (name: WebDavElementNames.href, ns: kDavNamespaceUrlStr)]
           as HrefElementParser?;
-  set href(HrefElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.href, ns: kDavNamespaceUrlStr), parser);
+  set href(HrefElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.href,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 
-  HrefElementParser? get location => _parsers[const (
-        name: WebDavElementNames.location,
-        ns: kDavNamespaceUrlStr
-      )] as HrefElementParser?;
-  set location(HrefElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.location, ns: kDavNamespaceUrlStr),
-      parser);
+  HrefElementParser? get location =>
+      _parsers[const (
+            name: WebDavElementNames.location,
+            ns: kDavNamespaceUrlStr,
+          )]
+          as HrefElementParser?;
+  set location(HrefElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.location,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 
   HttpStatusElementParser? get status =>
       _parsers[const (name: WebDavElementNames.status, ns: kDavNamespaceUrlStr)]
           as HttpStatusElementParser?;
-  set status(HttpStatusElementParser? parser) => _setOrRemove(
-      const (name: WebDavElementNames.status, ns: kDavNamespaceUrlStr), parser);
+  set status(HttpStatusElementParser? parser) => _setOrRemove(const (
+    name: WebDavElementNames.status,
+    ns: kDavNamespaceUrlStr,
+  ), parser);
 }

@@ -17,7 +17,7 @@ class PropfindPropRequestParam<P extends PropfindRequestProp>
   final List<P>? _props;
 
   const PropfindPropRequestParam({super.depth, List<P>? props})
-      : _props = props;
+    : _props = props;
 
   Iterable<P> get props => _props ?? const [];
 
@@ -56,7 +56,7 @@ class PropfindAllRequestParam<P extends PropfindRequestProp>
   final List<P>? _includes;
 
   const PropfindAllRequestParam({super.depth, List<P>? include})
-      : _includes = include;
+    : _includes = include;
 
   Iterable<P> get includes => _includes ?? const [];
 
@@ -79,7 +79,7 @@ class PropfindAllRequestParam<P extends PropfindRequestProp>
             WebDavElementNames.include,
             namespace: davns,
             nest: () {
-              for (var prop in _includes ?? const []) {
+              for (var prop in _includes) {
                 prop.toXml(context, nsmgr);
               }
             },
@@ -114,6 +114,8 @@ class PropfindNameRequestParam extends CommonPropfindRequestParam {
   String toRequestBody() => processXmlData().buildDocument().toXmlString();
 }
 
+// PROPFIND requests have no property value; preserve the public Prop<Null> API.
+// ignore: prefer_void_to_null
 class PropfindRequestProp implements Prop<Null>, ToXmlCapable {
   @override
   final String name;
@@ -121,6 +123,8 @@ class PropfindRequestProp implements Prop<Null>, ToXmlCapable {
   final String? namespace;
 
   @override
+  // Callers may read this value as null; void would break that contract.
+  // ignore: prefer_void_to_null
   Null get value => null;
 
   const PropfindRequestProp(this.name, [this.namespace]);

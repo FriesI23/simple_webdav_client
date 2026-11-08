@@ -28,19 +28,23 @@ class LockRequestParam
   final LockInfo? lockInfo;
   final DavTimeout? timeout;
 
-  const LockRequestParam(
-      {required LockInfo this.lockInfo,
-      this.timeout,
-      bool? recursive,
-      this.condition})
-      : depth =
-            recursive != null ? (recursive ? Depth.all : Depth.resource) : null;
+  const LockRequestParam({
+    required LockInfo this.lockInfo,
+    this.timeout,
+    bool? recursive,
+    this.condition,
+  }) : depth = recursive != null
+           ? (recursive ? Depth.all : Depth.resource)
+           : null;
 
-  const LockRequestParam.renew(
-      {required IfOr this.condition, this.timeout, bool? recursive})
-      : lockInfo = null,
-        depth =
-            recursive != null ? (recursive ? Depth.all : Depth.resource) : null;
+  const LockRequestParam.renew({
+    required IfOr this.condition,
+    this.timeout,
+    bool? recursive,
+  }) : lockInfo = null,
+       depth = recursive != null
+           ? (recursive ? Depth.all : Depth.resource)
+           : null;
 
   @override
   void beforeAddRequestBody(HttpClientRequest request) {
@@ -87,16 +91,23 @@ class LockInfo<O extends ToXmlCapable> implements ToXmlCapable {
         if (!nsmgr.contain(davns)) {
           context.namespace(davns, nsmgr.generate(davns));
         }
-        context.element(WebDavElementNames.lockscope,
-            namespace: davns,
-            nest: () => context.element(lockScope.name, namespace: davns));
-        context.element(WebDavElementNames.locktype,
-            namespace: davns,
-            nest: () => context.element("write", namespace: davns));
+        context.element(
+          WebDavElementNames.lockscope,
+          namespace: davns,
+          nest: () => context.element(lockScope.name, namespace: davns),
+        );
+        context.element(
+          WebDavElementNames.locktype,
+          namespace: davns,
+          nest: () => context.element("write", namespace: davns),
+        );
         final owner = this.owner;
         if (owner != null) {
-          context.element(WebDavElementNames.owner,
-              namespace: davns, nest: () => owner.toXml(context, nsmgr));
+          context.element(
+            WebDavElementNames.owner,
+            namespace: davns,
+            nest: () => owner.toXml(context, nsmgr),
+          );
         }
       },
     );

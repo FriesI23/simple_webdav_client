@@ -31,13 +31,9 @@ class IfOr {
   final Iterable<IfAnd> _tagList;
   final bool _tagged;
 
-  const IfOr.tagged(List<IfAnd> list)
-      : _tagList = list,
-        _tagged = true;
+  const IfOr.tagged(List<IfAnd> list) : _tagList = list, _tagged = true;
 
-  const IfOr.notag(List<IfAnd> list)
-      : _tagList = list,
-        _tagged = false;
+  const IfOr.notag(List<IfAnd> list) : _tagList = list, _tagged = false;
 
   @override
   String toString() => _tagList
@@ -52,12 +48,12 @@ class IfAnd {
   final List<IfCondition> _conditions;
 
   const IfAnd.tagged(Uri resource, List<IfCondition> conditions)
-      : _resourceTag = resource,
-        _conditions = conditions;
+    : _resourceTag = resource,
+      _conditions = conditions;
 
   const IfAnd.notag(List<IfCondition> conditions)
-      : _resourceTag = null,
-        _conditions = conditions;
+    : _resourceTag = null,
+      _conditions = conditions;
 
   bool get tagged => _resourceTag != null;
 
@@ -78,31 +74,33 @@ class IfCondition {
   final String? _etag;
   final Uri? _abspath;
 
-  const IfCondition._(
-      {required bool not, required String? etag, required Uri? abspath})
-      : _not = not,
-        _etag = etag,
-        _abspath = abspath;
+  const IfCondition._({
+    required bool not,
+    required String? etag,
+    required Uri? abspath,
+  }) : _not = not,
+       _etag = etag,
+       _abspath = abspath;
 
   const IfCondition.token(Uri abspath)
-      : _not = false,
-        _etag = null,
-        _abspath = abspath;
+    : _not = false,
+      _etag = null,
+      _abspath = abspath;
 
   const IfCondition.notToken(Uri abspath)
-      : _not = true,
-        _etag = null,
-        _abspath = abspath;
+    : _not = true,
+      _etag = null,
+      _abspath = abspath;
 
   const IfCondition.etag(String etag)
-      : _not = false,
-        _etag = etag,
-        _abspath = null;
+    : _not = false,
+      _etag = etag,
+      _abspath = null;
 
   const IfCondition.notEtag(String etag)
-      : _not = true,
-        _etag = etag,
-        _abspath = null;
+    : _not = true,
+      _etag = etag,
+      _abspath = null;
 
   bool get isEtag => _etag != null ? true : false;
 

@@ -36,38 +36,48 @@ void main() {
       propstatParser = MockPropstatElementParser();
       errorParser = MockErrorElementParser();
       parser = BaseResponseElementParser(
-          hrefParser: hrefParser,
-          statusParser: statusParser,
-          propstatParser: propstatParser,
-          errorParser: errorParser,
-          locationParser: hrefParser);
+        hrefParser: hrefParser,
+        statusParser: statusParser,
+        propstatParser: propstatParser,
+        errorParser: errorParser,
+        locationParser: hrefParser,
+      );
     });
     test("convert no path", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response xmlns:D="CUSTOM:">
   <D:href>/invalid/namespace/</D:href>
 </response>
 """
-          .trim());
-      expect(() => parser.convert(input.rootElement),
-          throwsA(TypeMatcher<WebDavParserDataError>()));
+            .trim(),
+      );
+      expect(
+        () => parser.convert(input.rootElement),
+        throwsA(const TypeMatcher<WebDavParserDataError>()),
+      );
     });
     test("convert status is null", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response>
   <href>/resource1</href>
   <status>test</status>
 </response>
 """
-          .trim());
-      when((statusParser as MockHttpStatusElementParser).convert(any))
-          .thenReturn(null);
+            .trim(),
+      );
+      when(
+        (statusParser as MockHttpStatusElementParser).convert(any),
+      ).thenReturn(null);
       expect(parser.convert(input.rootElement), isEmpty);
-      verify((statusParser as MockHttpStatusElementParser).convert(any))
-          .called(1);
+      verify(
+        (statusParser as MockHttpStatusElementParser).convert(any),
+      ).called(1);
     });
     test("convert with bnf:(href*, status)", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response>
   <href>/resource1</href>
   <href>/resource2</href>
@@ -77,32 +87,41 @@ void main() {
   <propstat/>
 </response>
 """
-          .trim());
-      when((statusParser as MockHttpStatusElementParser).convert(any))
-          .thenReturn(HttpStatus.accepted);
-      when(hrefParser.convert(input.findAllElements("href").toList()[0]))
-          .thenReturn(Uri.parse("/resource1"));
-      when(hrefParser.convert(input.findAllElements("href").toList()[1]))
-          .thenReturn(Uri.parse("/resource2"));
-      when(hrefParser.convert(input.findAllElements("href").toList()[2]))
-          .thenReturn(Uri.parse("/resource3"));
+            .trim(),
+      );
+      when(
+        (statusParser as MockHttpStatusElementParser).convert(any),
+      ).thenReturn(HttpStatus.accepted);
+      when(
+        hrefParser.convert(input.findAllElements("href").toList()[0]),
+      ).thenReturn(Uri.parse("/resource1"));
+      when(
+        hrefParser.convert(input.findAllElements("href").toList()[1]),
+      ).thenReturn(Uri.parse("/resource2"));
+      when(
+        hrefParser.convert(input.findAllElements("href").toList()[2]),
+      ).thenReturn(Uri.parse("/resource3"));
       final result = parser.convert(input.rootElement);
       expect(result.length, 3);
       expect(result.where((e) => e.path == Uri.parse("/resource1")).length, 1);
       expect(
-          result.where((e) => e.path == Uri.parse("/resource1")).first.status,
-          HttpStatus.accepted);
+        result.where((e) => e.path == Uri.parse("/resource1")).first.status,
+        HttpStatus.accepted,
+      );
       expect(result.where((e) => e.path == Uri.parse("/resource2")).length, 1);
       expect(
-          result.where((e) => e.path == Uri.parse("/resource2")).first.status,
-          HttpStatus.accepted);
+        result.where((e) => e.path == Uri.parse("/resource2")).first.status,
+        HttpStatus.accepted,
+      );
       expect(result.where((e) => e.path == Uri.parse("/resource3")).length, 1);
       expect(
-          result.where((e) => e.path == Uri.parse("/resource3")).first.status,
-          HttpStatus.accepted);
+        result.where((e) => e.path == Uri.parse("/resource3")).first.status,
+        HttpStatus.accepted,
+      );
     });
     test("convert with bnf:(href*, status), full case", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response>
   <href>/resource1</href>
   <href>/resource2</href>
@@ -113,34 +132,43 @@ void main() {
   <propstat/>
 </response>
 """
-          .trim());
-      when((statusParser as MockHttpStatusElementParser).convert(any))
-          .thenReturn(HttpStatus.accepted);
-      when(hrefParser.convert(input.findAllElements("href").toList()[0]))
-          .thenReturn(Uri.parse("/resource1"));
-      when(hrefParser.convert(input.findAllElements("href").toList()[1]))
-          .thenReturn(Uri.parse("/resource2"));
-      when((errorParser as MockErrorElementParser)
-              .convert(input.rootElement.getElement("error")!))
-          .thenReturn(WebDavStdResError("mock"));
-      when((hrefParser as MockHrefElementParser)
-              .convert(input.rootElement.getElement("location")!))
-          .thenReturn(Uri.base);
+            .trim(),
+      );
+      when(
+        (statusParser as MockHttpStatusElementParser).convert(any),
+      ).thenReturn(HttpStatus.accepted);
+      when(
+        hrefParser.convert(input.findAllElements("href").toList()[0]),
+      ).thenReturn(Uri.parse("/resource1"));
+      when(
+        hrefParser.convert(input.findAllElements("href").toList()[1]),
+      ).thenReturn(Uri.parse("/resource2"));
+      when(
+        (errorParser as MockErrorElementParser).convert(
+          input.rootElement.getElement("error")!,
+        ),
+      ).thenReturn(WebDavStdResError("mock"));
+      when(
+        (hrefParser as MockHrefElementParser).convert(
+          input.rootElement.getElement("location")!,
+        ),
+      ).thenReturn(Uri.base);
       final result = parser.convert(input.rootElement);
       expect(result.length, 2);
       expect(result.where((e) => e.path == Uri.parse("/resource1")).length, 1);
       final r1 = result.where((e) => e.path == Uri.parse("/resource1")).first;
       expect(r1.status, HttpStatus.accepted);
-      expect(r1.error, equals(TypeMatcher<WebDavStdResError>()));
+      expect(r1.error, equals(const TypeMatcher<WebDavStdResError>()));
       expect(r1.redirect, equals(Uri.base));
       expect(result.where((e) => e.path == Uri.parse("/resource2")).length, 1);
       final r2 = result.where((e) => e.path == Uri.parse("/resource2")).first;
       expect(r2.status, HttpStatus.accepted);
-      expect(r2.error, equals(TypeMatcher<WebDavStdResError>()));
+      expect(r2.error, equals(const TypeMatcher<WebDavStdResError>()));
       expect(r2.redirect, equals(Uri.base));
     });
     test("convert with bnf:(propstat+)", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response>
   <href>/resource</href>
   <!-- other hrefs will be ignored -->
@@ -154,20 +182,28 @@ void main() {
   </propstat>
 </response>
 """
-          .trim());
-      when((hrefParser as MockHrefElementParser)
-              .convert(input.rootElement.getElement("href")!))
-          .thenReturn(Uri.parse("/resource"));
+            .trim(),
+      );
+      when(
+        (hrefParser as MockHrefElementParser).convert(
+          input.rootElement.getElement("href")!,
+        ),
+      ).thenReturn(Uri.parse("/resource"));
       int index = 1;
-      when((propstatParser as MockPropstatElementParser).convert(any))
-          .thenAnswer((_) {
+      when(
+        (propstatParser as MockPropstatElementParser).convert(any),
+      ).thenAnswer((_) {
         final result = [
           WebDavStdResourceProp<int>(
-              name: "prop$index", status: HttpStatus.accepted, value: index),
+            name: "prop$index",
+            status: HttpStatus.accepted,
+            value: index,
+          ),
           WebDavStdResourceProp<String>(
-              name: "prop${index + 1}",
-              status: HttpStatus.accepted,
-              value: (index + 1).toString()),
+            name: "prop${index + 1}",
+            status: HttpStatus.accepted,
+            value: (index + 1).toString(),
+          ),
         ];
         index += 2;
         return result;
@@ -195,7 +231,8 @@ void main() {
       expect(resource.props.where((e) => e.name == 'prop4').first.value, "4");
     });
     test("convert with bnf:(propstat+), full case", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response>
   <href>/resource</href>
   <!-- other hrefs will be ignored -->
@@ -211,25 +248,36 @@ void main() {
   <location/>
 </response>
 """
-          .trim());
-      when((hrefParser as MockHrefElementParser)
-              .convert(input.rootElement.getElement("href")!))
-          .thenReturn(Uri.parse("/resource"));
+            .trim(),
+      );
+      when(
+        (hrefParser as MockHrefElementParser).convert(
+          input.rootElement.getElement("href")!,
+        ),
+      ).thenReturn(Uri.parse("/resource"));
       int index = 0;
-      when((propstatParser as MockPropstatElementParser).convert(any))
-          .thenAnswer((_) {
+      when(
+        (propstatParser as MockPropstatElementParser).convert(any),
+      ).thenAnswer((_) {
         index += 1;
         return [
           WebDavStdResourceProp<int>(
-              name: "prop$index", status: HttpStatus.accepted, value: index),
+            name: "prop$index",
+            status: HttpStatus.accepted,
+            value: index,
+          ),
         ];
       });
-      when((errorParser as MockErrorElementParser)
-              .convert(input.rootElement.getElement("error")!))
-          .thenReturn(WebDavStdResError("mock"));
-      when((hrefParser as MockHrefElementParser)
-              .convert(input.rootElement.getElement("location")!))
-          .thenReturn(Uri.base);
+      when(
+        (errorParser as MockErrorElementParser).convert(
+          input.rootElement.getElement("error")!,
+        ),
+      ).thenReturn(WebDavStdResError("mock"));
+      when(
+        (hrefParser as MockHrefElementParser).convert(
+          input.rootElement.getElement("location")!,
+        ),
+      ).thenReturn(Uri.base);
       final result = parser.convert(input.rootElement);
       expect(result.length, 1);
       final resource = result.first;
@@ -247,7 +295,8 @@ void main() {
       expect(resource.props.where((e) => e.name == 'prop2').first.value, 2);
     });
     test("convert with bnf:(propstat+) and no path", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <response>
   <href>/resource</href>
   <propstat>
@@ -258,7 +307,8 @@ void main() {
   </propstat>
 </response>
 """
-          .trim());
+            .trim(),
+      );
       when((hrefParser as MockHrefElementParser).convert(any)).thenReturn(null);
       final result = parser.convert(input.rootElement);
       expect(result, isEmpty);

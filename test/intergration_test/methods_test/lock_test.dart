@@ -21,9 +21,13 @@ final class Owner implements ToXmlCapable {
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {
-    context.element("href", namespace: kDavNamespaceUrlStr, nest: () {
-      context.text(url.toString());
-    });
+    context.element(
+      "href",
+      namespace: kDavNamespaceUrlStr,
+      nest: () {
+        context.text(url.toString());
+      },
+    );
   }
 }
 
@@ -40,27 +44,32 @@ void main() {
 
       addr = Uri(scheme: 'http', host: "localhost", port: server.bindPort);
 
-      final activeLockParser = BaseActiveLockElementParser(
-          lockScopeParser: BaseLockScopeElementParser(),
-          lockTypeParser: BaseWriteLockElementParser(),
-          depthParser: DepthElementParser(),
-          ownerParser: BaseHrefElementParser(),
-          timeoutParser: TimeoutElementParser(),
-          lockTokenParser:
-              NestedHrefElementParser(hrefParser: BaseHrefElementParser()),
-          lockRootParser:
-              NestedHrefElementParser(hrefParser: BaseHrefElementParser()));
-      final lockdiscoveryParser =
-          LockDiscoveryPropParser(pieceParser: activeLockParser);
+      const activeLockParser = BaseActiveLockElementParser(
+        lockScopeParser: BaseLockScopeElementParser(),
+        lockTypeParser: BaseWriteLockElementParser(),
+        depthParser: DepthElementParser(),
+        ownerParser: BaseHrefElementParser(),
+        timeoutParser: TimeoutElementParser(),
+        lockTokenParser: NestedHrefElementParser(
+          hrefParser: BaseHrefElementParser(),
+        ),
+        lockRootParser: NestedHrefElementParser(
+          hrefParser: BaseHrefElementParser(),
+        ),
+      );
+      const lockdiscoveryParser = LockDiscoveryPropParser(
+        pieceParser: activeLockParser,
+      );
       final propParsers = Map.of(kStdPropParserManager);
       propParsers[(name: "lockdiscovery", ns: kDavNamespaceUrlStr)] =
           lockdiscoveryParser;
 
       resultParser = BaseRespResultParser(
-          singleResDecoder: BaseRespSingleResultParser(
-              parserManger:
-                  WebDavResposneDataParserManger(parsers: propParsers)),
-          multiResDecoder: kStdResponseResultParser.multiResDecoder);
+        singleResDecoder: BaseRespSingleResultParser(
+          parserManger: WebDavResposneDataParserManger(parsers: propParsers),
+        ),
+        multiResDecoder: kStdResponseResultParser.multiResDecoder,
+      );
     });
 
     tearDownAll(() async {
@@ -78,10 +87,11 @@ void main() {
     });
 
     test(
-        "RFC4918 9.10.7 Simple Lock Request, "
-        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.7",
-        () async {
-      final requestBody = '''
+      "RFC4918 9.10.7 Simple Lock Request, "
+      "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.7",
+      () async {
+        final requestBody =
+            '''
 <?xml version="1.0" encoding="utf-8"?>
 <a1:lockinfo xmlns:a1="DAV:">
   <a1:lockscope>
@@ -95,9 +105,10 @@ void main() {
   </a1:owner>
 </a1:lockinfo>
 '''
-          .trim();
+                .trim();
 
-      final responseBody = '''
+        final responseBody =
+            '''
 <?xml version="1.0" encoding="utf-8" ?>
 <D:prop xmlns:D="DAV:">
   <D:lockdiscovery>
@@ -119,95 +130,110 @@ void main() {
   </D:lockdiscovery>
 </D:prop>
 '''
-          .trim();
-      addr = Uri(
+                .trim();
+        addr = Uri(
           scheme: addr.scheme,
           host: addr.host,
           port: addr.port,
-          path: "/workspace/webdav/proposal.doc");
-      final lockToken = "urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4";
+          path: "/workspace/webdav/proposal.doc",
+        );
+        const lockToken = "urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4";
 
-      Future<bool> expectedResponse(HttpRequest event) async {
-        event.response.statusCode = HttpStatus.ok;
-        event.response.headers.contentType =
-            ContentType.parse('application/xml; charset="utf-8"');
-        event.response.headers.add("Lock-Token", "<$lockToken>");
-        event.response.contentLength = responseBody.length;
-        event.response.write(responseBody);
-        return true;
-      }
+        Future<bool> expectedResponse(HttpRequest event) async {
+          event.response.statusCode = HttpStatus.ok;
+          event.response.headers.contentType = ContentType.parse(
+            'application/xml; charset="utf-8"',
+          );
+          event.response.headers.add("Lock-Token", "<$lockToken>");
+          event.response.contentLength = responseBody.length;
+          event.response.write(responseBody);
+          return true;
+        }
 
-      server.expectedResponse = expectedResponse;
+        server.expectedResponse = expectedResponse;
 
-      final uri = Uri(
+        final uri = Uri(
           scheme: addr.scheme,
           host: addr.host,
           port: addr.port,
-          path: "/workspace/webdav/");
-      final credentials = HttpClientDigestCredentials("ejw", "");
-      final realm = "ejw@example.com";
-      client.addCredentials(uri, realm, credentials);
+          path: "/workspace/webdav/",
+        );
+        final credentials = HttpClientDigestCredentials("ejw", "");
+        const realm = "ejw@example.com";
+        client.addCredentials(uri, realm, credentials);
 
-      final request = await client
-          .dispatch(addr, responseResultParser: resultParser)
-          .createLock(
+        final request = await client
+            .dispatch(addr, responseResultParser: resultParser)
+            .createLock(
               info: LockInfo(
-                  lockScope: LockScope.exclusive,
-                  owner:
-                      Owner(Uri.parse("http://example.org/~ejw/contact.html"))),
-              timeout: DavTimeout([double.infinity, 4100000000]));
+                lockScope: LockScope.exclusive,
+                owner: Owner(Uri.parse("http://example.org/~ejw/contact.html")),
+              ),
+              timeout: const DavTimeout([double.infinity, 4100000000]),
+            );
 
-      Future<void> serverSideChecker(HttpRequest event) async {
-        expect(event.method, WebDavMethod.lock.name);
-        expect(event.headers["Depth"]!.first, "0");
-        expect(event.headers.contentType.toString(),
-            equals(XmlContentType.applicationXml.toString()));
-        expect(event.headers["Timeout"]!.first,
-            equals("Infinite, Second-4100000000"));
-        final body = await utf8.decodeStream(event);
-        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
-      }
+        Future<void> serverSideChecker(HttpRequest event) async {
+          expect(event.method, WebDavMethod.lock.name);
+          expect(event.headers["Depth"]!.first, "0");
+          expect(
+            event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()),
+          );
+          expect(
+            event.headers["Timeout"]!.first,
+            equals("Infinite, Second-4100000000"),
+          );
+          final body = await utf8.decodeStream(event);
+          expect(
+            XmlDocument.parse(body).toXmlString(pretty: true),
+            requestBody,
+          );
+        }
 
-      server.serverSideChecker = serverSideChecker;
+        server.serverSideChecker = serverSideChecker;
 
-      final response = await request.close();
-      expect(response.body, isNull);
-      expect(response.response.headers["Lock-Token"]!.first, "<$lockToken>");
-      final result = await response.parse();
-      expect(response.body, equals(responseBody));
-      expect(result!.length, 1);
-      final resource = result.first;
-      expect(resource.status, HttpStatus.ok);
-      expect(resource.path, addr);
-      expect(resource.desc, isNull);
-      expect(resource.error, isNull);
-      expect(resource.props.length, 1);
-      final locks =
-          resource.props.first as WebDavStdResourceProp<LockDiscovery<Uri>>;
-      expect(locks.status, HttpStatus.ok);
-      expect(locks.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
-      expect(locks.desc, isNull);
-      expect(locks.error, isNull);
-      expect(locks.value!.length, 1);
-      final lock = locks.value!.first;
-      expect(lock.isWriteLock, isTrue);
-      expect(lock.lockScope, LockScope.exclusive);
-      expect(lock.depth, Depth.all);
-      expect(lock.owner,
-          equals(Uri.parse("http://example.org/~ejw/contact.html")));
-      expect(lock.timeout, equals(604800));
-      expect(lock.lockToken, equals(Uri.parse(lockToken)));
-      expect(
+        final response = await request.close();
+        expect(response.body, isNull);
+        expect(response.response.headers["Lock-Token"]!.first, "<$lockToken>");
+        final result = await response.parse();
+        expect(response.body, equals(responseBody));
+        expect(result!.length, 1);
+        final resource = result.first;
+        expect(resource.status, HttpStatus.ok);
+        expect(resource.path, addr);
+        expect(resource.desc, isNull);
+        expect(resource.error, isNull);
+        expect(resource.props.length, 1);
+        final locks =
+            resource.props.first as WebDavStdResourceProp<LockDiscovery<Uri>>;
+        expect(locks.status, HttpStatus.ok);
+        expect(locks.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(locks.desc, isNull);
+        expect(locks.error, isNull);
+        expect(locks.value!.length, 1);
+        final lock = locks.value!.first;
+        expect(lock.isWriteLock, isTrue);
+        expect(lock.lockScope, LockScope.exclusive);
+        expect(lock.depth, Depth.all);
+        expect(
+          lock.owner,
+          equals(Uri.parse("http://example.org/~ejw/contact.html")),
+        );
+        expect(lock.timeout, equals(604800));
+        expect(lock.lockToken, equals(Uri.parse(lockToken)));
+        expect(
           lock.lockRoot,
-          equals(
-              Uri.parse("http://example.com/workspace/webdav/proposal.doc")));
-    });
+          equals(Uri.parse("http://example.com/workspace/webdav/proposal.doc")),
+        );
+      },
+    );
     test(
-        "RFC4918 9.10.8 Refreshing a Write Lock, "
-        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.8",
-        () async {
-      final requestBody = '';
-      final responseBody = '''
+      "RFC4918 9.10.8 Refreshing a Write Lock, "
+      "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.8",
+      () async {
+        const requestBody = '';
+        final responseBody =
+            '''
 <?xml version="1.0" encoding="utf-8" ?>
 <D:prop xmlns:D="DAV:">
 <D:lockdiscovery>
@@ -229,93 +255,105 @@ void main() {
 </D:lockdiscovery>
 </D:prop>
 '''
-          .trim();
-      addr = Uri(
+                .trim();
+        addr = Uri(
           scheme: addr.scheme,
           host: addr.host,
           port: addr.port,
-          path: "/workspace/webdav/proposal.doc");
-      final lockToken = "urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4";
+          path: "/workspace/webdav/proposal.doc",
+        );
+        const lockToken = "urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4";
 
-      Future<bool> expectedResponse(HttpRequest event) async {
-        event.response.statusCode = HttpStatus.ok;
-        event.response.headers.contentType =
-            ContentType.parse('application/xml; charset="utf-8"');
-        event.response.contentLength = responseBody.length;
-        event.response.write(responseBody);
-        return true;
-      }
+        Future<bool> expectedResponse(HttpRequest event) async {
+          event.response.statusCode = HttpStatus.ok;
+          event.response.headers.contentType = ContentType.parse(
+            'application/xml; charset="utf-8"',
+          );
+          event.response.contentLength = responseBody.length;
+          event.response.write(responseBody);
+          return true;
+        }
 
-      server.expectedResponse = expectedResponse;
+        server.expectedResponse = expectedResponse;
 
-      final uri = Uri(
+        final uri = Uri(
           scheme: addr.scheme,
           host: addr.host,
           port: addr.port,
-          path: "/workspace/webdav/");
-      final credentials = HttpClientDigestCredentials("ejw", "");
-      final realm = "ejw@example.com";
-      client.addCredentials(uri, realm, credentials);
+          path: "/workspace/webdav/",
+        );
+        final credentials = HttpClientDigestCredentials("ejw", "");
+        const realm = "ejw@example.com";
+        client.addCredentials(uri, realm, credentials);
 
-      final request = await client
-          .dispatch(addr, responseResultParser: resultParser)
-          .renewLock(
+        final request = await client
+            .dispatch(addr, responseResultParser: resultParser)
+            .renewLock(
               condition: IfOr.notag([
-                IfAnd.notag([IfCondition.token(Uri.parse(lockToken))])
+                IfAnd.notag([IfCondition.token(Uri.parse(lockToken))]),
               ]),
-              timeout: DavTimeout([double.infinity, 4100000000]));
+              timeout: const DavTimeout([double.infinity, 4100000000]),
+            );
 
-      Future<void> serverSideChecker(HttpRequest event) async {
-        expect(event.method, WebDavMethod.lock.name);
-        expect(event.headers["Depth"], isNull);
-        expect(event.headers["If"]!.first,
-            "(<urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4>)");
-        expect(event.headers["Timeout"]!.first,
-            equals("Infinite, Second-4100000000"));
-        expect(event.headers.contentType, isNull);
-        final body = await utf8.decodeStream(event);
-        expect(body, requestBody);
-      }
+        Future<void> serverSideChecker(HttpRequest event) async {
+          expect(event.method, WebDavMethod.lock.name);
+          expect(event.headers["Depth"], isNull);
+          expect(
+            event.headers["If"]!.first,
+            "(<urn:uuid:e71d4fae-5dec-22d6-fea5-00a0c91e6be4>)",
+          );
+          expect(
+            event.headers["Timeout"]!.first,
+            equals("Infinite, Second-4100000000"),
+          );
+          expect(event.headers.contentType, isNull);
+          final body = await utf8.decodeStream(event);
+          expect(body, requestBody);
+        }
 
-      server.serverSideChecker = serverSideChecker;
+        server.serverSideChecker = serverSideChecker;
 
-      final response = await request.close();
-      expect(response.body, isNull);
-      expect(response.response.headers["Lock-Token"], isNull);
-      final result = await response.parse();
-      expect(response.body, equals(responseBody));
-      expect(result!.length, 1);
-      final resource = result.first;
-      expect(resource.status, HttpStatus.ok);
-      expect(resource.path, addr);
-      expect(resource.desc, isNull);
-      expect(resource.error, isNull);
-      expect(resource.props.length, 1);
-      final locks =
-          resource.props.first as WebDavStdResourceProp<LockDiscovery<Uri>>;
-      expect(locks.status, HttpStatus.ok);
-      expect(locks.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
-      expect(locks.desc, isNull);
-      expect(locks.error, isNull);
-      expect(locks.value!.length, 1);
-      final lock = locks.value!.first;
-      expect(lock.isWriteLock, isTrue);
-      expect(lock.lockScope, LockScope.exclusive);
-      expect(lock.depth, Depth.all);
-      expect(lock.owner,
-          equals(Uri.parse("http://example.org/~ejw/contact.html")));
-      expect(lock.timeout, equals(604800));
-      expect(lock.lockToken, equals(Uri.parse(lockToken)));
-      expect(
+        final response = await request.close();
+        expect(response.body, isNull);
+        expect(response.response.headers["Lock-Token"], isNull);
+        final result = await response.parse();
+        expect(response.body, equals(responseBody));
+        expect(result!.length, 1);
+        final resource = result.first;
+        expect(resource.status, HttpStatus.ok);
+        expect(resource.path, addr);
+        expect(resource.desc, isNull);
+        expect(resource.error, isNull);
+        expect(resource.props.length, 1);
+        final locks =
+            resource.props.first as WebDavStdResourceProp<LockDiscovery<Uri>>;
+        expect(locks.status, HttpStatus.ok);
+        expect(locks.namespace, equals(Uri.parse(kDavNamespaceUrlStr)));
+        expect(locks.desc, isNull);
+        expect(locks.error, isNull);
+        expect(locks.value!.length, 1);
+        final lock = locks.value!.first;
+        expect(lock.isWriteLock, isTrue);
+        expect(lock.lockScope, LockScope.exclusive);
+        expect(lock.depth, Depth.all);
+        expect(
+          lock.owner,
+          equals(Uri.parse("http://example.org/~ejw/contact.html")),
+        );
+        expect(lock.timeout, equals(604800));
+        expect(lock.lockToken, equals(Uri.parse(lockToken)));
+        expect(
           lock.lockRoot,
-          equals(
-              Uri.parse("http://example.com/workspace/webdav/proposal.doc")));
-    });
+          equals(Uri.parse("http://example.com/workspace/webdav/proposal.doc")),
+        );
+      },
+    );
     test(
-        "RFC4918 9.10.9 Multi-Resource Lock Request, "
-        "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.9",
-        () async {
-      final requestBody = '''
+      "RFC4918 9.10.9 Multi-Resource Lock Request, "
+      "see: https://datatracker.ietf.org/doc/html/rfc4918#section-9.10.9",
+      () async {
+        final requestBody =
+            '''
 <?xml version="1.0" encoding="utf-8"?>
 <a1:lockinfo xmlns:a1="DAV:">
   <a1:lockscope>
@@ -329,9 +367,10 @@ void main() {
   </a1:owner>
 </a1:lockinfo>
 '''
-          .trim();
+                .trim();
 
-      final responseBody = '''
+        final responseBody =
+            '''
 <?xml version="1.0" encoding="utf-8" ?>
 <D:multistatus xmlns:D="DAV:">
   <D:response>
@@ -344,73 +383,85 @@ void main() {
   </D:response>
 </D:multistatus>
 '''
-          .trim();
-      addr = Uri(
+                .trim();
+        addr = Uri(
           scheme: addr.scheme,
           host: addr.host,
           port: addr.port,
-          path: "/webdav/");
+          path: "/webdav/",
+        );
 
-      Future<bool> expectedResponse(HttpRequest event) async {
-        event.response.statusCode = HttpStatus.multiStatus;
-        event.response.headers.contentType =
-            ContentType.parse('application/xml; charset="utf-8"');
-        event.response.contentLength = responseBody.length;
-        event.response.write(responseBody);
-        return true;
-      }
+        Future<bool> expectedResponse(HttpRequest event) async {
+          event.response.statusCode = HttpStatus.multiStatus;
+          event.response.headers.contentType = ContentType.parse(
+            'application/xml; charset="utf-8"',
+          );
+          event.response.contentLength = responseBody.length;
+          event.response.write(responseBody);
+          return true;
+        }
 
-      server.expectedResponse = expectedResponse;
+        server.expectedResponse = expectedResponse;
 
-      final uri = Uri(
+        final uri = Uri(
           scheme: addr.scheme,
           host: addr.host,
           port: addr.port,
-          path: "/workspace/webdav/");
-      final credentials = HttpClientDigestCredentials("ejw", "");
-      final realm = "ejw@example.com";
-      client.addCredentials(uri, realm, credentials);
+          path: "/workspace/webdav/",
+        );
+        final credentials = HttpClientDigestCredentials("ejw", "");
+        const realm = "ejw@example.com";
+        client.addCredentials(uri, realm, credentials);
 
-      final request = await client
-          .dispatch(addr, responseResultParser: resultParser)
-          .createDirLock(
+        final request = await client
+            .dispatch(addr, responseResultParser: resultParser)
+            .createDirLock(
               info: LockInfo(
-                  lockScope: LockScope.exclusive,
-                  owner:
-                      Owner(Uri.parse("http://example.org/~ejw/contact.html"))),
-              timeout: DavTimeout([double.infinity, 4100000000]));
+                lockScope: LockScope.exclusive,
+                owner: Owner(Uri.parse("http://example.org/~ejw/contact.html")),
+              ),
+              timeout: const DavTimeout([double.infinity, 4100000000]),
+            );
 
-      Future<void> serverSideChecker(HttpRequest event) async {
-        expect(event.method, WebDavMethod.lock.name);
-        expect(event.headers["Depth"]!.first, "infinity");
-        expect(event.headers.contentType.toString(),
-            equals(XmlContentType.applicationXml.toString()));
-        expect(event.headers["Timeout"]!.first,
-            equals("Infinite, Second-4100000000"));
-        final body = await utf8.decodeStream(event);
-        expect(XmlDocument.parse(body).toXmlString(pretty: true), requestBody);
-      }
+        Future<void> serverSideChecker(HttpRequest event) async {
+          expect(event.method, WebDavMethod.lock.name);
+          expect(event.headers["Depth"]!.first, "infinity");
+          expect(
+            event.headers.contentType.toString(),
+            equals(XmlContentType.applicationXml.toString()),
+          );
+          expect(
+            event.headers["Timeout"]!.first,
+            equals("Infinite, Second-4100000000"),
+          );
+          final body = await utf8.decodeStream(event);
+          expect(
+            XmlDocument.parse(body).toXmlString(pretty: true),
+            requestBody,
+          );
+        }
 
-      server.serverSideChecker = serverSideChecker;
+        server.serverSideChecker = serverSideChecker;
 
-      final response = await request.close();
-      expect(response.body, isNull);
-      expect(response.response.headers["Lock-Token"], isNull);
-      final result = await response.parse();
-      expect(response.body, equals(responseBody));
-      expect(result!.length, 2);
-      final r1 = result.first;
-      expect(r1.path, Uri.parse("http://example.com/webdav/secret"));
-      expect(r1.status, HttpStatus.forbidden);
-      expect(r1.props, isEmpty);
-      expect(r1.desc, isNull);
-      expect(r1.error, isNull);
-      final r2 = result.last;
-      expect(r2.path, Uri.parse("http://example.com/webdav/"));
-      expect(r2.status, HttpStatus.failedDependency);
-      expect(r2.props, isEmpty);
-      expect(r2.desc, isNull);
-      expect(r2.error, isNull);
-    });
+        final response = await request.close();
+        expect(response.body, isNull);
+        expect(response.response.headers["Lock-Token"], isNull);
+        final result = await response.parse();
+        expect(response.body, equals(responseBody));
+        expect(result!.length, 2);
+        final r1 = result.first;
+        expect(r1.path, Uri.parse("http://example.com/webdav/secret"));
+        expect(r1.status, HttpStatus.forbidden);
+        expect(r1.props, isEmpty);
+        expect(r1.desc, isNull);
+        expect(r1.error, isNull);
+        final r2 = result.last;
+        expect(r2.path, Uri.parse("http://example.com/webdav/"));
+        expect(r2.status, HttpStatus.failedDependency);
+        expect(r2.props, isEmpty);
+        expect(r2.desc, isNull);
+        expect(r2.error, isNull);
+      },
+    );
   });
 }

@@ -18,11 +18,7 @@ import 'package:simple_webdav_client/src/_std/put.dart';
 import 'package:simple_webdav_client/src/io.dart';
 import 'package:test/test.dart';
 
-@GenerateMocks([
-  HttpClientRequest,
-  HttpHeaders,
-  IfOr,
-])
+@GenerateMocks([HttpClientRequest, HttpHeaders, IfOr])
 import "basic_test.mocks.dart";
 
 void main() {
@@ -44,23 +40,27 @@ void main() {
       expect(param1.destination, equals(Uri.base));
       expect(param1.overwrite, isNull);
       final param2 = CommonCopyMoveRequestParam(
-          destination: Uri.base,
-          overwrite: false,
-          depth: Depth.resource,
-          condition: MockIfOr());
-      expect(param2.condition, TypeMatcher<IfOr>());
+        destination: Uri.base,
+        overwrite: false,
+        depth: Depth.resource,
+        condition: MockIfOr(),
+      );
+      expect(param2.condition, const TypeMatcher<IfOr>());
       expect(param2.depth, Depth.resource);
       expect(param2.destination, equals(Uri.base));
       expect(param2.overwrite, isFalse);
     });
 
     test("toRequestBody", () {
-      expect(CommonCopyMoveRequestParam(destination: Uri.base).toRequestBody(),
-          isNull);
+      expect(
+        CommonCopyMoveRequestParam(destination: Uri.base).toRequestBody(),
+        isNull,
+      );
     });
     test("beforeAddRequestBody", () {
-      CommonCopyMoveRequestParam(destination: Uri.parse("/path"))
-          .beforeAddRequestBody(request);
+      CommonCopyMoveRequestParam(
+        destination: Uri.parse("/path"),
+      ).beforeAddRequestBody(request);
       verify(headers.add("Destination", "/path")).called(1);
       verifyNever(headers.add("Depth", any));
       verifyNever(headers.add("Overwrite", any));
@@ -69,11 +69,11 @@ void main() {
     test("beforeAddRequestBody with params", () {
       final ifOr = MockIfOr();
       CommonCopyMoveRequestParam(
-              destination: Uri.parse("/path"),
-              depth: Depth.all,
-              overwrite: true,
-              condition: ifOr)
-          .beforeAddRequestBody(request);
+        destination: Uri.parse("/path"),
+        depth: Depth.all,
+        overwrite: true,
+        condition: ifOr,
+      ).beforeAddRequestBody(request);
       verify(headers.add("Destination", "/path")).called(1);
       verify(headers.add("Depth", Depth.all.name)).called(1);
       verify(headers.add("Overwrite", "T")).called(1);
@@ -82,11 +82,11 @@ void main() {
     test("beforeAddRequestBody with overwirte is false", () {
       final ifOr = MockIfOr();
       CommonCopyMoveRequestParam(
-              destination: Uri.parse("/path"),
-              depth: Depth.resource,
-              overwrite: false,
-              condition: ifOr)
-          .beforeAddRequestBody(request);
+        destination: Uri.parse("/path"),
+        depth: Depth.resource,
+        overwrite: false,
+        condition: ifOr,
+      ).beforeAddRequestBody(request);
       verify(headers.add("Destination", "/path")).called(1);
       verify(headers.add("Depth", Depth.resource.name)).called(1);
       verify(headers.add("Overwrite", "F")).called(1);
@@ -105,28 +105,35 @@ void main() {
     });
 
     test("constructor", () {
-      final param1 = CommonDataRequestParam<String>(data: "mock");
+      const param1 = CommonDataRequestParam<String>(data: "mock");
       expect(param1.data, "mock");
       expect(param1.condition, isNull);
-      final param2 =
-          CommonDataRequestParam<int>(data: 123, condition: MockIfOr());
+      final param2 = CommonDataRequestParam<int>(
+        data: 123,
+        condition: MockIfOr(),
+      );
       expect(param2.data, 123);
-      expect(param2.condition, equals(TypeMatcher<IfOr>()));
+      expect(param2.condition, equals(const TypeMatcher<IfOr>()));
     });
 
     test("toRequestBody", () {
-      expect(CommonDataRequestParam(data: 123.45).toRequestBody(), "123.45");
-      expect(CommonDataRequestParam(data: null).toRequestBody(), isNull);
+      expect(
+        const CommonDataRequestParam(data: 123.45).toRequestBody(),
+        "123.45",
+      );
+      expect(const CommonDataRequestParam(data: null).toRequestBody(), isNull);
     });
 
     test("beforeAddRequestBody", () {
-      CommonDataRequestParam(data: null).beforeAddRequestBody(request);
+      const CommonDataRequestParam(data: null).beforeAddRequestBody(request);
       verifyNever(headers.add("If", any));
     });
     test("beforeAddRequestBody with condition", () {
       final ifOr = MockIfOr();
-      CommonDataRequestParam(data: null, condition: ifOr)
-          .beforeAddRequestBody(request);
+      CommonDataRequestParam(
+        data: null,
+        condition: ifOr,
+      ).beforeAddRequestBody(request);
       verify(headers.add("If", ifOr.toString())).called(1);
     });
   });
@@ -140,37 +147,39 @@ void main() {
     });
     test("constructor with params", () {
       final param = CopyRequestParam(
-          destination: Uri.base,
-          recursive: false,
-          overwrite: true,
-          condition: MockIfOr());
+        destination: Uri.base,
+        recursive: false,
+        overwrite: true,
+        condition: MockIfOr(),
+      );
       expect(param.destination, Uri.base);
       expect(param.depth, Depth.resource);
       expect(param.overwrite, isTrue);
-      expect(param.condition, equals(TypeMatcher<IfOr>()));
+      expect(param.condition, equals(const TypeMatcher<IfOr>()));
     });
     test("constructor when recursive is true", () {
       final param = CopyRequestParam(
-          destination: Uri.base,
-          recursive: true,
-          overwrite: false,
-          condition: MockIfOr());
+        destination: Uri.base,
+        recursive: true,
+        overwrite: false,
+        condition: MockIfOr(),
+      );
       expect(param.destination, Uri.base);
       expect(param.depth, Depth.all);
       expect(param.overwrite, isFalse);
-      expect(param.condition, equals(TypeMatcher<IfOr>()));
+      expect(param.condition, equals(const TypeMatcher<IfOr>()));
     });
   });
   group("test GetRequestParam", () {
     test("constructor", () {
-      final param = GetRequestParam();
+      const param = GetRequestParam();
       expect(param.data, isNull);
       expect(param.condition, isNull);
     });
   });
   group("test HeadRequestParam", () {
     test("constructor", () {
-      final param = HeadRequestParam();
+      const param = HeadRequestParam();
       expect(param.data, isNull);
       expect(param.condition, isNull);
     });
@@ -187,17 +196,17 @@ void main() {
     });
 
     test("constructor", () {
-      final param1 = MkcolRequestParam();
+      const param1 = MkcolRequestParam();
       expect(param1.condition, isNull);
       final param2 = MkcolRequestParam(condition: MockIfOr());
-      expect(param2.condition, TypeMatcher<IfOr>());
+      expect(param2.condition, const TypeMatcher<IfOr>());
     });
     test("toRequestBody", () {
-      expect(MkcolRequestParam().toRequestBody(), isNull);
+      expect(const MkcolRequestParam().toRequestBody(), isNull);
       expect(MkcolRequestParam(condition: MockIfOr()).toRequestBody(), isNull);
     });
     test("test beforeAddRequestBody", () {
-      MkcolRequestParam().beforeAddRequestBody(request);
+      const MkcolRequestParam().beforeAddRequestBody(request);
       verifyNever(headers.add("If", any));
       final ifOr = MockIfOr();
       MkcolRequestParam(condition: ifOr).beforeAddRequestBody(request);
@@ -214,48 +223,50 @@ void main() {
     });
     test("constructor with params", () {
       final param = MoveRequestParam(
-          destination: Uri.base,
-          recursive: false,
-          overwrite: true,
-          condition: MockIfOr());
+        destination: Uri.base,
+        recursive: false,
+        overwrite: true,
+        condition: MockIfOr(),
+      );
       expect(param.destination, Uri.base);
       expect(param.depth, isNull);
       expect(param.overwrite, isTrue);
-      expect(param.condition, equals(TypeMatcher<IfOr>()));
+      expect(param.condition, equals(const TypeMatcher<IfOr>()));
     });
     test("constructor when recursive is true", () {
       final param = MoveRequestParam(
-          destination: Uri.base,
-          recursive: true,
-          overwrite: false,
-          condition: MockIfOr());
+        destination: Uri.base,
+        recursive: true,
+        overwrite: false,
+        condition: MockIfOr(),
+      );
       expect(param.destination, Uri.base);
       expect(param.depth, Depth.all);
       expect(param.overwrite, isFalse);
-      expect(param.condition, equals(TypeMatcher<IfOr>()));
+      expect(param.condition, equals(const TypeMatcher<IfOr>()));
     });
   });
   group("test PostRequestParam", () {
     test("constructor", () {
-      final param = PostRequestParam(data: 1234);
+      const param = PostRequestParam(data: 1234);
       expect(param.condition, isNull);
       expect(param.data, 1234);
     });
     test("constructor with params", () {
       final param = PostRequestParam(data: "test", condition: MockIfOr());
-      expect(param.condition, TypeMatcher<IfOr>());
+      expect(param.condition, const TypeMatcher<IfOr>());
       expect(param.data, "test");
     });
   });
   group("test PutRequestParam", () {
     test("constructor", () {
-      final param = PutRequestParam(data: 1234);
+      const param = PutRequestParam(data: 1234);
       expect(param.condition, isNull);
       expect(param.data, 1234);
     });
     test("constructor with params", () {
       final param = PutRequestParam(data: "test", condition: MockIfOr());
-      expect(param.condition, TypeMatcher<IfOr>());
+      expect(param.condition, const TypeMatcher<IfOr>());
       expect(param.data, "test");
     });
   });

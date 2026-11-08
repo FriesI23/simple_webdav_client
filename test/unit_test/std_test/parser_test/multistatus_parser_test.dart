@@ -11,73 +11,87 @@ import 'package:simple_webdav_client/src/response.dart';
 import 'package:test/test.dart';
 import 'package:xml/xml.dart';
 
-@GenerateMocks([
-  ResponseElementParser,
-])
+@GenerateMocks([ResponseElementParser])
 import 'multistatus_parser_test.mocks.dart';
 
 void main() {
   group("test BaseMultistatusElementParser", () {
     test("convert", () {
       final responseParser = MockResponseElementParser();
-      final parser =
-          BaseMultistatusElementParser(responseParser: responseParser);
-      final data = XmlDocument.parse("""
+      final parser = BaseMultistatusElementParser(
+        responseParser: responseParser,
+      );
+      final data = XmlDocument.parse(
+        """
 <D:multistatus xmlns:D="DAV:">
   <D:response/>
 </D:multistatus>
 """
-          .trim());
-      when(responseParser
-              .convert(data.rootElement.getElement("response", namespace: "*")))
-          .thenReturn([WebDavStdResource(path: Uri.base, status: 200)]);
+            .trim(),
+      );
+      when(
+        responseParser.convert(
+          data.rootElement.getElement("response", namespace: "*"),
+        ),
+      ).thenReturn([WebDavStdResource(path: Uri.base, status: 200)]);
       final result = parser.convert(data.rootElement);
-      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+      expect(result, equals(const TypeMatcher<WebDavResponseResult>()));
       expect(result.first.path, Uri.base);
       expect(result.length, 1);
       verify(responseParser.convert(any)).called(1);
     });
     test("convert empty", () {
       final responseParser = MockResponseElementParser();
-      final parser =
-          BaseMultistatusElementParser(responseParser: responseParser);
-      final data = XmlDocument.parse("""
+      final parser = BaseMultistatusElementParser(
+        responseParser: responseParser,
+      );
+      final data = XmlDocument.parse(
+        """
 <D:multistatus xmlns:D="DAV:">
 </D:multistatus>
 """
-          .trim());
-      when(responseParser.convert(any))
-          .thenReturn([WebDavStdResource(path: Uri.base, status: 200)]);
+            .trim(),
+      );
+      when(
+        responseParser.convert(any),
+      ).thenReturn([WebDavStdResource(path: Uri.base, status: 200)]);
       final result = parser.convert(data.rootElement);
-      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+      expect(result, equals(const TypeMatcher<WebDavResponseResult>()));
       expect(result, isEmpty);
       verifyNever(responseParser.convert(any));
     });
     test("convert multi", () {
       final responseParser = MockResponseElementParser();
-      final parser =
-          BaseMultistatusElementParser(responseParser: responseParser);
-      final data = XmlDocument.parse("""
+      final parser = BaseMultistatusElementParser(
+        responseParser: responseParser,
+      );
+      final data = XmlDocument.parse(
+        """
 <D:multistatus xmlns:D="DAV:">
   <D:response/>
   <D:response/>
 </D:multistatus>
 """
-          .trim());
-      when(responseParser
-              .convert(data.rootElement.getElement("response", namespace: "*")))
-          .thenReturn([
+            .trim(),
+      );
+      when(
+        responseParser.convert(
+          data.rootElement.getElement("response", namespace: "*"),
+        ),
+      ).thenReturn([
         WebDavStdResource(path: Uri.parse("http://test/1"), status: 200),
-        WebDavStdResource(path: Uri.parse("http://test/2"), status: 201)
+        WebDavStdResource(path: Uri.parse("http://test/2"), status: 201),
       ]);
-      when(responseParser.convert(
-              data.rootElement.findElements("response", namespace: "*").last))
-          .thenReturn([
+      when(
+        responseParser.convert(
+          data.rootElement.findElements("response", namespace: "*").last,
+        ),
+      ).thenReturn([
         WebDavStdResource(path: Uri.parse("http://test/3"), status: 400),
-        WebDavStdResource(path: Uri.parse("http://test/4"), status: 403)
+        WebDavStdResource(path: Uri.parse("http://test/4"), status: 403),
       ]);
       final result = parser.convert(data.rootElement);
-      expect(result, equals(TypeMatcher<WebDavResponseResult>()));
+      expect(result, equals(const TypeMatcher<WebDavResponseResult>()));
       expect(result.length, 4);
       int i = 0;
       for (var r in result) {

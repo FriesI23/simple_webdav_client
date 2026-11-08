@@ -6,8 +6,8 @@
 export 'src/_std/const.dart'
     show
         kStdDecoderManager,
-        kStdPropParserManager,
         kStdElementParserManager,
+        kStdPropParserManager,
         kStdResponseResultParser;
 export 'src/_std/depth.dart' show Depth;
 export 'src/codec/timeout.dart';

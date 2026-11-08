@@ -23,8 +23,8 @@ class TestUsagedHttpServer {
   TestUsagedHttpServer();
 
   int getPort() {
-    final int minPort = 49152;
-    final int maxPort = 65535;
+    const int minPort = 49152;
+    const int maxPort = 65535;
 
     return minPort + random.nextInt(maxPort - minPort);
   }
@@ -62,12 +62,9 @@ final class TestUsageXmlStringPropParser
 
   @override
   WebDavStdResourceProp<String>? convert(
-      ({
-        String? desc,
-        WebDavStdResError? error,
-        XmlElement node,
-        int status
-      }) input) {
+    ({String? desc, WebDavStdResError? error, XmlElement node, int status})
+    input,
+  ) {
     final nsurl = input.node.namespaceUri;
     return WebDavStdResourceProp<String>(
       name: input.node.localName.trim(),

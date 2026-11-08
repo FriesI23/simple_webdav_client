@@ -21,8 +21,12 @@ class CommonCopyMoveRequestParam
   final Depth? depth;
   final bool? overwrite;
 
-  const CommonCopyMoveRequestParam(
-      {required this.destination, this.depth, this.overwrite, this.condition});
+  const CommonCopyMoveRequestParam({
+    required this.destination,
+    this.depth,
+    this.overwrite,
+    this.condition,
+  });
 
   @override
   void beforeAddRequestBody(HttpClientRequest request) {

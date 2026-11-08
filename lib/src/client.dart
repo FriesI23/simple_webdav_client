@@ -27,23 +27,28 @@ abstract interface class WebDavClient {
 
   /// Sets the function to be called when a site is requesting authentication.
   void setAuthenticate(
-      Future<bool> Function(Uri url, String scheme, String? realm)? f);
+    Future<bool> Function(Uri url, String scheme, String? realm)? f,
+  );
 
   /// Sets the function to be called when a proxy is requesting authentication.
   void setAuthenticateProxy(
-      Future<bool> Function(
-              String host, int port, String scheme, String? realm)?
-          f);
+    Future<bool> Function(String host, int port, String scheme, String? realm)?
+    f,
+  );
 
   /// Add credentials to be used for authorizing requests.
   void addCredentials(Uri url, String realm, HttpClientCredentials credentials);
 
   /// Add credentials to be used for authorizing proxies.
   void addProxyCredentials(
-      String host, int port, String realm, HttpClientCredentials credentials);
+    String host,
+    int port,
+    String realm,
+    HttpClientCredentials credentials,
+  );
 
   /// Opens a WebDAV connection.
-  Future<WebDavRequest<WebDavResponse, P>>
-      openUrl<P extends WebDavRequestParam>(
-          {required WebDavMethod method, required Uri url, required P param});
+  Future<WebDavRequest<WebDavResponse, P>> openUrl<
+    P extends WebDavRequestParam
+  >({required WebDavMethod method, required Uri url, required P param});
 }

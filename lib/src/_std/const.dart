@@ -13,27 +13,34 @@ import 'parser_mgr.dart';
 
 const kStdDecoderManager = ResponseBodyDecoderManager(decoders: {});
 
-const kStdElementParserManager = WebDavResposneDataParserManger(parsers: {
-  (name: WebDavElementNames.error, ns: kDavNamespaceUrlStr): _errorParser,
-  (name: WebDavElementNames.href, ns: kDavNamespaceUrlStr): _hrefParser,
-  (name: WebDavElementNames.location, ns: kDavNamespaceUrlStr):
-      _nestedHrefParser,
-  (name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr):
-      _multistatusParser,
-  (name: WebDavElementNames.propstat, ns: kDavNamespaceUrlStr): _propstatParser,
-  (name: WebDavElementNames.response, ns: kDavNamespaceUrlStr): _responseParser,
-  (name: WebDavElementNames.status, ns: kDavNamespaceUrlStr): _statusParser,
-  ..._propParsers,
-});
+const kStdElementParserManager = WebDavResposneDataParserManger(
+  parsers: {
+    (name: WebDavElementNames.error, ns: kDavNamespaceUrlStr): _errorParser,
+    (name: WebDavElementNames.href, ns: kDavNamespaceUrlStr): _hrefParser,
+    (name: WebDavElementNames.location, ns: kDavNamespaceUrlStr):
+        _nestedHrefParser,
+    (name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr):
+        _multistatusParser,
+    (name: WebDavElementNames.propstat, ns: kDavNamespaceUrlStr):
+        _propstatParser,
+    (name: WebDavElementNames.response, ns: kDavNamespaceUrlStr):
+        _responseParser,
+    (name: WebDavElementNames.status, ns: kDavNamespaceUrlStr): _statusParser,
+    ..._propParsers,
+  },
+);
 
-const kStdPropParserManager =
-    WebDavResposneDataParserManger(parsers: _propParsers);
+const kStdPropParserManager = WebDavResposneDataParserManger(
+  parsers: _propParsers,
+);
 
 const kStdResponseResultParser = BaseRespResultParser(
-  singleResDecoder:
-      BaseRespSingleResultParser(parserManger: kStdElementParserManager),
-  multiResDecoder:
-      BaseRespMultiResultParser(parserManger: kStdElementParserManager),
+  singleResDecoder: BaseRespSingleResultParser(
+    parserManger: kStdElementParserManager,
+  ),
+  multiResDecoder: BaseRespMultiResultParser(
+    parserManger: kStdElementParserManager,
+  ),
 );
 
 const _errorParser = BaseErrorElementParser();
@@ -50,32 +57,38 @@ const _propstatParser = BasePropstatElementParser(
 
 const _nestedHrefParser = NestedHrefElementParser(hrefParser: _hrefParser);
 
+// Null represents the absent owner value in the exported standard parser map.
+// ignore: prefer_void_to_null
 const _lockDiscoveryParser = LockDiscoveryPropParser<Null>(
-    pieceParser: BaseActiveLockElementParser(
-  lockScopeParser: _lockScopeParser,
-  lockTypeParser: _lockTypeParser,
-  depthParser: DepthElementParser(),
-  timeoutParser: TimeoutElementParser(),
-  ownerParser: null,
-  lockTokenParser: _nestedHrefParser,
-  lockRootParser: _nestedHrefParser,
-));
+  pieceParser: BaseActiveLockElementParser(
+    lockScopeParser: _lockScopeParser,
+    lockTypeParser: _lockTypeParser,
+    depthParser: DepthElementParser(),
+    timeoutParser: TimeoutElementParser(),
+    ownerParser: null,
+    lockTokenParser: _nestedHrefParser,
+    lockRootParser: _nestedHrefParser,
+  ),
+);
 
 const _supporedtLockParser = SupportedLockPropParser(
-    pieceParser: BaseLockEntryElementParser(
-  lockScopeParser: _lockScopeParser,
-  lockTypeParser: _lockTypeParser,
-));
+  pieceParser: BaseLockEntryElementParser(
+    lockScopeParser: _lockScopeParser,
+    lockTypeParser: _lockTypeParser,
+  ),
+);
 
 const _responseParser = BaseResponseElementParser(
-    hrefParser: _hrefParser,
-    statusParser: _statusParser,
-    propstatParser: _propstatParser,
-    errorParser: _errorParser,
-    locationParser: _nestedHrefParser);
+  hrefParser: _hrefParser,
+  statusParser: _statusParser,
+  propstatParser: _propstatParser,
+  errorParser: _errorParser,
+  locationParser: _nestedHrefParser,
+);
 
-const _multistatusParser =
-    BaseMultistatusElementParser(responseParser: _responseParser);
+const _multistatusParser = BaseMultistatusElementParser(
+  responseParser: _responseParser,
+);
 
 const Map<({String name, String? ns}), Converter> _propParsers = {
   (name: WebDavElementNames.creationdate, ns: kDavNamespaceUrlStr):

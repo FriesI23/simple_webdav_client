@@ -15,19 +15,23 @@ void main() {
       expect(error.toString(), "StdResErrorCond{test, cond=[]}");
     });
     test("constructor with condition", () {
-      final error = WebDavStdResError("test", conditions: [
-        StdResErrorCond.noConflictingLock,
-        StdResErrorCond.cannotModifyProtectedProperty
-      ]);
+      final error = WebDavStdResError(
+        "test",
+        conditions: [
+          StdResErrorCond.noConflictingLock,
+          StdResErrorCond.cannotModifyProtectedProperty,
+        ],
+      );
       expect(error.message, "test");
       expect(error.conditions, [
         StdResErrorCond.noConflictingLock,
-        StdResErrorCond.cannotModifyProtectedProperty
+        StdResErrorCond.cannotModifyProtectedProperty,
       ]);
       expect(
-          error.toString(),
-          "StdResErrorCond{test, "
-          "cond=[no-conflicting-lock,cannot-modify-protected-property]}");
+        error.toString(),
+        "StdResErrorCond{test, "
+        "cond=[no-conflicting-lock,cannot-modify-protected-property]}",
+      );
     });
   });
 }

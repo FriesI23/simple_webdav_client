@@ -32,70 +32,82 @@ import 'lock_parser_test.mocks.dart';
 void main() {
   group("test BaseLockScopeElementParser", () {
     test("convert lockscope:exclusive", () {
-      final parser = BaseLockScopeElementParser();
-      final input = XmlDocument.parse("""
+      const parser = BaseLockScopeElementParser();
+      final input = XmlDocument.parse(
+        """
 <lockscope>
   <exclusive/>
   <!-- only match first element -->
   <shared/>
 </lockscope>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
       expect(result, LockScope.exclusive);
     });
     test("convert lockscope:shared", () {
-      final parser = BaseLockScopeElementParser();
-      final input = XmlDocument.parse("""
+      const parser = BaseLockScopeElementParser();
+      final input = XmlDocument.parse(
+        """
 <lockscope>
   <shared/>
 </lockscope>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
       expect(result, LockScope.shared);
     });
     test("convert lockscope:unknown", () {
-      final parser = BaseLockScopeElementParser();
-      final input = XmlDocument.parse("""
+      const parser = BaseLockScopeElementParser();
+      final input = XmlDocument.parse(
+        """
 <lockscope>
   <noshared/>
 </lockscope>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
       expect(result, isNull);
     });
     test("convert no lockscope", () {
-      final parser = BaseLockScopeElementParser();
-      final input = XmlDocument.parse("""
+      const parser = BaseLockScopeElementParser();
+      final input = XmlDocument.parse(
+        """
 <lockscope>
 </lockscope>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
       expect(result, isNull);
     });
   });
   group("test BaseWriteLockElementParser", () {
     test("convert is write lock", () {
-      final parser = BaseWriteLockElementParser();
-      final input = XmlDocument.parse("""
+      const parser = BaseWriteLockElementParser();
+      final input = XmlDocument.parse(
+        """
 <root>
   <write/>
 </root>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
       expect(result, isTrue);
     });
     test("convert is not write lock", () {
-      final parser = BaseWriteLockElementParser();
-      final input = XmlDocument.parse("""
+      const parser = BaseWriteLockElementParser();
+      final input = XmlDocument.parse(
+        """
 <root>
 </root>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
       expect(result, isFalse);
     });
@@ -125,15 +137,16 @@ void main() {
       final result = parser.convert((
         desc: null,
         error: null,
-        node: XmlDocument.parse("""
+        node: XmlDocument.parse(
+          """
 <D:prop1 xmlns:D=DAV:>
   <D:lockentry/>
   <D:lockentry/>
   <D:lockentry/>
 </D:prop1>
 """
-                .trim())
-            .rootElement,
+              .trim(),
+        ).rootElement,
         status: HttpStatus.accepted,
       ));
       expect(result.name, "prop1");
@@ -151,15 +164,16 @@ void main() {
       final result = parser.convert((
         desc: 'test',
         error: WebDavStdResError("mock"),
-        node: XmlDocument.parse("""
+        node: XmlDocument.parse(
+          """
 <D:prop1 xml:lang=en-us xmlns:D=DAV:>
   <D:lockentry/>
   <D:lockentry/>
   <D:lockentry/>
 </D:prop1>
 """
-                .trim())
-            .rootElement,
+              .trim(),
+        ).rootElement,
         status: HttpStatus.accepted,
       ));
       expect(result.name, "prop1");
@@ -180,76 +194,98 @@ void main() {
       lockScopeParser = MockLockScopeElementParser();
       lockTypeParser = MockWriteLockElementParser();
       parser = BaseLockEntryElementParser(
-          lockScopeParser: lockScopeParser, lockTypeParser: lockTypeParser);
+        lockScopeParser: lockScopeParser,
+        lockTypeParser: lockTypeParser,
+      );
     });
 
     test('convert', () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:lockentry xmlns:D=DAV:>
   <D:lockscope/>
   <D:locktype/>
 </D:lockentry>
 """
-          .trim());
-      when((lockScopeParser as MockLockScopeElementParser).convert(any))
-          .thenReturn(LockScope.exclusive);
-      when((lockTypeParser as MockWriteLockElementParser).convert(any))
-          .thenReturn(true);
+            .trim(),
+      );
+      when(
+        (lockScopeParser as MockLockScopeElementParser).convert(any),
+      ).thenReturn(LockScope.exclusive);
+      when(
+        (lockTypeParser as MockWriteLockElementParser).convert(any),
+      ).thenReturn(true);
       final result = parser.convert(input.rootElement)!;
       expect(result.lockScope, LockScope.exclusive);
       expect(result.isWriteLock, isTrue);
     });
     test('convert with no child elements', () {
       final inputs = [
-        XmlDocument.parse("""
+        XmlDocument.parse(
+          """
 <D:lockentry xmlns:D=DAV:>
 </D:lockentry>
 """
-            .trim()),
-        XmlDocument.parse("""
+              .trim(),
+        ),
+        XmlDocument.parse(
+          """
 <D:lockentry xmlns:D=DAV:>
   <D:locktype/>
 </D:lockentry>
 """
-            .trim()),
-        XmlDocument.parse("""
+              .trim(),
+        ),
+        XmlDocument.parse(
+          """
 <D:lockentry xmlns:D=DAV:>
   <D:lockscope/>
 </D:lockentry>
 """
-            .trim())
+              .trim(),
+        ),
       ];
       for (var input in inputs) {
         expect(parser.convert(input.rootElement), isNull);
       }
     });
     test('convert lockscope got null', () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:lockentry xmlns:D=DAV:>
   <D:lockscope/>
   <D:locktype/>
 </D:lockentry>
 """
-          .trim());
-      when((lockScopeParser as MockLockScopeElementParser).convert(any))
-          .thenReturn(null);
-      when((lockTypeParser as MockWriteLockElementParser).convert(any))
-          .thenReturn(true);
-      expect(() => parser.convert(input.rootElement),
-          throwsA(TypeMatcher<WebDavParserDataError>()));
+            .trim(),
+      );
+      when(
+        (lockScopeParser as MockLockScopeElementParser).convert(any),
+      ).thenReturn(null);
+      when(
+        (lockTypeParser as MockWriteLockElementParser).convert(any),
+      ).thenReturn(true);
+      expect(
+        () => parser.convert(input.rootElement),
+        throwsA(const TypeMatcher<WebDavParserDataError>()),
+      );
     });
     test('convert locktype got null', () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:lockentry xmlns:D=DAV:>
   <D:lockscope/>
   <D:locktype/>
 </D:lockentry>
 """
-          .trim());
-      when((lockScopeParser as MockLockScopeElementParser).convert(any))
-          .thenReturn(LockScope.exclusive);
-      when((lockTypeParser as MockWriteLockElementParser).convert(any))
-          .thenReturn(null);
+            .trim(),
+      );
+      when(
+        (lockScopeParser as MockLockScopeElementParser).convert(any),
+      ).thenReturn(LockScope.exclusive);
+      when(
+        (lockTypeParser as MockWriteLockElementParser).convert(any),
+      ).thenReturn(null);
       final result = parser.convert(input.rootElement)!;
       expect(result.lockScope, LockScope.exclusive);
       expect(result.isWriteLock, isFalse);
@@ -280,15 +316,16 @@ void main() {
       final result = parser.convert((
         desc: null,
         error: null,
-        node: XmlDocument.parse("""
+        node: XmlDocument.parse(
+          """
 <D:prop1 xmlns:D=DAV:>
   <D:activelock/>
   <D:activelock/>
   <D:activelock/>
 </D:prop1>
 """
-                .trim())
-            .rootElement,
+              .trim(),
+        ).rootElement,
         status: HttpStatus.accepted,
       ));
       expect(result.name, "prop1");
@@ -306,15 +343,16 @@ void main() {
       final result = parser.convert((
         desc: 'test',
         error: WebDavStdResError("mock"),
-        node: XmlDocument.parse("""
+        node: XmlDocument.parse(
+          """
 <D:prop1 xml:lang=en-us xmlns:D=DAV:>
   <D:activelock/>
   <D:activelock/>
   <D:activelock/>
 </D:prop1>
 """
-                .trim())
-            .rootElement,
+              .trim(),
+        ).rootElement,
         status: HttpStatus.accepted,
       ));
       expect(result.name, "prop1");
@@ -345,17 +383,19 @@ void main() {
       lockTokenParser = MockNestedHrefElementParser();
       lockRootParser = MockNestedHrefElementParser();
       parser = BaseActiveLockElementParser(
-          lockScopeParser: lockScopeParser,
-          lockTypeParser: lockTypeParser,
-          depthParser: depthParser,
-          ownerParser: ownerParser,
-          timeoutParser: timeoutParser,
-          lockTokenParser: lockTokenParser,
-          lockRootParser: lockRootParser);
+        lockScopeParser: lockScopeParser,
+        lockTypeParser: lockTypeParser,
+        depthParser: depthParser,
+        ownerParser: ownerParser,
+        timeoutParser: timeoutParser,
+        lockTokenParser: lockTokenParser,
+        lockRootParser: lockRootParser,
+      );
     });
 
     test("convert", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:activelock xmlns:D=DAV:>
   <D:locktype/>
   <D:lockscope/>
@@ -366,7 +406,8 @@ void main() {
   <D:lockroot/>
 </D:activelock>
 """
-          .trim());
+            .trim(),
+      );
       when(lockScopeParser.convert(any)).thenReturn(LockScope.exclusive);
       when(lockTypeParser.convert(any)).thenReturn(true);
       when(depthParser.convert(any)).thenReturn(Depth.all);
@@ -414,14 +455,15 @@ void main() {
   <D:locktoken/>
   <D:lockroot/>
 </D:activelock>
-""")
+"""),
       ];
       for (var input in inputs) {
         expect(parser.convert(input.rootElement), isNull);
       }
     });
     test("convert: lockscope parser failed", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:activelock xmlns:D=DAV:>
   <D:locktype/>
   <D:lockscope/>
@@ -432,13 +474,17 @@ void main() {
   <D:lockroot/>
 </D:activelock>
 """
-          .trim());
+            .trim(),
+      );
       when(lockScopeParser.convert(any)).thenReturn(null);
-      expect(() => parser.convert(input.rootElement),
-          throwsA(TypeMatcher<WebDavParserDataError>()));
+      expect(
+        () => parser.convert(input.rootElement),
+        throwsA(const TypeMatcher<WebDavParserDataError>()),
+      );
     });
     test("convert: depth parser failed", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:activelock xmlns:D=DAV:>
   <D:locktype/>
   <D:lockscope/>
@@ -449,14 +495,18 @@ void main() {
   <D:lockroot/>
 </D:activelock>
 """
-          .trim());
+            .trim(),
+      );
       when(lockScopeParser.convert(any)).thenReturn(LockScope.exclusive);
       when(depthParser.convert(any)).thenReturn(null);
-      expect(() => parser.convert(input.rootElement),
-          throwsA(TypeMatcher<WebDavParserDataError>()));
+      expect(
+        () => parser.convert(input.rootElement),
+        throwsA(const TypeMatcher<WebDavParserDataError>()),
+      );
     });
     test("convert with empty elements", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:activelock xmlns:D=DAV:>
   <D:locktype/>
   <D:lockscope/>
@@ -467,7 +517,8 @@ void main() {
   <D:lockroot/>
 </D:activelock>
 """
-          .trim());
+            .trim(),
+      );
       when(lockScopeParser.convert(any)).thenReturn(LockScope.exclusive);
       when(lockTypeParser.convert(any)).thenReturn(null);
       when(depthParser.convert(any)).thenReturn(Depth.all);
@@ -485,7 +536,8 @@ void main() {
       expect(result.lockRoot, isNull);
     });
     test("convert with no optional parsers", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <D:activelock xmlns:D=DAV:>
   <D:locktype/>
   <D:lockscope/>
@@ -496,19 +548,21 @@ void main() {
   <D:lockroot/>
 </D:activelock>
 """
-          .trim());
+            .trim(),
+      );
       when(lockScopeParser.convert(any)).thenReturn(LockScope.exclusive);
       when(lockTypeParser.convert(any)).thenReturn(true);
       when(depthParser.convert(any)).thenReturn(Depth.all);
       when(lockRootParser.convert(any)).thenReturn(Uri.parse("/lock/root"));
       parser = BaseActiveLockElementParser(
-          lockScopeParser: lockScopeParser,
-          lockTypeParser: lockTypeParser,
-          depthParser: depthParser,
-          ownerParser: null,
-          timeoutParser: null,
-          lockTokenParser: null,
-          lockRootParser: lockRootParser);
+        lockScopeParser: lockScopeParser,
+        lockTypeParser: lockTypeParser,
+        depthParser: depthParser,
+        ownerParser: null,
+        timeoutParser: null,
+        lockTokenParser: null,
+        lockRootParser: lockRootParser,
+      );
       final result = parser.convert(input.rootElement)!;
       expect(result.lockScope, LockScope.exclusive);
       expect(result.isWriteLock, isTrue);

@@ -30,6 +30,7 @@ class WebDavStdResError extends WebDavResourceError {
   WebDavStdResError(super.message, {this.conditions = const []});
 
   @override
-  String toString() => "StdResErrorCond{$message, "
+  String toString() =>
+      "StdResErrorCond{$message, "
       "cond=[${conditions.map((e) => e.name).join(",")}]}";
 }

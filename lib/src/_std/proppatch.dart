@@ -22,7 +22,7 @@ class ProppatchRequestParam<P extends ProppatchRequestProp>
     with ToXmlMixin, IfHeaderRequestMixin
     implements WebDavRequestParam, ToXmlCapable {
   static Iterable<({ProppatchRequestOp op, List<ProppatchRequestProp> props})>
-      groupPropsByOp(Iterable<ProppatchRequestProp> props) {
+  groupPropsByOp(Iterable<ProppatchRequestProp> props) {
     final result =
         <({ProppatchRequestOp op, List<ProppatchRequestProp> props})>[];
     var currentProps = <ProppatchRequestProp>[];
@@ -47,7 +47,7 @@ class ProppatchRequestParam<P extends ProppatchRequestProp>
   String toRequestBody() => processXmlData().buildDocument().toXmlString();
 
   const ProppatchRequestParam({required List<P> ops, this.condition})
-      : _operations = ops;
+    : _operations = ops;
 
   Iterable<P> get operations => _operations;
 
@@ -75,12 +75,15 @@ class ProppatchRequestParam<P extends ProppatchRequestProp>
             groupPiece.op.name,
             namespace: davns,
             nest: () {
-              context.element(WebDavElementNames.prop, namespace: davns,
-                  nest: () {
-                for (var prop in groupPiece.props) {
-                  prop.toXml(context, nsmgr);
-                }
-              });
+              context.element(
+                WebDavElementNames.prop,
+                namespace: davns,
+                nest: () {
+                  for (var prop in groupPiece.props) {
+                    prop.toXml(context, nsmgr);
+                  }
+                },
+              );
             },
           );
         }
@@ -120,8 +123,8 @@ class ProppatchRequestProp<V extends ToXmlCapable>
     required this.name,
     this.namespace = kDavNamespaceUrlStr,
     this.lang,
-  })  : op = ProppatchRequestOp.remove,
-        value = null;
+  }) : op = ProppatchRequestOp.remove,
+       value = null;
 
   @override
   void toXml(XmlBuilder context, NamespaceManager nsmgr) {

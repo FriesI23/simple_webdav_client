@@ -261,6 +261,51 @@ WebDavClient.std().dispatch(newFilePath, responseResultParser: parser);
 [![ETH][eth-badge]][eth-addr]
 [![BTC][btc-badge]][btc-addr]
 
+## Development
+
+The package supports Dart **3.8.0 or later**. Development and formatting use
+**Dart 3.8.3**, pinned in `.tool-versions`. No Flutter SDK is required.
+With the Dart plugin installed in asdf, run `asdf install` to install that SDK.
+The commands below require GNU Make and a POSIX shell (Git Bash on Windows).
+
+```sh
+make bootstrap
+make check
+```
+
+| Command | Purpose |
+| --- | --- |
+| `make bootstrap` | Resolve dependencies using the committed lockfile |
+| `make gen` | Regenerate Mockito mocks; follow with `make format` |
+| `make format` | Format library, test, generated, and example Dart files |
+| `make format-check` | Check formatting without changing files |
+| `make fix` | Apply Dart fixes and format; review the diff before committing |
+| `make analyze` | Require zero analyzer errors, warnings, and infos |
+| `make test` | Run all unit and local HTTP integration tests |
+| `make publish-dry-run` | Validate the package without publishing |
+| `make check` | Resolve, check formatting, analyze, and run all tests |
+| `make aio` | Resolve, regenerate mocks, apply fixes, format, and run all checks |
+
+Override the Dart executable with `make check DART=/path/to/dart`.
+For a standalone JSON test report, use
+`make test MACHINE_OUT=test-results/package_test.log`; `make test CI=1` uses
+the GitHub console reporter. Test failures return a nonzero exit code.
+The full test suite starts its own loopback HTTP servers and needs no Docker
+container or external WebDAV service. The interactive example is separate.
+
+Style rules extend Dart's recommended lints with a pure Dart subset of mHabit's
+rules for final/const declarations, return types, imports, and simpler code.
+Analysis includes tests, examples, and generated mocks. Keep public APIs and
+behavior unchanged when fixing style; any necessary local suppression must
+explain the existing contract it preserves. Do not edit generated mocks by hand.
+
+CI checks generated-code reproducibility, formatting, analysis, tests, and
+publishing validation on the pinned SDK. Separate jobs analyze and test on
+Dart 3.8.0 and the latest stable SDK, plus downgraded dependencies on 3.8.0.
+Only the pinned SDK enforces formatting. PRs, main-branch pushes, manual checks,
+and tag publishing share these gates; a release tag publishes only after they
+all pass.
+
 ## License
 
 ```text

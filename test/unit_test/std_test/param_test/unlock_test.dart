@@ -9,10 +9,7 @@ import 'package:simple_webdav_client/src/_std/unlock.dart';
 import 'package:simple_webdav_client/src/io.dart';
 import 'package:test/test.dart';
 
-@GenerateMocks([
-  HttpClientRequest,
-  HttpHeaders,
-])
+@GenerateMocks([HttpClientRequest, HttpHeaders])
 import 'unlock_test.mocks.dart';
 
 void main() {
@@ -32,15 +29,18 @@ void main() {
       expect(param.lockToken, Uri.parse("http://example"));
     });
     test("beforeAddRequestBody", () {
-      UnlockRequestParam(lockToken: Uri.parse("http://example"))
-          .beforeAddRequestBody(request);
+      UnlockRequestParam(
+        lockToken: Uri.parse("http://example"),
+      ).beforeAddRequestBody(request);
       verify(headers.add("Lock-Token", "<http://example>"));
     });
     test("toRequestBody", () {
       expect(
-          UnlockRequestParam(lockToken: Uri.parse("http://example"))
-              .toRequestBody(),
-          null);
+        UnlockRequestParam(
+          lockToken: Uri.parse("http://example"),
+        ).toRequestBody(),
+        null,
+      );
     });
   });
 }

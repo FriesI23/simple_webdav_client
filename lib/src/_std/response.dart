@@ -44,8 +44,9 @@ class WebDavStdResponse<T extends WebDavStdResResultView>
     final decoder = bodyDecoders[contentType?.charset ?? 'utf-8'];
     if (decoder == null) {
       throw WebDavXmlDecodeError(
-          "decode body error, got content type is $contentType, "
-          "which not included from ${bodyDecoders.keys.toList()}");
+        "decode body error, got content type is $contentType, "
+        "which not included from ${bodyDecoders.keys.toList()}",
+      );
     }
     return response.transform(decoder).join();
   }
@@ -57,11 +58,14 @@ class WebDavStdResponse<T extends WebDavStdResResultView>
     try {
       final String rawData = _data != null ? _data! : await _decodeBody();
       _data = rawData;
-      final result = resultParser.convert(ResponseResultParserParam(
+      final result = resultParser.convert(
+        ResponseResultParserParam(
           data: rawData,
           headers: response.headers,
           status: response.statusCode,
-          path: path));
+          path: path,
+        ),
+      );
       _parsing?.complete(result);
     } on Exception {
       if (_parsing != null) _parsing!.complete(null);
@@ -82,7 +86,7 @@ class WebDavStdResponseResult
   WebDavStdResponseResult() : _resources = {};
 
   const WebDavStdResponseResult.fromMap(Map<Uri, WebDavStdResource> resources)
-      : _resources = resources;
+    : _resources = resources;
 
   @override
   bool add(WebDavStdResource resource) =>
@@ -109,11 +113,9 @@ class WebDavStdResponseResult
     sb.writeln("WebDavStdResponseResult{");
     for (var entry in _resources.entries) {
       sb.writeln("  // ${entry.key}");
-      sb.writeln(entry.value
-          .toDebugString()
-          .split("\n")
-          .map((e) => "  $e")
-          .join('\n'));
+      sb.writeln(
+        entry.value.toDebugString().split("\n").map((e) => "  $e").join('\n'),
+      );
     }
     sb.write("}");
     return sb.toString();

@@ -29,23 +29,31 @@ void main() {
   group("test WebDavStdResponse", () {
     test("constructor", () {
       final response = WebDavStdResponse(
-          response: MockHttpClientResponse(),
-          path: Uri.base,
-          method: WebDavMethod.get,
-          bodyDecoders: MockResponseBodyDecoderManager(),
-          resultParser: MockResponseResultParser());
-      expect(response.response, equals(TypeMatcher<HttpClientResponse>()));
+        response: MockHttpClientResponse(),
+        path: Uri.base,
+        method: WebDavMethod.get,
+        bodyDecoders: MockResponseBodyDecoderManager(),
+        resultParser: MockResponseResultParser(),
+      );
+      expect(
+        response.response,
+        equals(const TypeMatcher<HttpClientResponse>()),
+      );
       expect(response.path, equals(Uri.base));
       expect(response.method, WebDavMethod.get);
-      expect(response.bodyDecoders,
-          equals(TypeMatcher<ResponseBodyDecoderManager>()));
       expect(
-          response.resultParser, equals(TypeMatcher<ResponseResultParser>()));
+        response.bodyDecoders,
+        equals(const TypeMatcher<ResponseBodyDecoderManager>()),
+      );
+      expect(
+        response.resultParser,
+        equals(const TypeMatcher<ResponseResultParser>()),
+      );
       expect(response.body, isNull);
     });
     test("parse", () async {
       final contentType = ContentType.text;
-      final httpStatus = HttpStatus.accepted;
+      const httpStatus = HttpStatus.accepted;
       final httpResponse = MockHttpClientResponse();
       final bodyDecoders = MockResponseBodyDecoderManager();
       final resultParser = MockResponseResultParser();
@@ -54,17 +62,19 @@ void main() {
       when(httpResponse.headers).thenReturn(httpResponseHeader);
       when(httpResponseHeader.contentType).thenReturn(contentType);
       when(bodyDecoders[contentType.charset]).thenReturn(utf8.decoder);
-      when(httpResponse.transform(utf8.decoder))
-          .thenAnswer((_) => Stream.value("mock data"));
+      when(
+        httpResponse.transform(utf8.decoder),
+      ).thenAnswer((_) => Stream.value("mock data"));
       when(httpResponse.statusCode).thenReturn(httpStatus);
       provideDummy<WebDavStdResResultView>(dataResult);
       when(resultParser.convert(any)).thenReturn(dataResult);
       final response = WebDavStdResponse(
-          response: httpResponse,
-          path: Uri.base,
-          method: WebDavMethod.get,
-          bodyDecoders: bodyDecoders,
-          resultParser: resultParser);
+        response: httpResponse,
+        path: Uri.base,
+        method: WebDavMethod.get,
+        bodyDecoders: bodyDecoders,
+        resultParser: resultParser,
+      );
       // parse
       final result = await response.parse();
       verify(httpResponse.transform(utf8.decoder)).called(1);
@@ -80,7 +90,7 @@ void main() {
     });
     test("parse with exception", () async {
       final contentType = ContentType.text;
-      final httpStatus = HttpStatus.accepted;
+      const httpStatus = HttpStatus.accepted;
       final httpResponse = MockHttpClientResponse();
       final bodyDecoders = MockResponseBodyDecoderManager();
       final resultParser = MockResponseResultParser();
@@ -88,18 +98,21 @@ void main() {
       when(httpResponse.headers).thenReturn(httpResponseHeader);
       when(httpResponseHeader.contentType).thenReturn(contentType);
       when(bodyDecoders[contentType.charset]).thenReturn(utf8.decoder);
-      when(httpResponse.transform(utf8.decoder))
-          .thenAnswer((_) => Stream.value("mock data"));
+      when(
+        httpResponse.transform(utf8.decoder),
+      ).thenAnswer((_) => Stream.value("mock data"));
       when(httpResponse.statusCode).thenReturn(httpStatus);
       provideDummy<WebDavStdResResultView>(MockWebDavStdResResultView());
-      when(resultParser.convert(any))
-          .thenAnswer((_) => throw Exception('mock message'));
+      when(
+        resultParser.convert(any),
+      ).thenAnswer((_) => throw Exception('mock message'));
       final response = WebDavStdResponse(
-          response: httpResponse,
-          path: Uri.base,
-          method: WebDavMethod.get,
-          bodyDecoders: bodyDecoders,
-          resultParser: resultParser);
+        response: httpResponse,
+        path: Uri.base,
+        method: WebDavMethod.get,
+        bodyDecoders: bodyDecoders,
+        resultParser: resultParser,
+      );
       // parse
       try {
         await response.parse();
@@ -122,7 +135,7 @@ void main() {
       expect(response.body, "mock data");
     });
     test("parse with unknown contentType", () async {
-      final httpStatus = HttpStatus.accepted;
+      const httpStatus = HttpStatus.accepted;
       final httpResponse = MockHttpClientResponse();
       final bodyDecoders = MockResponseBodyDecoderManager();
       final resultParser = MockResponseResultParser();
@@ -130,26 +143,31 @@ void main() {
       when(httpResponse.headers).thenReturn(httpResponseHeader);
       when(httpResponseHeader.contentType).thenReturn(ContentType.text);
       when(bodyDecoders.keys).thenReturn([]);
-      when(bodyDecoders[any]).thenReturn(null);
-      when(httpResponse.transform(utf8.decoder))
-          .thenAnswer((_) => Stream.value("mock data"));
+      when(bodyDecoders['utf-8']).thenReturn(null);
+      when(
+        httpResponse.transform(utf8.decoder),
+      ).thenAnswer((_) => Stream.value("mock data"));
       when(httpResponse.statusCode).thenReturn(httpStatus);
       provideDummy<WebDavStdResResultView>(MockWebDavStdResResultView());
       final response = WebDavStdResponse(
-          response: httpResponse,
-          path: Uri.base,
-          method: WebDavMethod.get,
-          bodyDecoders: bodyDecoders,
-          resultParser: resultParser);
+        response: httpResponse,
+        path: Uri.base,
+        method: WebDavMethod.get,
+        bodyDecoders: bodyDecoders,
+        resultParser: resultParser,
+      );
       // parse
       try {
         await response.parse();
       } on WebDavXmlDecodeError catch (e) {
         expect(e, isA<WebDavXmlDecodeError>());
         expect(
-            e.message,
-            equals("decode body error, got content type is text/plain; "
-                "charset=utf-8, which not included from []"));
+          e.message,
+          equals(
+            "decode body error, got content type is text/plain; "
+            "charset=utf-8, which not included from []",
+          ),
+        );
       }
       verifyNever(httpResponse.transform(any));
       verifyNever(resultParser.convert(any));
@@ -160,9 +178,12 @@ void main() {
       } on WebDavXmlDecodeError catch (e) {
         expect(e, isA<WebDavXmlDecodeError>());
         expect(
-            e.message,
-            equals("decode body error, got content type is text/plain; "
-                "charset=utf-8, which not included from []"));
+          e.message,
+          equals(
+            "decode body error, got content type is text/plain; "
+            "charset=utf-8, which not included from []",
+          ),
+        );
       }
       verifyNever(httpResponse.transform(any));
       verifyNever(resultParser.convert(any));
@@ -173,48 +194,62 @@ void main() {
     test("constructor", () {
       final result = WebDavStdResponseResult();
       expect(result, isEmpty);
-      expect(result, equals(TypeMatcher<Iterable>()));
-      expect(result, equals(TypeMatcher<WebDavStdResResultView>()));
+      expect(result, equals(const TypeMatcher<Iterable>()));
+      expect(result, equals(const TypeMatcher<WebDavStdResResultView>()));
     });
     test("constructor.fromMap", () {
-      final result1 = const WebDavStdResponseResult.fromMap({});
+      const result1 = WebDavStdResponseResult.fromMap({});
       expect(result1, isEmpty);
-      expect(result1, equals(TypeMatcher<Iterable>()));
-      expect(result1, equals(TypeMatcher<WebDavStdResResultView>()));
+      expect(result1, equals(const TypeMatcher<Iterable>()));
+      expect(result1, equals(const TypeMatcher<WebDavStdResResultView>()));
       final resource = WebDavStdResource(
-          path: Uri.parse("http://example.com"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com"),
+        status: HttpStatus.accepted,
+      );
       final result2 = WebDavStdResponseResult.fromMap({Uri.base: resource});
       expect(result2.length, 1);
-      expect(result2, equals(TypeMatcher<Iterable>()));
-      expect(result2, equals(TypeMatcher<WebDavStdResResultView>()));
+      expect(result2, equals(const TypeMatcher<Iterable>()));
+      expect(result2, equals(const TypeMatcher<WebDavStdResResultView>()));
       expect(result2.first, same(resource));
     });
     test("add", () {
       final result = WebDavStdResponseResult();
       final resource1 = WebDavStdResource(
-          path: Uri.parse("http://example.com"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com"),
+        status: HttpStatus.accepted,
+      );
       expect(result.add(resource1), isTrue);
       expect(result.length, 1);
       expect(result.first, same(resource1));
       final resource2 = WebDavStdResource(
-          path: Uri.parse("http://example.com"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com"),
+        status: HttpStatus.accepted,
+      );
       expect(result.add(resource2), isFalse);
       expect(result.length, 1);
       expect(result.first, same(resource1));
       final resource3 = WebDavStdResource(
-          path: Uri.parse("http://example.com/3"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com/3"),
+        status: HttpStatus.accepted,
+      );
       expect(result.add(resource3), isTrue);
       expect(result.length, 2);
       expect(result.toList(), equals([resource1, resource3]));
     });
     test("clear", () {
       final result = WebDavStdResponseResult();
-      result.add(WebDavStdResource(
+      result.add(
+        WebDavStdResource(
           path: Uri.parse("http://example.com/1"),
-          status: HttpStatus.accepted));
-      result.add(WebDavStdResource(
+          status: HttpStatus.accepted,
+        ),
+      );
+      result.add(
+        WebDavStdResource(
           path: Uri.parse("http://example.com/2"),
-          status: HttpStatus.accepted));
+          status: HttpStatus.accepted,
+        ),
+      );
       expect(result, isNotEmpty);
       expect(result.length, 2);
       result.clear();
@@ -223,12 +258,18 @@ void main() {
     });
     test("contain", () {
       final result = WebDavStdResponseResult();
-      result.add(WebDavStdResource(
+      result.add(
+        WebDavStdResource(
           path: Uri.parse("http://example.com/1"),
-          status: HttpStatus.accepted));
-      result.add(WebDavStdResource(
+          status: HttpStatus.accepted,
+        ),
+      );
+      result.add(
+        WebDavStdResource(
           path: Uri.parse("http://example.com/2"),
-          status: HttpStatus.accepted));
+          status: HttpStatus.accepted,
+        ),
+      );
       expect(result.contain(Uri.parse("http://example.com/1")), isTrue);
       expect(result.contain(Uri.parse("http://example.com/2")), isTrue);
       expect(result.contain(Uri.parse("http://example.com/3")), isFalse);
@@ -236,9 +277,13 @@ void main() {
     test("find", () {
       final result = WebDavStdResponseResult();
       final resource1 = WebDavStdResource(
-          path: Uri.parse("http://example.com/1"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com/1"),
+        status: HttpStatus.accepted,
+      );
       final resource2 = WebDavStdResource(
-          path: Uri.parse("http://example.com/2"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com/2"),
+        status: HttpStatus.accepted,
+      );
       result.add(resource1);
       result.add(resource2);
       expect(result.find(Uri.parse("http://example.com/1")), same(resource1));
@@ -248,14 +293,20 @@ void main() {
     test("iterator", () {
       final result = WebDavStdResponseResult();
       expect(
-          result.iterator, equals(TypeMatcher<Iterator<WebDavStdResource>>()));
+        result.iterator,
+        equals(const TypeMatcher<Iterator<WebDavStdResource>>()),
+      );
     });
     test("remove", () {
       final result = WebDavStdResponseResult();
       final resource1 = WebDavStdResource(
-          path: Uri.parse("http://example.com/1"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com/1"),
+        status: HttpStatus.accepted,
+      );
       final resource2 = WebDavStdResource(
-          path: Uri.parse("http://example.com/2"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com/2"),
+        status: HttpStatus.accepted,
+      );
       result.add(resource1);
       result.add(resource2);
       expect(result, isNotEmpty);
@@ -273,27 +324,31 @@ void main() {
     test("toDebugString", () {
       final result = WebDavStdResponseResult();
       final resource1 = WebDavStdResource(
-          path: Uri.parse("http://example.com/1"),
-          status: HttpStatus.accepted,
-          props: {
-            (name: "test", ns: "DAV:"): WebDavStdResourceProp(
-              name: "test",
-              namespace: Uri.parse("DAV:"),
-              status: HttpStatus.accepted,
-              value: DateTime.parse("2024-08-29 11:29:47"),
-            ),
-            (name: "test", ns: "CUSTOM:"): WebDavStdResourceProp(
-              name: "test",
-              namespace: Uri.parse("CUSTOM:"),
-              status: HttpStatus.accepted,
-              value: DateTime.parse("1970-01-01 12:00:00"),
-            )
-          });
+        path: Uri.parse("http://example.com/1"),
+        status: HttpStatus.accepted,
+        props: {
+          (name: "test", ns: "DAV:"): WebDavStdResourceProp(
+            name: "test",
+            namespace: Uri.parse("DAV:"),
+            status: HttpStatus.accepted,
+            value: DateTime.parse("2024-08-29 11:29:47"),
+          ),
+          (name: "test", ns: "CUSTOM:"): WebDavStdResourceProp(
+            name: "test",
+            namespace: Uri.parse("CUSTOM:"),
+            status: HttpStatus.accepted,
+            value: DateTime.parse("1970-01-01 12:00:00"),
+          ),
+        },
+      );
       final resource2 = WebDavStdResource(
-          path: Uri.parse("http://example.com/2"), status: HttpStatus.accepted);
+        path: Uri.parse("http://example.com/2"),
+        status: HttpStatus.accepted,
+      );
       result.add(resource1);
       result.add(resource2);
-      final expectString = """
+      final expectString =
+          """
 WebDavStdResponseResult{
   // http://example.com/1
   WebDavStdResource{
@@ -309,7 +364,7 @@ WebDavStdResponseResult{
   }
 }
 """
-          .trim();
+              .trim();
       expect(result.toDebugString(), expectString);
     });
   });

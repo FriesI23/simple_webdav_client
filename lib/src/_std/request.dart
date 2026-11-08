@@ -35,13 +35,15 @@ class WebDavStdRequest<P extends WebDavRequestParam>
     param?.beforeAddRequestBody(request);
     final body = param?.toRequestBody();
     if (body != null) request.write(body);
-    return request.close().then((response) => WebDavStdResponse(
-          response: response,
-          path: request.uri,
-          method: method,
-          bodyDecoders: responseBodyDecoders ?? kStdDecoderManager,
-          resultParser: responseResultParser ?? kStdResponseResultParser,
-        ));
+    return request.close().then(
+      (response) => WebDavStdResponse(
+        response: response,
+        path: request.uri,
+        method: method,
+        bodyDecoders: responseBodyDecoders ?? kStdDecoderManager,
+        resultParser: responseResultParser ?? kStdResponseResultParser,
+      ),
+    );
   }
 
   @override

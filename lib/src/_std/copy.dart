@@ -7,13 +7,14 @@ import '_param.dart';
 import 'depth.dart';
 
 class CopyRequestParam extends CommonCopyMoveRequestParam {
-  const CopyRequestParam(
-      {required super.destination,
-      bool? recursive,
-      super.overwrite,
-      super.condition})
-      : super(
-            depth: recursive != null
-                ? (recursive ? Depth.all : Depth.resource)
-                : null);
+  const CopyRequestParam({
+    required super.destination,
+    bool? recursive,
+    super.overwrite,
+    super.condition,
+  }) : super(
+         depth: recursive != null
+             ? (recursive ? Depth.all : Depth.resource)
+             : null,
+       );
 }

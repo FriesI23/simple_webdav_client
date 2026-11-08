@@ -13,11 +13,12 @@ void main() {
     late BaseErrorElementParser parser;
 
     setUp(() {
-      parser = BaseErrorElementParser();
+      parser = const BaseErrorElementParser();
     });
 
     test("convert", () {
-      final input = XmlDocument.parse("""
+      final input = XmlDocument.parse(
+        """
 <error>
   <lock-token-matches-request-uri/>
   <lock-token-submitted/>
@@ -29,14 +30,19 @@ void main() {
   <unknown-condition/>
 </error>
 """
-          .trim());
+            .trim(),
+      );
       final result = parser.convert(input.rootElement);
-      expect(result, equals(TypeMatcher<WebDavStdResError>()));
+      expect(result, equals(const TypeMatcher<WebDavStdResError>()));
       expect(result.message, isEmpty);
       expect(
-          result.conditions, unorderedEquals(StdResErrorCond.values.toList()));
-      expect(result.conditions.map((e) => e.name).contains("unknown-condition"),
-          isFalse);
+        result.conditions,
+        unorderedEquals(StdResErrorCond.values.toList()),
+      );
+      expect(
+        result.conditions.map((e) => e.name).contains("unknown-condition"),
+        isFalse,
+      );
     });
   });
 }
