@@ -7,6 +7,7 @@ import '../client.dart';
 import '../io.dart';
 import '../method.dart';
 import '../request.dart';
+import 'authentication.dart';
 import 'client_dispatcher.dart';
 import 'decoder_mgr.dart';
 import 'parser.dart';
@@ -17,6 +18,7 @@ class WebDavStdClient implements WebDavClient {
   bool _closing = false;
 
   late final HttpClient client;
+  WebDavAuthenticationSession? _authentication;
 
   WebDavStdClient([SecurityContext? context]) {
     client = HttpClient(context: context);
@@ -24,10 +26,26 @@ class WebDavStdClient implements WebDavClient {
 
   WebDavStdClient.withClient(this.client);
 
+  /// Uses package-managed discovery, or explicitly preemptive Basic auth.
+  ///
+  /// An injected [client] must be dedicated to this instance, with no SDK
+  /// authentication callback or credentials registered. Do not configure its
+  /// site authentication directly after passing it here. Redirects are not
+  /// followed automatically in this mode.
+  WebDavStdClient.authenticated({
+    required WebDavAuthenticationConfig authentication,
+    HttpClient? client,
+  }) {
+    this.client = client ?? HttpClient();
+    _authentication = WebDavAuthenticationSession(authentication, this.client);
+  }
+
   @override
   void close({bool force = false}) {
     if (_closing) return;
-    client.close(force: force);
+    final abortDiscovery = _authentication?.discovering ?? false;
+    _authentication?.close();
+    client.close(force: force || abortDiscovery);
     _closing = true;
   }
 
@@ -49,7 +67,19 @@ class WebDavStdClient implements WebDavClient {
   @override
   void setAuthenticate(
     Future<bool> Function(Uri url, String scheme, String? realm)? f,
-  ) => client.authenticate = f;
+  ) {
+    _checkLegacyAuthentication();
+    client.authenticate = f;
+  }
+
+  void _checkLegacyAuthentication() {
+    if (_authentication != null) {
+      throw StateError(
+        'SDK site authentication cannot be mixed with '
+        'package-managed authentication.',
+      );
+    }
+  }
 
   /// Sets the function to be called when a proxy is requesting authentication.
   ///
@@ -68,7 +98,10 @@ class WebDavStdClient implements WebDavClient {
     Uri url,
     String realm,
     HttpClientCredentials credentials,
-  ) => client.addCredentials(url, realm, credentials);
+  ) {
+    _checkLegacyAuthentication();
+    client.addCredentials(url, realm, credentials);
+  }
 
   /// Add credentials to be used for authorizing proxies.
   ///
@@ -82,7 +115,7 @@ class WebDavStdClient implements WebDavClient {
   ) => client.addProxyCredentials(host, port, realm, credentials);
 
   @override
-  bool get closed => _closing;
+  bool get closed => _closing || (_authentication?.closed ?? false);
 
   /// Opens a WebDAV connection.
   ///
@@ -111,16 +144,23 @@ class WebDavStdClient implements WebDavClient {
     required P param,
     ResponseBodyDecoderManager? responseBodyDecoders,
     ResponseResultParser<WebDavStdResResultView>? responseResultParser,
-  }) => client
-      .openUrl(method.name, url)
-      .then(
-        (request) => WebDavStdRequest<P>(
-          request: request,
-          param: param,
-          responseBodyDecoders: responseBodyDecoders,
-          responseResultParser: responseResultParser,
-        ),
+  }) async {
+    final authentication = _authentication;
+    await authentication?.prepare(url);
+    final request = await client.openUrl(method.name, url);
+    try {
+      authentication?.configureRequest(request);
+      return WebDavStdRequest<P>(
+        request: request,
+        param: param,
+        responseBodyDecoders: responseBodyDecoders,
+        responseResultParser: responseResultParser,
       );
+    } catch (_) {
+      request.abort();
+      rethrow;
+    }
+  }
 
   /// Creates a [WebDavStdRequestDispatcher] for handling WebDAV requests.
   ///

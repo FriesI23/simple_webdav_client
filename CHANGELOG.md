@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add managed Basic discovery for mixed WWW-Authenticate challenges, explicit
+  Basic authentication, scoped credentials and bounded Digest discovery.
+- Reuse the existing native HTTP test server for authentication regressions.
+- Use the official `http_parser` challenge parser and existing PROPFIND builders
+  for authentication discovery; document unsupported token68 headers.
+
 - Require Dart 3.8 or later and update WebDAV/XML and development dependencies.
 - Adopt a stricter pure Dart style baseline and Dart 3.8.3 formatting.
 - Add local quality commands and CI checks for SDK and dependency compatibility.

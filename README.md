@@ -30,6 +30,30 @@ Following methods have been implemented:
 - [x] [LOCK](#lock)
 - [x] [UNLOCK](#unlock)
 
+### Authentication
+
+Use `WebDavStdClient.authenticated` for automatic Basic or Digest authentication.
+Basic can also be selected when the server offers both Basic and Bearer.
+Bearer/OAuth authentication is not supported. Digest requires MD5 with no qop
+or `qop="auth"`.
+
+```dart
+final client = WebDavStdClient.authenticated(
+  authentication: WebDavAuthenticationConfig(
+    scope: Uri.parse('https://example.com/dav/'),
+    username: 'user',
+    password: 'app-password',
+  ),
+);
+```
+
+`scope` limits credentials to the given origin and directory. Set
+`mode: WebDavAuthenticationMode.basic` to use Basic directly. Basic requires
+HTTPS by default; set `allowInsecureBasic: true` for an HTTP server.
+
+Authenticated clients do not follow redirects automatically. Do not combine
+this constructor with `setAuthenticate` or `addCredentials`.
+
 ### Propfind
 
 Used to retrieve properties defined on the resource identified by the Request-URI.
