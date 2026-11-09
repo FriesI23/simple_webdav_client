@@ -18,25 +18,47 @@ import 'propfind.dart';
 part 'authentication_auto.dart';
 part 'authentication_basic.dart';
 
-/// Authentication strategy for a WebDAV client.
+/// How package-managed site authentication chooses an Authorization header.
+///
+/// These modes authenticate to the WebDAV server. Proxy authentication remains
+/// the responsibility of the underlying [HttpClient].
 enum WebDavAuthenticationMode {
   /// Selects Basic or supported Digest through read-only discovery.
+  ///
+  /// Probes with PROPFIND before the first operation; concurrent callers share
+  /// discovery. Selects Basic from mixed challenges or Digest from a single
+  /// challenge (MD5 with no `qop` or `qop="auth"`). A successful anonymous probe
+  /// keeps requests anonymous.
   auto,
 
   /// Sends Basic credentials immediately without probing the server.
+  ///
+  /// Use for known Basic servers or when anonymous discovery does not expose
+  /// the required authentication. Requires HTTPS unless
+  /// [WebDavAuthenticationConfig.allowInsecureBasic] is enabled.
   basic,
 }
 
 /// Credentials and authentication settings for a WebDAV directory.
 ///
-/// [scope] limits credentials to one HTTP(S) origin and directory subtree.
-/// Basic requires HTTPS unless [allowInsecureBasic] is enabled.
-/// Available on native platforms.
+/// Use with `WebDavStdClient.authenticated` on native platforms to manage
+/// Authorization instead of SDK site credentials and authentication callbacks.
+/// Supports Basic and MD5 Digest; proxy authentication remains SDK-managed.
+///
+/// [scope] limits requests and credentials to one origin and directory subtree.
+/// Basic requires HTTPS unless [allowInsecureBasic] is enabled. See [mode] for
+/// discovery and preemptive Basic options.
 final class WebDavAuthenticationConfig {
   /// Absolute HTTP(S) directory URI limiting where credentials may be sent.
+  ///
+  /// Must end in `/` and contain no user information, query or fragment.
+  /// Out-of-scope requests fail before they are opened.
   final Uri scope;
 
   /// Initial read-only discovery URI within [scope], defaulting to [scope].
+  ///
+  /// In automatic mode, choose a resource exposing the required authentication.
+  /// A 404 without a challenge makes discovery try parents within [scope].
   final Uri probeUri;
 
   /// Login name used by the selected authentication scheme.
@@ -46,15 +68,33 @@ final class WebDavAuthenticationConfig {
   final String password;
 
   /// Whether to discover authentication or send Basic preemptively.
+  ///
+  /// Defaults to [WebDavAuthenticationMode.auto].
   final WebDavAuthenticationMode mode;
 
   /// Explicitly permits Basic over HTTP instead of requiring HTTPS.
+  ///
+  /// Defaults to false; enabling this sends Basic credentials without TLS.
   final bool allowInsecureBasic;
 
   /// Deadline for all read-only discovery requests and their response bodies.
+  ///
+  /// Defaults to 30 seconds and must be positive. Expiry closes the client.
+  /// Does not apply to business requests or explicit Basic mode.
   final Duration discoveryTimeout;
 
   /// Validates and normalizes the credential scope and discovery settings.
+  ///
+  /// Opens no connection. To skip discovery for a known Basic server:
+  ///
+  /// ```dart
+  /// final authentication = WebDavAuthenticationConfig(
+  ///   scope: Uri.parse('https://example.com/dav/'),
+  ///   username: 'user',
+  ///   password: 'app-password',
+  ///   mode: WebDavAuthenticationMode.basic,
+  /// );
+  /// ```
   ///
   /// Throws [ArgumentError] for invalid settings and
   /// [WebDavAuthenticationError] when [probeUri] lies outside [scope].

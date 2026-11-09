@@ -20,24 +20,60 @@ class WebDavStdClient implements WebDavClient {
   late final HttpClient client;
   WebDavAuthenticationSession? _authentication;
 
+  /// Creates a client using SDK-managed HTTP transport and authentication.
+  ///
+  /// Configure native site authentication with [setAuthenticate] and
+  /// [addCredentials], or use [WebDavStdClient.authenticated] for managed auth.
   WebDavStdClient([SecurityContext? context]) {
     client = HttpClient(context: context);
   }
 
+  /// Creates a client using an existing [HttpClient], including its SDK
+  /// authentication, proxy and TLS settings.
+  ///
+  /// Calling [close] also closes [client]. See [WebDavStdClient.authenticated]
+  /// for package-managed site authentication.
   WebDavStdClient.withClient(this.client);
 
   /// Creates a native WebDAV client with scoped Basic or Digest authentication.
   ///
-  /// [authentication] controls discovery and credential scope. An injected
-  /// [client] must be dedicated to this instance and remain free of SDK
-  /// site-authentication callbacks and credentials.
+  /// Sets Authorization directly, replacing [HttpClient.authenticate] and
+  /// [HttpClient.addCredentials] for site authentication. Supports mixed server
+  /// challenges containing Basic. [authentication] selects automatic discovery
+  /// or preemptive Basic and limits requests to one origin and directory subtree.
+  ///
+  /// ```dart
+  /// import 'package:simple_webdav_client/client.dart';
+  ///
+  /// final dav = WebDavStdClient.authenticated(
+  ///   authentication: WebDavAuthenticationConfig(
+  ///     scope: Uri.parse('https://example.com/dav/'),
+  ///     username: 'user',
+  ///     password: 'app-password',
+  ///   ),
+  /// );
+  /// // Use dav.dispatch(...) and close dav when finished.
+  /// ```
+  ///
+  /// > For SDK-managed site authentication, use [WebDavStdClient.new] or
+  /// > [WebDavStdClient.withClient] with [setAuthenticate] / [addCredentials].
+  /// > With this constructor, supply server credentials in
+  /// > [WebDavAuthenticationConfig]; both methods throw [StateError].
+  ///
+  /// Proxy authentication remains SDK-managed: configure [HttpClient.findProxy],
+  /// [setAuthenticateProxy] and [addProxyCredentials] separately. An injected
+  /// [client] retains its proxy and TLS settings, must have no SDK site
+  /// credentials or authentication callback, and is also closed by [close].
   ///
   /// For custom HTTP Digest connections, supply [connectionFactory] here.
-  /// HTTP Digest uses a fresh connection for each request. Other authentication
-  /// modes and HTTPS retain the client's connection handling.
+  /// HTTP Digest uses a fresh connection per request; other modes and HTTPS
+  /// retain the client's connection handling.
   ///
-  /// Redirects are not followed automatically. Requests are not replayed by the
-  /// package. SDK proxy-authentication retries can omit request bodies.
+  /// Automatic discovery completes before the first business request. An
+  /// anonymous successful probe keeps requests anonymous; choose an appropriate
+  /// probe URI or explicit Basic if authentication is needed for the operation.
+  /// Redirects are returned to the caller, and business requests are not replayed
+  /// by the package. SDK proxy-authentication retries can omit request bodies.
   /// Transport exceptions propagate unchanged. Create a new client to change
   /// credentials or rediscover an expired Digest nonce.
   ///
@@ -105,6 +141,8 @@ class WebDavStdClient implements WebDavClient {
   /// Sets the function to be called when a proxy is requesting authentication.
   ///
   /// Delegates to [HttpClient.authenticateProxy].
+  /// Also available with [WebDavStdClient.authenticated]; use
+  /// [addProxyCredentials] to supply proxy credentials from this callback.
   @override
   void setAuthenticateProxy(
     Future<bool> Function(String host, int port, String scheme, String? realm)?
@@ -130,6 +168,8 @@ class WebDavStdClient implements WebDavClient {
   /// Add credentials to be used for authorizing proxies.
   ///
   /// Delegates to [HttpClient.addProxyCredentials].
+  /// Also available with [WebDavStdClient.authenticated]. Proxy credentials
+  /// are independent of server credentials in [WebDavAuthenticationConfig].
   @override
   void addProxyCredentials(
     String host,
