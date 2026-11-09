@@ -478,6 +478,70 @@ void main() {
     expect(visits, isEmpty);
   });
 
+  test('concurrent discovery retries after a connection failure', () async {
+    final opening = Completer<void>();
+    final connection = Completer<ConnectionTask<Socket>>();
+    const failure = SocketException('temporary connection failure');
+    var connections = 0;
+    final auth = client(
+      connectionFactory: (uri, host, port) {
+        if (connections++ == 0) {
+          opening.complete();
+          return connection.future;
+        }
+        return Socket.startConnect(host ?? uri.host, port ?? uri.port);
+      },
+    );
+    final failures = List.generate(
+      8,
+      (_) => expectLater(get(auth), throwsA(same(failure))),
+    );
+    await opening.future;
+    connection.completeError(failure);
+    await Future.wait(failures);
+    expect(connections, 1);
+    expect(visits, isEmpty);
+    expect(auth.closed, isFalse);
+
+    expect(
+      await Future.wait(List.generate(8, (_) => get(auth))),
+      everyElement(HttpStatus.ok),
+    );
+    expect(await get(auth), HttpStatus.ok);
+    expect(
+      visits.where((v) => v.method == WebDavMethod.propfind.name),
+      hasLength(1),
+    );
+    expect(
+      visits.where((v) => v.method == WebDavMethod.get.name),
+      hasLength(9),
+    );
+  });
+
+  test('discovery retries after a temporary server error', () async {
+    handler = (request, body) async {
+      request.response.statusCode = HttpStatus.serviceUnavailable;
+    };
+    final auth = client();
+    await expectLater(
+      get(auth),
+      throwsA(
+        isA<WebDavAuthenticationError>().having(
+          (e) => e.statusCode,
+          'status',
+          HttpStatus.serviceUnavailable,
+        ),
+      ),
+    );
+    expect(auth.closed, isFalse);
+    expect(visits, hasLength(1));
+
+    handler = null;
+    expect(await get(auth), HttpStatus.ok);
+    expect(await get(auth), HttpStatus.ok);
+    expect(visits.map((v) => v.method), ['PROPFIND', 'PROPFIND', 'GET', 'GET']);
+  });
+
   for (final phase in ['discovery', 'business auto', 'business basic']) {
     for (final error in <Exception>[
       const SocketException('connection failed'),

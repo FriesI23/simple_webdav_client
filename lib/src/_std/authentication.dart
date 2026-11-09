@@ -197,6 +197,8 @@ abstract interface class WebDavAuthenticationSession {
   /// Validates [uri] and completes authentication before opening its request.
   ///
   /// Concurrent calls share the same initialization result.
+  /// After a transport failure or a 5xx discovery response, a later call retries
+  /// initialization unless the session has closed.
   /// Throws [StateError] after closure and [WebDavAuthenticationError] for
   /// scope violations or discovery failures. Transport exceptions propagate
   /// unchanged.
@@ -238,7 +240,21 @@ abstract base class _WebDavAuthenticationSession
   Future<void> prepare(Uri uri) async {
     _checkOpen();
     _configuration._checkUri(uri);
-    _authentication = await (_initializing ??= _initialize());
+    final initializing = _initializing ??= _initialize();
+    try {
+      _authentication = await initializing;
+    } catch (error) {
+      final status = error is WebDavAuthenticationError
+          ? error.statusCode
+          : null;
+      final retryable =
+          error is! WebDavAuthenticationError ||
+          (status != null && status >= 500 && status < 600);
+      if (retryable && identical(_initializing, initializing)) {
+        _initializing = null;
+      }
+      rethrow;
+    }
     _checkOpen();
   }
 
