@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:http_parser/http_parser.dart' show AuthenticationChallenge;
 import 'package:simple_webdav_client/client.dart';
 import 'package:simple_webdav_client/utils.dart' show Depth;
 import 'package:test/test.dart';
@@ -179,25 +180,36 @@ void main() {
     expect(visits, hasLength(2));
   });
 
-  test(
-    'concurrent first requests share discovery and cache the result',
-    () async {
-      final auth = client();
+  for (final mode in WebDavAuthenticationMode.values) {
+    test('$mode concurrent first requests share initialization', () async {
+      final auth = client(mode: mode);
+      final expectedProbes = switch (mode) {
+        WebDavAuthenticationMode.auto => 1,
+        WebDavAuthenticationMode.basic => 0,
+      };
       expect(
         await Future.wait(List.generate(8, (_) => get(auth))),
         everyElement(HttpStatus.ok),
       );
       expect(
         visits.where((v) => v.method == WebDavMethod.propfind.name),
-        hasLength(1),
+        hasLength(expectedProbes),
       );
       expect(await get(auth), HttpStatus.ok);
       expect(
         visits.where((v) => v.method == WebDavMethod.propfind.name),
-        hasLength(1),
+        hasLength(expectedProbes),
       );
-    },
-  );
+    });
+
+    test('$mode close before first request prevents initialization', () async {
+      final auth = client(mode: mode);
+      auth.close();
+      expect(auth.closed, isTrue);
+      await expectLater(get(auth), throwsStateError);
+      expect(visits, isEmpty);
+    });
+  }
 
   test(
     'missing sync directory discovers authentication at its parent',
@@ -281,6 +293,8 @@ void main() {
     ['Digest realm="r", nonce="n", qop="auth-int"'],
     ['Digest realm="r", nonce="n", qop="auth,auth-int"'],
     ['Digest realm="r", nonce="n", qop=" auth "'],
+    ['Digest realm="r", nonce="n", charset="unknown"'],
+    ['Digest realm="r", nonce="n", userhash=true'],
   ]) {
     test('unsupported/malformed challenge fails bounded: $headers', () async {
       challenges = headers;
@@ -319,17 +333,19 @@ void main() {
   test(
     'scope rejects another origin, sibling prefix and encoded traversal',
     () async {
-      final auth = client(scope: root.resolve('dav/'));
-      for (final uri in [
-        root.replace(port: root.port + 1),
-        root.resolve('dav-other/'),
-        root.resolve('dav/%2e%2e/private/'),
-        root.replace(scheme: 'https', path: '/dav/'),
-      ]) {
-        await expectLater(
-          get(auth, uri),
-          throwsA(isA<WebDavAuthenticationError>()),
-        );
+      for (final mode in WebDavAuthenticationMode.values) {
+        final auth = client(mode: mode, scope: root.resolve('dav/'));
+        for (final uri in [
+          root.replace(port: root.port + 1),
+          root.resolve('dav-other/'),
+          root.resolve('dav/%2e%2e/private/'),
+          root.replace(scheme: 'https', path: '/dav/'),
+        ]) {
+          await expectLater(
+            get(auth, uri),
+            throwsA(isA<WebDavAuthenticationError>()),
+          );
+        }
       }
       expect(visits, isEmpty);
     },
@@ -495,83 +511,192 @@ void main() {
 
   for (final qop in [null, 'auth']) {
     for (final password in ['password', 'wrong']) {
-      test(
-        'pure Digest primes credentials before PUT ($password, qop: $qop)',
-        () async {
-          final challenge =
-              'Digest realm="WebDAV", nonce="fixed-nonce", algorithm=MD5${qop == null ? '' : ', qop="$qop"'}';
-          handler = (request, body) async {
-            final header =
-                request.headers.value(HttpHeaders.authorizationHeader) ?? '';
-            final fields = <String, String>{};
-            for (final match in RegExp(
-              r'(\w+)=(?:"([^"]*)"|([^,\s]+))',
-            ).allMatches(header)) {
-              fields[match[1]!] = match[2] ?? match[3]!;
-            }
-            String hash(String s) => md5.convert(utf8.encode(s)).toString();
-            final ha1 = hash('user:WebDAV:password');
-            final ha2 = hash('${request.method}:${request.uri}');
-            final expected = qop == null
-                ? hash('$ha1:fixed-nonce:$ha2')
-                : hash(
-                    '$ha1:fixed-nonce:${fields['nc']}:${fields['cnonce']}:auth:$ha2',
-                  );
-            if (fields['response'] != expected) {
-              request.response.statusCode = HttpStatus.unauthorized;
+      test('pure Digest verifies before PUT ($password, qop: $qop)', () async {
+        final challenge =
+            'Digest realm="WebDAV", nonce="fixed-nonce", algorithm=MD5${qop == null ? '' : ', qop="$qop"'}';
+        handler = (request, body) async {
+          final header =
+              request.headers.value(HttpHeaders.authorizationHeader) ?? '';
+          final fields = header.isEmpty
+              ? <String, String>{}
+              : AuthenticationChallenge.parse(header).parameters;
+          String hash(String s) => md5.convert(utf8.encode(s)).toString();
+          final ha1 = hash('user:WebDAV:password');
+          final ha2 = hash('${request.method}:${request.uri}');
+          final expected = qop == null
+              ? hash('$ha1:fixed-nonce:$ha2')
+              : hash(
+                  '$ha1:fixed-nonce:${fields['nc']}:${fields['cnonce']}:auth:$ha2',
+                );
+          if (fields['response'] != expected) {
+            request.response.statusCode = HttpStatus.unauthorized;
+            request.response.headers.set(
+              HttpHeaders.wwwAuthenticateHeader,
+              challenge,
+            );
+          } else {
+            request.response.statusCode =
+                request.method == WebDavMethod.put.name
+                ? HttpStatus.created
+                : HttpStatus.multiStatus;
+          }
+        };
+        final auth = client(
+          password: password,
+          timeout: const Duration(milliseconds: 300),
+        );
+        Future<int> operation() async {
+          final response =
+              await (await auth
+                      .dispatch(root.resolve('file'))
+                      .create(data: 'payload'))
+                  .close();
+          await response.response.drain<void>();
+          return response.response.statusCode;
+        }
+
+        if (password == 'password') {
+          expect(await operation(), HttpStatus.created);
+          final put = visits
+              .where((v) => v.method == WebDavMethod.put.name)
+              .single;
+          expect(put.body, 'payload');
+          expect(put.auth, startsWith('Digest '));
+        } else {
+          await expectLater(
+            operation(),
+            throwsA(
+              isA<WebDavAuthenticationError>().having(
+                (e) => e.statusCode,
+                'status',
+                HttpStatus.unauthorized,
+              ),
+            ),
+          );
+          expect(
+            visits.where((v) => v.method == WebDavMethod.put.name),
+            isEmpty,
+          );
+          expect(visits, hasLength(2));
+          expect(auth.closed, isFalse);
+          await expectLater(
+            operation(),
+            throwsA(isA<WebDavAuthenticationError>()),
+          );
+          expect(visits, hasLength(2));
+        }
+      });
+    }
+  }
+
+  for (final challenge in [
+    'Digest realm="WebDAV", nonce="new", qop="auth", stale=true',
+    'Digest realm="WebDAV", nonce="initial", qop="auth"',
+    'Digest realm="WebDAV", nonce="new", Bearer realm="oauth"',
+  ]) {
+    test(
+      'Digest business 401 is returned without replay: $challenge',
+      () async {
+        var puts = 0;
+        handler = (request, body) async {
+          final hasAuth =
+              request.headers.value(HttpHeaders.authorizationHeader) != null;
+          switch (request.method) {
+            case 'PROPFIND' when hasAuth:
+              request.response.statusCode = HttpStatus.multiStatus;
+            case 'PUT':
+              puts++;
+              request.response.statusCode = puts == 1
+                  ? HttpStatus.unauthorized
+                  : HttpStatus.conflict;
               request.response.headers.set(
                 HttpHeaders.wwwAuthenticateHeader,
                 challenge,
               );
-            } else {
-              request.response.statusCode =
-                  request.method == WebDavMethod.put.name
-                  ? HttpStatus.created
-                  : HttpStatus.multiStatus;
-            }
-          };
-          final auth = client(
-            password: password,
-            timeout: const Duration(milliseconds: 300),
-          );
-          Future<int> operation() async {
-            final response =
-                await (await auth
-                        .dispatch(root.resolve('file'))
-                        .create(data: 'payload'))
-                    .close();
-            await response.response.drain<void>();
-            return response.response.statusCode;
+            default:
+              request.response.statusCode = HttpStatus.unauthorized;
+              request.response.headers.set(
+                HttpHeaders.wwwAuthenticateHeader,
+                'Digest realm="WebDAV", nonce="initial", qop="auth"',
+              );
           }
-
-          if (password == 'password') {
-            expect(await operation(), HttpStatus.created);
-            final put = visits
-                .where((v) => v.method == WebDavMethod.put.name)
-                .single;
-            expect(put.body, 'payload');
-            expect(put.auth, startsWith('Digest '));
-          } else {
-            await expectLater(
-              operation(),
-              throwsA(
-                isA<WebDavAuthenticationError>().having(
-                  (e) => e.statusCode,
-                  'status',
-                  HttpStatus.unauthorized,
-                ),
-              ),
-            );
-            expect(
-              visits.where((v) => v.method == WebDavMethod.put.name),
-              isEmpty,
-            );
-            // The SDK may retry a fixed Digest nonce internally. The session's
-            // deadline must abort that loop rather than leaving it running.
-            expect(auth.closed, isTrue);
-          }
-        },
-      );
-    }
+        };
+        final auth = client();
+        final request = await auth
+            .dispatch(root.resolve('file'))
+            .create(data: 'important payload');
+        final response = await request.close().timeout(
+          const Duration(seconds: 1),
+        );
+        await response.response.drain<void>();
+        expect(response.response.statusCode, HttpStatus.unauthorized);
+        expect(puts, 1);
+        expect(
+          visits.where((v) => v.method == 'PUT').single.body,
+          'important payload',
+        );
+        expect(visits.where((v) => v.method == 'PROPFIND'), hasLength(2));
+      },
+    );
   }
+
+  test(
+    'Digest signs query targets and preserves opaque with unique counts',
+    () async {
+      final counts = <String>[];
+      final nonces = <String>[];
+      const realm = 'WebDAV, "realm"';
+      const opaque = 'opaque\\value';
+      handler = (request, body) async {
+        final header = request.headers.value(HttpHeaders.authorizationHeader);
+        if (header == null) {
+          request.response.statusCode = HttpStatus.unauthorized;
+          request.response.headers.set(
+            HttpHeaders.wwwAuthenticateHeader,
+            r'Digest realm="WebDAV, \"realm\"", nonce="fixed", qop="auth", opaque="opaque\\value"',
+          );
+          return;
+        }
+        final fields = AuthenticationChallenge.parse(header).parameters;
+        expect(fields['realm'], realm);
+        expect(fields['opaque'], opaque);
+        expect(fields['uri'], request.uri.toString());
+        expect(fields['nc'], matches(RegExp(r'^[0-9a-f]{8}$')));
+        counts.add(fields['nc']!);
+        nonces.add(fields['cnonce']!);
+        String hash(String value) => md5.convert(utf8.encode(value)).toString();
+        final ha1 = hash('user:$realm:password');
+        final ha2 = hash('${request.method}:${request.uri}');
+        expect(
+          fields['response'],
+          hash('$ha1:fixed:${fields['nc']}:${fields['cnonce']}:auth:$ha2'),
+        );
+        request.response.statusCode = HttpStatus.ok;
+      };
+      final auth = client();
+      expect(
+        await get(auth, root.resolve('file?version=1&name=a%20b')),
+        HttpStatus.ok,
+      );
+      expect(
+        await Future.wait(
+          List.generate(4, (i) => get(auth, root.resolve('file?version=$i'))),
+        ),
+        everyElement(HttpStatus.ok),
+      );
+      expect(counts.toSet(), hasLength(6));
+      expect(
+        counts,
+        containsAll([
+          '00000001',
+          '00000002',
+          '00000003',
+          '00000004',
+          '00000005',
+          '00000006',
+        ]),
+      );
+      expect(nonces.toSet(), hasLength(6));
+    },
+  );
 }

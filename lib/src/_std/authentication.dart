@@ -3,7 +3,9 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart' show md5;
 import 'package:http_parser/http_parser.dart' show AuthenticationChallenge;
 
 import '../dav/element.dart';
@@ -12,6 +14,9 @@ import '../io.dart';
 import '../method.dart';
 import 'depth.dart';
 import 'propfind.dart';
+
+part 'authentication_auto.dart';
+part 'authentication_basic.dart';
 
 /// Authentication selected by the package instead of a caller's SDK callback.
 enum WebDavAuthenticationMode {
@@ -29,6 +34,7 @@ enum WebDavAuthenticationMode {
 /// pure MD5 Digest with a read-only PROPFIND before opening business requests.
 /// Basic is only allowed over HTTPS unless [allowInsecureBasic] is explicit.
 /// This configuration must use a dedicated, previously unauthenticated client.
+/// Package-managed authentication is only available on native platforms.
 final class WebDavAuthenticationConfig {
   /// Absolute HTTP(S) directory URI limiting where credentials may be sent.
   final Uri scope;
@@ -48,7 +54,7 @@ final class WebDavAuthenticationConfig {
   /// Explicitly permits Basic over HTTP instead of requiring HTTPS.
   final bool allowInsecureBasic;
 
-  /// Deadline for the entire discovery operation, including SDK retries.
+  /// Deadline for all read-only discovery requests and their response bodies.
   final Duration discoveryTimeout;
 
   /// Validates and normalizes the credential scope and discovery settings.
@@ -87,24 +93,28 @@ final class WebDavAuthenticationConfig {
   }
 
   void _checkUri(Uri uri) {
+    if (!_containsUri(uri)) {
+      throw WebDavAuthenticationError(
+        'Request is outside the credential scope',
+        uri: uri,
+      );
+    }
+  }
+
+  bool _containsUri(Uri uri) {
     final normalized = uri.normalizePath();
     final segments = normalized.pathSegments;
     final unsafeSegment = segments.any(
       (s) => s == '.' || s == '..' || s.contains('/') || s.contains('\\'),
     );
     final root = scope.path.endsWith('/') ? scope.path : '${scope.path}/';
-    if (uri.userInfo.isNotEmpty ||
-        normalized.scheme != scope.scheme ||
-        normalized.host != scope.host ||
-        normalized.port != scope.port ||
-        unsafeSegment ||
-        !(normalized.path.startsWith(root) ||
-            normalized.path == root.substring(0, root.length - 1))) {
-      throw WebDavAuthenticationError(
-        'Request is outside the credential scope',
-        uri: uri,
-      );
-    }
+    return uri.userInfo.isEmpty &&
+        normalized.scheme == scope.scheme &&
+        normalized.host == scope.host &&
+        normalized.port == scope.port &&
+        !unsafeSegment &&
+        (normalized.path.startsWith(root) ||
+            normalized.path == root.substring(0, root.length - 1));
   }
 
   @override
@@ -143,11 +153,28 @@ abstract interface class WebDavAuthenticationSession {
   /// Creates the private implementation for [configuration] and [client].
   ///
   /// [client] must be dedicated to this session, without previously registered
-  /// SDK site-authentication callbacks or credentials.
+  /// SDK site-authentication callbacks or credentials. Throws [UnsupportedError]
+  /// on the Web, where the transport cannot disable automatic redirects.
   factory WebDavAuthenticationSession(
     WebDavAuthenticationConfig configuration,
     HttpClient client,
-  ) = _WebDavAuthenticationSession;
+  ) {
+    if (!const bool.fromEnvironment('dart.library.io')) {
+      throw UnsupportedError(
+        'Package-managed authentication requires native IO '
+        'to prevent automatic credential forwarding on redirects.',
+      );
+    }
+    return switch (configuration.mode) {
+      WebDavAuthenticationMode.basic => _BasicAuthenticationSession(
+        configuration,
+      ),
+      WebDavAuthenticationMode.auto => _AutomaticAuthenticationSession(
+        configuration,
+        client,
+      ),
+    };
+  }
 
   /// Whether explicit closure or a discovery timeout has ended the session.
   bool get closed;
@@ -174,37 +201,28 @@ abstract interface class WebDavAuthenticationSession {
   void configureRequest(HttpClientRequest request);
 }
 
-final class _WebDavAuthenticationSession
+// Shared scope checks, lifecycle and cached initialization do not depend on
+// whether authentication was configured explicitly or discovered.
+abstract base class _WebDavAuthenticationSession
     implements WebDavAuthenticationSession {
   final WebDavAuthenticationConfig _configuration;
-  final HttpClient _client;
-  final _pending = <HttpClientRequest>{};
-  Future<void>? _initializing;
-  bool _basic = false;
   bool _closed = false;
-  int? _lastStatus;
-  Uri? _lastProbeUri;
-  bool _discovering = false;
+  Future<_RequestAuthentication>? _initializing;
+  late _RequestAuthentication _authentication;
 
-  _WebDavAuthenticationSession(this._configuration, this._client);
+  _WebDavAuthenticationSession(this._configuration);
 
   @override
   bool get closed => _closed;
 
   @override
-  bool get discovering => _discovering;
+  bool get discovering => false;
 
   @override
-  void close() {
-    _closed = true;
-    for (final request in _pending.toList()) {
-      request.abort();
-    }
-    _pending.clear();
-  }
+  void close() => _closed = true;
 
   void _checkOpen() {
-    if (_closed) {
+    if (closed) {
       throw StateError('The authenticated WebDAV client is closed.');
     }
   }
@@ -213,192 +231,25 @@ final class _WebDavAuthenticationSession
   Future<void> prepare(Uri uri) async {
     _checkOpen();
     _configuration._checkUri(uri);
-    await (_initializing ??= _initialize());
+    _authentication = await (_initializing ??= _initialize());
     _checkOpen();
   }
+
+  Future<_RequestAuthentication> _initialize();
 
   @override
   void configureRequest(HttpClientRequest request) {
     _checkOpen();
     _configuration._checkUri(request.uri);
     request.followRedirects = false;
-    if (_basic) {
-      request.headers.set(
-        HttpHeaders.authorizationHeader,
-        'Basic ${base64Encode(utf8.encode('${_configuration.username}:${_configuration.password}'))}',
-      );
-    }
+    _authentication.apply(request);
   }
+}
 
-  Future<void> _initialize() async {
-    _discovering = true;
-    try {
-      await _negotiate().timeout(_configuration.discoveryTimeout);
-    } on TimeoutException {
-      close();
-      _client.close(force: true);
-      throw WebDavAuthenticationError(
-        'Authentication discovery timed out',
-        uri: _lastProbeUri ?? _configuration.probeUri,
-        statusCode: _lastStatus,
-      );
-    } on IOException catch (error) {
-      if (error is WebDavAuthenticationError) rethrow;
-      throw WebDavAuthenticationError(
-        'Authentication discovery request failed',
-        uri: _lastProbeUri ?? _configuration.probeUri,
-        statusCode: _lastStatus,
-      );
-    } finally {
-      _discovering = false;
-    }
-  }
+// No strategy registers SDK credentials: a business 401 must remain a response,
+// never an SDK retry that silently drops the original body.
+sealed class _RequestAuthentication {
+  const _RequestAuthentication();
 
-  void _selectBasic(Uri uri, {int? statusCode}) {
-    if (uri.scheme != 'https' && !_configuration.allowInsecureBasic) {
-      throw WebDavAuthenticationError(
-        'Basic authentication requires HTTPS',
-        uri: uri,
-        statusCode: statusCode,
-      );
-    }
-    _basic = true;
-  }
-
-  Future<void> _negotiate() async {
-    if (_configuration.mode == WebDavAuthenticationMode.basic) {
-      _selectBasic(_configuration.probeUri);
-      return;
-    }
-    var uri = _configuration.probeUri;
-    while (true) {
-      _checkOpen();
-      final response = await _probe(uri);
-      final status = response.statusCode;
-      final headers = response.headers[HttpHeaders.wwwAuthenticateHeader];
-      await response.drain<void>();
-      _checkOpen();
-      if (status >= HttpStatus.ok && status < HttpStatus.multipleChoices) {
-        return;
-      }
-      if (status == HttpStatus.notFound && headers == null) {
-        final parent = uri.resolve(uri.path.endsWith('/') ? '../' : './');
-        if (parent.path != uri.path) {
-          try {
-            _configuration._checkUri(parent);
-            uri = parent;
-            continue;
-          } on WebDavAuthenticationError {
-            // Reached the configured scope. Never probe its parent.
-          }
-        }
-      }
-      if (status != HttpStatus.unauthorized || headers == null) {
-        throw WebDavAuthenticationError(
-          'Authentication discovery failed',
-          uri: uri,
-          statusCode: status,
-        );
-      }
-      final List<AuthenticationChallenge> challenges;
-      try {
-        challenges = headers
-            .expand(AuthenticationChallenge.parseHeader)
-            .toList();
-      } on FormatException {
-        throw WebDavAuthenticationError(
-          'Unsupported authentication challenge format',
-          uri: uri,
-          statusCode: status,
-        );
-      }
-      if (challenges.any(
-        (c) => c.scheme == 'basic' && c.parameters['realm'] != null,
-      )) {
-        _selectBasic(uri, statusCode: status);
-        return;
-      }
-      if (challenges.length == 1 &&
-          headers.length == 1 &&
-          challenges.single.scheme == 'digest' &&
-          _supportedDigest(challenges.single)) {
-        await _warmDigest(uri, challenges.single);
-        return;
-      }
-      throw WebDavAuthenticationError(
-        'Unsupported authentication challenge',
-        uri: uri,
-        statusCode: status,
-      );
-    }
-  }
-
-  bool _supportedDigest(AuthenticationChallenge challenge) {
-    final p = challenge.parameters;
-    final qop = p['qop'];
-    return p['realm'] != null &&
-        p['nonce'] != null &&
-        (p['algorithm'] ?? 'MD5').toLowerCase() == 'md5' &&
-        // The SDK compares the complete qop value; it cannot select from lists.
-        (qop == null || qop == 'auth');
-  }
-
-  Future<void> _warmDigest(Uri uri, AuthenticationChallenge challenge) async {
-    var attempts = 0;
-    _client.authenticate = (url, scheme, realm) async {
-      _checkOpen();
-      _configuration._checkUri(url);
-      if (scheme != 'Digest' ||
-          realm != challenge.parameters['realm'] ||
-          attempts++ >= 2) {
-        return false;
-      }
-      _client.addCredentials(
-        _configuration.scope,
-        realm ?? '',
-        HttpClientDigestCredentials(
-          _configuration.username,
-          _configuration.password,
-        ),
-      );
-      return true;
-    };
-    final response = await _probe(uri);
-    final status = response.statusCode;
-    await response.drain<void>();
-    _checkOpen();
-    if (status != HttpStatus.notFound &&
-        !(status >= HttpStatus.ok && status < HttpStatus.multipleChoices)) {
-      throw WebDavAuthenticationError(
-        'Digest authentication failed',
-        uri: uri,
-        statusCode: status,
-      );
-    }
-  }
-
-  Future<HttpClientResponse> _probe(Uri uri) async {
-    _checkOpen();
-    _lastProbeUri = uri;
-    final request = await _client.openUrl(WebDavMethod.propfind.name, uri);
-    if (_closed) {
-      request.abort();
-      _checkOpen();
-    }
-    _pending.add(request);
-    request.followRedirects = false;
-    try {
-      const param = PropfindPropRequestParam(
-        depth: Depth.resource,
-        props: [PropfindRequestProp.dav(WebDavElementNames.resourcetype)],
-      );
-      param.beforeAddRequestBody(request);
-      request.write(param.toRequestBody());
-      final response = await request.close();
-      _lastStatus = response.statusCode;
-      return response;
-    } finally {
-      _pending.remove(request);
-    }
-  }
+  void apply(HttpClientRequest request);
 }

@@ -32,6 +32,11 @@ class WebDavStdClient implements WebDavClient {
   /// authentication callback or credentials registered. Do not configure its
   /// site authentication directly after passing it here. Redirects are not
   /// followed automatically in this mode.
+  ///
+  /// Throws [UnsupportedError] on the Web because its transport cannot prevent
+  /// credential forwarding on automatic redirects. Business 401 responses are
+  /// returned without retries; create a new client to rediscover expired Digest
+  /// credentials or nonces.
   WebDavStdClient.authenticated({
     required WebDavAuthenticationConfig authentication,
     HttpClient? client,

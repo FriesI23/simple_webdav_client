@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Prevent Digest business-request retries and empty-body replay; bound discovery
+  to parent traversal and one authenticated probe. Reject managed authentication
+  on the Web, where redirect credential scoping cannot be guaranteed.
 - Add managed Basic discovery for mixed WWW-Authenticate challenges, explicit
   Basic authentication, scoped credentials and bounded Digest discovery.
 - Reuse the existing native HTTP test server for authentication regressions.

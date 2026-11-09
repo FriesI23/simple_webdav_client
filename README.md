@@ -32,7 +32,10 @@ Following methods have been implemented:
 
 ### Authentication
 
-Use `WebDavStdClient.authenticated` for automatic Basic or Digest authentication.
+Use `WebDavStdClient.authenticated` for automatic Basic or Digest authentication
+on native platforms. This constructor throws `UnsupportedError` on the Web,
+where the current transport cannot disable automatic redirects. The legacy
+constructors remain available on all supported platforms.
 Basic can also be selected when the server offers both Basic and Bearer.
 Bearer/OAuth authentication is not supported. Digest requires MD5 with no qop
 or `qop="auth"`.
@@ -53,6 +56,12 @@ HTTPS by default; set `allowInsecureBasic: true` for an HTTP server.
 
 Authenticated clients do not follow redirects automatically. Do not combine
 this constructor with `setAuthenticate` or `addCredentials`.
+
+Discovery walks from `probeUri` up to `scope` on unauthenticated 404 responses.
+Digest uses at most one additional authenticated, read-only PROPFIND to verify
+credentials. Business requests are never retried automatically: a 401 is returned
+to the caller. Create a new client to rediscover authentication after a Digest
+nonce expires or credentials change.
 
 ### Propfind
 
