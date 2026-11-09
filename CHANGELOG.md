@@ -2,14 +2,14 @@
 
 ## Unreleased
 
-- Prevent Digest business-request retries and empty-body replay; bound discovery
-  to parent traversal and one authenticated probe. Reject managed authentication
-  on the Web, where redirect credential scoping cannot be guaranteed.
-- Add managed Basic discovery for mixed WWW-Authenticate challenges, explicit
-  Basic authentication, scoped credentials and bounded Digest discovery.
-- Reuse the existing native HTTP test server for authentication regressions.
-- Use the official `http_parser` challenge parser and existing PROPFIND builders
-  for authentication discovery; document unsupported token68 headers.
+- Add scoped Basic and MD5 Digest authentication with read-only discovery,
+  mixed Basic challenge support and an explicit Basic mode on native platforms.
+- Support HTTP Digest over direct and proxy connections, including custom
+  connection factories.
+- Disable automatic redirects for authenticated clients and keep CONNECT proxy
+  credentials out of requests to the origin.
+- Preserve transport exceptions and caller-configured proxy authentication.
+- Exclude tests and TLS fixtures from published archives.
 
 - Require Dart 3.8 or later and update WebDAV/XML and development dependencies.
 - Adopt a stricter pure Dart style baseline and Dart 3.8.3 formatting.

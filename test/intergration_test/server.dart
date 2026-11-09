@@ -29,11 +29,20 @@ class TestUsagedHttpServer {
     return minPort + random.nextInt(maxPort - minPort);
   }
 
-  Future<void> open() async {
+  Future<void> open({
+    SecurityContext? securityContext,
+    Set<String> additionalMethods = const {},
+  }) async {
     for (var i = 0; i <= 10; i++) {
       final port = getPort();
       try {
-        server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+        server = securityContext == null
+            ? await HttpServer.bind(InternetAddress.loopbackIPv4, port)
+            : await HttpServer.bindSecure(
+                InternetAddress.loopbackIPv4,
+                port,
+                securityContext,
+              );
         bindPort = port;
         break;
       } on SocketException catch (e) {
@@ -42,7 +51,8 @@ class TestUsagedHttpServer {
       }
     }
     server.listen((event) async {
-      if (WebDavMethod.fromName(event.method) == WebDavMethod.unknown) {
+      if (WebDavMethod.fromName(event.method) == WebDavMethod.unknown &&
+          !additionalMethods.contains(event.method)) {
         event.response.statusCode = HttpStatus.methodNotAllowed;
         event.response.close();
         return;

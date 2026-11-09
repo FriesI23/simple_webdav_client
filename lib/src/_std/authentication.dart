@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Fries_I23
 // SPDX-License-Identifier: MIT
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -18,23 +17,20 @@ import 'propfind.dart';
 part 'authentication_auto.dart';
 part 'authentication_basic.dart';
 
-/// Authentication selected by the package instead of a caller's SDK callback.
+/// Authentication strategy for a WebDAV client.
 enum WebDavAuthenticationMode {
-  /// Discovers Basic or supported pure Digest before business requests begin.
+  /// Selects Basic or supported Digest through read-only discovery.
   auto,
 
   /// Sends Basic credentials immediately without probing the server.
   basic,
 }
 
-/// Credentials for one origin and an optional directory subtree.
+/// Credentials and authentication settings for a WebDAV directory.
 ///
-/// [scope] must be an absolute HTTP(S) directory URI. [probeUri] defaults to
-/// [scope]. Automatic mode discovers Basic (including mixed challenges) or
-/// pure MD5 Digest with a read-only PROPFIND before opening business requests.
-/// Basic is only allowed over HTTPS unless [allowInsecureBasic] is explicit.
-/// This configuration must use a dedicated, previously unauthenticated client.
-/// Package-managed authentication is only available on native platforms.
+/// [scope] limits credentials to one HTTP(S) origin and directory subtree.
+/// Basic requires HTTPS unless [allowInsecureBasic] is enabled.
+/// Available on native platforms.
 final class WebDavAuthenticationConfig {
   /// Absolute HTTP(S) directory URI limiting where credentials may be sent.
   final Uri scope;
@@ -122,7 +118,7 @@ final class WebDavAuthenticationConfig {
       'WebDavAuthenticationConfig(mode: ${mode.name}, scope: $scope)';
 }
 
-/// A bounded authentication/discovery failure. Credentials are never included.
+/// An authentication policy, challenge or discovery failure.
 final class WebDavAuthenticationError implements WebDavError, HttpException {
   /// Explanation of the failure without credential values.
   @override
@@ -135,7 +131,7 @@ final class WebDavAuthenticationError implements WebDavError, HttpException {
   /// Last observed HTTP status, or null if no response was received.
   final int? statusCode;
 
-  /// Records an authentication failure while redacting URI user information.
+  /// Creates an authentication error with an optional HTTP [statusCode].
   WebDavAuthenticationError(this.message, {required Uri uri, this.statusCode})
     : uri = uri.replace(userInfo: '');
 
@@ -145,25 +141,35 @@ final class WebDavAuthenticationError implements WebDavError, HttpException {
       '(status: $statusCode, uri: $uri)';
 }
 
-/// Coordinates authentication discovery and request setup for one transport.
+/// Coordinates authentication discovery and request setup for one HTTP client.
 ///
-/// This internal contract does not send or replay business requests. Its owner
-/// remains responsible for closing the dedicated HTTP client.
+/// The owner is responsible for closing the HTTP client.
 abstract interface class WebDavAuthenticationSession {
-  /// Creates the private implementation for [configuration] and [client].
+  /// Creates a session using [configuration] and a dedicated [client].
   ///
-  /// [client] must be dedicated to this session, without previously registered
-  /// SDK site-authentication callbacks or credentials. Throws [UnsupportedError]
-  /// on the Web, where the transport cannot disable automatic redirects.
+  /// [client] must have no SDK site-authentication callbacks or credentials.
+  /// [connectionFactory] is an optional socket factory for [client], including
+  /// HTTP Digest connections.
+  ///
+  /// Throws [UnsupportedError] on the Web.
   factory WebDavAuthenticationSession(
     WebDavAuthenticationConfig configuration,
-    HttpClient client,
-  ) {
+    HttpClient client, {
+    Future<ConnectionTask<Socket>> Function(
+      Uri uri,
+      String? proxyHost,
+      int? proxyPort,
+    )?
+    connectionFactory,
+  }) {
     if (!const bool.fromEnvironment('dart.library.io')) {
       throw UnsupportedError(
         'Package-managed authentication requires native IO '
         'to prevent automatic credential forwarding on redirects.',
       );
+    }
+    if (connectionFactory != null) {
+      client.connectionFactory = connectionFactory;
     }
     return switch (configuration.mode) {
       WebDavAuthenticationMode.basic => _BasicAuthenticationSession(
@@ -172,6 +178,7 @@ abstract interface class WebDavAuthenticationSession {
       WebDavAuthenticationMode.auto => _AutomaticAuthenticationSession(
         configuration,
         client,
+        connectionFactory: connectionFactory,
       ),
     };
   }
@@ -189,20 +196,20 @@ abstract interface class WebDavAuthenticationSession {
 
   /// Validates [uri] and completes authentication before opening its request.
   ///
-  /// Concurrent calls share initialization and its cached success or failure.
+  /// Concurrent calls share the same initialization result.
   /// Throws [StateError] after closure and [WebDavAuthenticationError] for
-  /// rejected scope or authentication discovery failures.
+  /// scope violations or discovery failures. Transport exceptions propagate
+  /// unchanged.
   Future<void> prepare(Uri uri);
 
   /// Applies the selected authentication and disables automatic redirects.
   ///
   /// Call after [prepare] completes, before writing or sending [request].
-  /// Throws if the session is closed or the request is outside its scope.
+  /// Throws [StateError] after closure or [WebDavAuthenticationError] when
+  /// the request is outside the credential scope.
   void configureRequest(HttpClientRequest request);
 }
 
-// Shared scope checks, lifecycle and cached initialization do not depend on
-// whether authentication was configured explicitly or discovered.
 abstract base class _WebDavAuthenticationSession
     implements WebDavAuthenticationSession {
   final WebDavAuthenticationConfig _configuration;
@@ -241,15 +248,21 @@ abstract base class _WebDavAuthenticationSession
   void configureRequest(HttpClientRequest request) {
     _checkOpen();
     _configuration._checkUri(request.uri);
-    request.followRedirects = false;
+    _configureTransportRequest(request);
     _authentication.apply(request);
   }
 }
 
-// No strategy registers SDK credentials: a business 401 must remain a response,
-// never an SDK retry that silently drops the original body.
 sealed class _RequestAuthentication {
   const _RequestAuthentication();
 
   void apply(HttpClientRequest request);
+}
+
+void _configureTransportRequest(HttpClientRequest request) {
+  request.followRedirects = false;
+  if (request.uri.scheme == 'https') {
+    // Proxy credentials belong to CONNECT, not requests inside the tunnel.
+    request.headers.removeAll(HttpHeaders.proxyAuthorizationHeader);
+  }
 }

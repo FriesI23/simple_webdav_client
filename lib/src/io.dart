@@ -5,12 +5,12 @@
 
 export 'package:universal_io/io.dart'
     show
+        ConnectionTask,
         ContentType,
         Cookie,
         HttpClient,
         HttpClientBasicCredentials,
         HttpClientCredentials,
-        HttpClientDigestCredentials,
         HttpClientRequest,
         HttpClientResponse,
         HttpDate,
@@ -18,5 +18,5 @@ export 'package:universal_io/io.dart'
         HttpHeaders,
         HttpOverrides,
         HttpStatus,
-        IOException,
-        SecurityContext;
+        SecurityContext,
+        Socket;

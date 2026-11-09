@@ -7,8 +7,22 @@ final class _AutomaticAuthenticationSession
     extends _WebDavAuthenticationSession {
   final _AuthenticationDiscovery _discovery;
 
-  _AutomaticAuthenticationSession(super.configuration, HttpClient client)
-    : _discovery = _AuthenticationDiscovery(configuration, client);
+  _AutomaticAuthenticationSession(
+    super.configuration,
+    HttpClient client, {
+    Future<ConnectionTask<Socket>> Function(
+      Uri uri,
+      String? proxyHost,
+      int? proxyPort,
+    )?
+    connectionFactory,
+  }) : _discovery = _AuthenticationDiscovery(
+         configuration,
+         client,
+         configuration.scope.scheme == 'http'
+             ? _HttpRequestTargets(connectionFactory)
+             : null,
+       );
 
   @override
   bool get closed => super.closed || _discovery.closed;
@@ -29,16 +43,22 @@ final class _AutomaticAuthenticationSession
 final class _AuthenticationDiscovery {
   final WebDavAuthenticationConfig _configuration;
   final HttpClient _client;
+  final _HttpRequestTargets? _requestTargets;
   HttpClientRequest? _pending;
   bool closed = false;
   bool running = false;
   int? _lastStatus;
   Uri? _lastProbeUri;
 
-  _AuthenticationDiscovery(this._configuration, this._client);
+  _AuthenticationDiscovery(
+    this._configuration,
+    this._client,
+    this._requestTargets,
+  );
 
   void close() {
     closed = true;
+    _requestTargets?.close();
     _pending?.abort();
   }
 
@@ -51,21 +71,17 @@ final class _AuthenticationDiscovery {
   Future<_RequestAuthentication> run() async {
     running = true;
     try {
-      return await _discover().timeout(_configuration.discoveryTimeout);
-    } on TimeoutException {
-      close();
-      _client.close(force: true);
-      throw WebDavAuthenticationError(
-        'Authentication discovery timed out',
-        uri: _lastProbeUri ?? _configuration.probeUri,
-        statusCode: _lastStatus,
-      );
-    } on IOException catch (error) {
-      if (error is WebDavAuthenticationError) rethrow;
-      throw WebDavAuthenticationError(
-        'Authentication discovery request failed',
-        uri: _lastProbeUri ?? _configuration.probeUri,
-        statusCode: _lastStatus,
+      return await _discover().timeout(
+        _configuration.discoveryTimeout,
+        onTimeout: () {
+          close();
+          _client.close(force: true);
+          throw WebDavAuthenticationError(
+            'Authentication discovery timed out',
+            uri: _lastProbeUri ?? _configuration.probeUri,
+            statusCode: _lastStatus,
+          );
+        },
       );
     } finally {
       running = false;
@@ -73,7 +89,6 @@ final class _AuthenticationDiscovery {
   }
 
   Future<_RequestAuthentication> _discover() async {
-    // Each 404 moves strictly toward the scope root; null is the exit.
     for (
       Uri? uri = _configuration.probeUri;
       uri != null;
@@ -122,9 +137,10 @@ final class _AuthenticationDiscovery {
       case [final challenge]
           when response.challenges!.length == 1 &&
               _DigestAuthentication.supports(challenge):
+        _requestTargets?.enable(_client);
         return _verifyDigest(
           response.uri,
-          _DigestAuthentication(_configuration, challenge),
+          _DigestAuthentication(_configuration, challenge, _requestTargets),
         );
       default:
         throw response.failure('Unsupported authentication challenge');
@@ -135,7 +151,6 @@ final class _AuthenticationDiscovery {
     Uri uri,
     _DigestAuthentication authentication,
   ) async {
-    // Exactly one authenticated, read-only probe. A 401 ends discovery.
     final response = await _probe(uri, authentication);
     return switch (response.status) {
       HttpStatus.notFound ||
@@ -157,7 +172,9 @@ final class _AuthenticationDiscovery {
     }
     _pending = request;
     try {
-      request.followRedirects = false;
+      _configureTransportRequest(request);
+      // Digest requires a new, observed connection after discovery.
+      if (_requestTargets != null) request.persistentConnection = false;
       authentication.apply(request);
       const param = PropfindPropRequestParam(
         depth: Depth.resource,
@@ -175,6 +192,9 @@ final class _AuthenticationDiscovery {
       await response.drain<void>();
       _checkOpen();
       return result;
+    } catch (_) {
+      request.abort();
+      rethrow;
     } finally {
       _pending = null;
     }
@@ -208,8 +228,83 @@ final class _AnonymousAuthentication extends _RequestAuthentication {
   void apply(HttpClientRequest request) {}
 }
 
-// SDK Digest signing is coupled to automatic transport retries. Generate only
-// the header here, using crypto for MD5 and RFC 7616 section 3.4 for the proof.
+// HTTP proxies use absolute-form targets; HTTPS uses origin-form inside TLS.
+final class _HttpRequestTargets {
+  final Future<ConnectionTask<Socket>> Function(
+    Uri uri,
+    String? proxyHost,
+    int? proxyPort,
+  )?
+  _connectionFactory;
+  final _routes = <(int, String, int), bool>{};
+  bool _closed = false;
+
+  _HttpRequestTargets(this._connectionFactory);
+
+  void enable(HttpClient client) => client.connectionFactory = _connect;
+
+  void close() {
+    _closed = true;
+    _routes.clear();
+  }
+
+  Future<ConnectionTask<Socket>> _connect(
+    Uri uri,
+    String? proxyHost,
+    int? proxyPort,
+  ) async {
+    final task =
+        await (_connectionFactory?.call(uri, proxyHost, proxyPort) ??
+            Socket.startConnect(
+              proxyHost ?? uri.host,
+              proxyPort ??
+                  (uri.port == 0 ? HttpClient.defaultHttpPort : uri.port),
+            ));
+    return ConnectionTask.fromSocket(
+      task.socket.then((socket) {
+        if (_closed) {
+          socket.destroy();
+          throw StateError('Authentication discovery is closed.');
+        }
+        final key = (
+          socket.port,
+          socket.remoteAddress.address,
+          socket.remotePort,
+        );
+        _routes[key] = proxyHost != null;
+        return socket;
+      }),
+      task.cancel,
+    );
+  }
+
+  String target(HttpClientRequest request) {
+    final connection = request.connectionInfo;
+    final route = connection == null
+        ? null
+        : _routes.remove((
+            connection.localPort,
+            connection.remoteAddress.address,
+            connection.remotePort,
+          ));
+    if (route == null) {
+      throw WebDavAuthenticationError(
+        'Cannot determine the Digest request target',
+        uri: request.uri,
+      );
+    }
+    return route
+        ? request.uri.removeFragment().toString()
+        : _originRequestTarget(request.uri);
+  }
+}
+
+String _originRequestTarget(Uri uri) {
+  final path = uri.path.isEmpty ? '/' : uri.path;
+  return uri.hasQuery ? '$path?${uri.query}' : path;
+}
+
+// MD5 Digest header signing as defined in RFC 7616 section 3.4.
 final class _DigestAuthentication extends _RequestAuthentication {
   final String _username;
   final String _realm;
@@ -217,12 +312,14 @@ final class _DigestAuthentication extends _RequestAuthentication {
   final String? _opaque;
   final String _ha1;
   final _DigestQop _qop;
+  final _HttpRequestTargets? _requestTargets;
   final Random _random = Random.secure();
   int _nonceCount = 0;
 
   _DigestAuthentication(
     WebDavAuthenticationConfig configuration,
     AuthenticationChallenge challenge,
+    this._requestTargets,
   ) : _username = configuration.username,
       _realm = challenge.parameters['realm']!,
       _nonce = challenge.parameters['nonce']!,
@@ -251,8 +348,10 @@ final class _DigestAuthentication extends _RequestAuthentication {
 
   @override
   void apply(HttpClientRequest request) {
-    final path = request.uri.path.isEmpty ? '/' : request.uri.path;
-    final target = request.uri.hasQuery ? '$path?${request.uri.query}' : path;
+    final target =
+        _requestTargets?.target(request) ?? _originRequestTarget(request.uri);
+    // PAC can select DIRECT or PROXY for the same endpoint on the next request.
+    if (_requestTargets != null) request.persistentConnection = false;
     final ha2 = _hash('${request.method}:$target');
     final fields = <String, String>{
       'username': _username,

@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:http_parser/http_parser.dart' show AuthenticationChallenge;
+import 'package:mockito/mockito.dart' show Fake;
 import 'package:simple_webdav_client/client.dart';
 import 'package:simple_webdav_client/utils.dart' show Depth;
 import 'package:test/test.dart';
@@ -33,8 +34,13 @@ void main() {
     Uri? scope,
     Uri? probeUri,
     Duration timeout = const Duration(seconds: 3),
+    HttpClient? http,
+    Future<ConnectionTask<Socket>> Function(Uri, String?, int?)?
+    connectionFactory,
   }) {
     final result = WebDavStdClient.authenticated(
+      client: http,
+      connectionFactory: connectionFactory,
       authentication: WebDavAuthenticationConfig(
         scope: scope ?? root,
         probeUri: probeUri,
@@ -53,6 +59,69 @@ void main() {
     final response = await (await client.dispatch(uri ?? root).get()).close();
     await response.response.drain<void>();
     return response.response.statusCode;
+  }
+
+  Future<void> expectRedirectResponse(WebDavStdClient client, Uri scope) async {
+    handler = (request, body) async {
+      if (scope.scheme == 'https') {
+        expect(
+          request.headers.value(HttpHeaders.proxyAuthorizationHeader),
+          isNull,
+        );
+      }
+      request.response.statusCode = HttpStatus.found;
+      request.response.headers.set(
+        HttpHeaders.locationHeader,
+        'http://outside.invalid/private',
+      );
+    };
+    final response =
+        await (await client
+                .dispatch(scope.resolve('redirect'))
+                .create(data: 'payload'))
+            .close()
+            .timeout(const Duration(seconds: 2));
+    expect(response.response.statusCode, HttpStatus.found);
+    expect(response.response.redirects, isEmpty);
+    await response.response.drain<void>();
+  }
+
+  void requireDigest({String? qop = 'auth', Map<String, String>? files}) {
+    final challenge =
+        'Digest realm="WebDAV", nonce="fixed-nonce", algorithm=MD5${qop == null ? '' : ', qop="$qop"'}';
+    handler = (request, body) async {
+      final header = request.headers.value(HttpHeaders.authorizationHeader);
+      final fields = header == null
+          ? <String, String>{}
+          : AuthenticationChallenge.parse(header).parameters;
+      String hash(String value) => md5.convert(utf8.encode(value)).toString();
+      final ha1 = hash('user:WebDAV:password');
+      final ha2 = hash('${request.method}:${request.uri}');
+      final expected = qop == null
+          ? hash('$ha1:fixed-nonce:$ha2')
+          : hash(
+              '$ha1:fixed-nonce:${fields['nc']}:${fields['cnonce']}:auth:$ha2',
+            );
+      if (fields['response'] != expected ||
+          fields['uri'] != request.uri.toString()) {
+        request.response.statusCode = HttpStatus.unauthorized;
+        request.response.headers.set(
+          HttpHeaders.wwwAuthenticateHeader,
+          challenge,
+        );
+        return;
+      }
+      if (request.method == WebDavMethod.put.name) {
+        files?[request.uri.path] = body;
+        request.response.statusCode = HttpStatus.created;
+      } else if (request.method == WebDavMethod.get.name) {
+        request.response.statusCode = HttpStatus.ok;
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(files?[request.uri.path] ?? '');
+      } else {
+        request.response.statusCode = HttpStatus.multiStatus;
+      }
+    };
   }
 
   setUp(() async {
@@ -400,21 +469,66 @@ void main() {
     await expectLater(get(auth), throwsStateError);
   });
 
-  test('discovery transport errors include the failed URI', () async {
+  test('discovery preserves connection failures', () async {
     final unavailable = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final uri = root.replace(port: unavailable.port);
     await unavailable.close(force: true);
     final auth = client(scope: uri);
-    await expectLater(
-      get(auth, uri),
-      throwsA(
-        isA<WebDavAuthenticationError>()
-            .having((e) => e.uri, 'uri', uri)
-            .having((e) => e.statusCode, 'status', isNull),
-      ),
-    );
+    await expectLater(get(auth, uri), throwsA(isA<SocketException>()));
     expect(visits, isEmpty);
   });
+
+  for (final phase in ['discovery', 'business auto', 'business basic']) {
+    for (final error in <Exception>[
+      const SocketException('connection failed'),
+      const HandshakeException('certificate rejected'),
+      const HttpException('transport failed'),
+      TimeoutException('transport deadline'),
+    ]) {
+      test('$phase preserves the original ${error.runtimeType}', () async {
+        final transport = _FailingOpenClient();
+        final auth = client(
+          http: transport,
+          mode: phase == 'business basic'
+              ? WebDavAuthenticationMode.basic
+              : WebDavAuthenticationMode.auto,
+        );
+        if (phase == 'business auto') {
+          expect(await get(auth), HttpStatus.ok);
+        }
+        transport.failure = error;
+        await expectLater(get(auth), throwsA(same(error)));
+        expect(auth.closed, isFalse);
+      });
+    }
+  }
+
+  for (final access in ['Basic auto', 'Basic forced', 'anonymous']) {
+    test('$access preserves the injected HTTP connection factory', () async {
+      if (access == 'anonymous') {
+        handler = (request, body) async {
+          request.response.statusCode = HttpStatus.ok;
+        };
+      }
+      var connections = 0;
+      final http = HttpClient()
+        ..connectionFactory = (uri, host, port) {
+          connections++;
+          return Socket.startConnect(uri.host, uri.port);
+        };
+      final auth = client(
+        http: http,
+        mode: access == 'Basic forced'
+            ? WebDavAuthenticationMode.basic
+            : WebDavAuthenticationMode.auto,
+      );
+      expect(await get(auth), HttpStatus.ok);
+      final afterFirst = connections;
+      expect(afterFirst, greaterThan(0));
+      expect(await get(auth), HttpStatus.ok);
+      expect(connections, afterFirst);
+    });
+  }
 
   test(
     'parent discovery timeout reports its actual URI and last status',
@@ -510,37 +624,335 @@ void main() {
   });
 
   for (final qop in [null, 'auth']) {
+    for (final route in [
+      'direct',
+      'proxy',
+      'proxy fallback',
+      'direct fallback',
+      'switch at same endpoint',
+    ]) {
+      test(
+        'Digest $route signs the wire target and keeps PUT data (qop: $qop)',
+        () async {
+          final files = <String, String>{};
+          requireDigest(qop: qop, files: files);
+          final unavailable = await HttpServer.bind(
+            InternetAddress.loopbackIPv4,
+            0,
+          );
+          final unavailablePort = unavailable.port;
+          await unavailable.close(force: true);
+          final proxied = route == 'proxy' || route == 'proxy fallback';
+          final scope = proxied
+              ? Uri.parse('http://origin.example.test/dav/')
+              : root.resolve('dav/');
+          final proxy = 'PROXY 127.0.0.1:${server.bindPort}';
+          final http = HttpClient()
+            ..findProxy = (uri) => switch (route) {
+              'direct' => 'DIRECT',
+              'proxy' => proxy,
+              'proxy fallback' => 'PROXY 127.0.0.1:$unavailablePort; $proxy',
+              'direct fallback' => 'PROXY 127.0.0.1:$unavailablePort; DIRECT',
+              _ => uri.queryParameters['via'] == 'proxy' ? proxy : 'DIRECT',
+            };
+          final observedRoutes = <bool>[];
+          final auth = client(
+            http: http,
+            scope: scope,
+            probeUri: scope.resolve('probe/'),
+            connectionFactory: (uri, host, port) {
+              observedRoutes.add(host != null);
+              return Socket.startConnect(host ?? uri.host, port ?? uri.port);
+            },
+          );
+          final file = scope.resolve(
+            'file%20%E4%B9%A0%E6%83%AF.json?via=proxy&name=a%20b#fragment',
+          );
+          const data = '{"habit":"习惯","value":42}';
+          final request = await auth.dispatch(file).create(data: data);
+          request.request.headers.contentType = ContentType.json;
+          request.request.contentLength = utf8.encode(data).length;
+          final upload = await request.close();
+          expect(upload.response.statusCode, HttpStatus.created);
+          await upload.response.drain<void>();
+          for (final uri in [
+            file,
+            file.replace(query: ''),
+            file.resolve(file.path),
+          ]) {
+            final download = await (await auth.dispatch(uri).get()).close();
+            expect(download.response.statusCode, HttpStatus.ok);
+            expect(await utf8.decoder.bind(download.response).join(), data);
+          }
+          expect(
+            visits.where((v) => v.method == WebDavMethod.put.name),
+            hasLength(1),
+          );
+          expect(observedRoutes, isNotEmpty);
+          if (route == 'switch at same endpoint') {
+            expect(observedRoutes, containsAll([false, true]));
+          }
+          await expectRedirectResponse(auth, scope);
+        },
+      );
+    }
+  }
+
+  for (final proxied in [false, true]) {
+    test('Digest signs an empty path with query (proxy: $proxied)', () async {
+      requireDigest();
+      final scope = proxied ? Uri.parse('http://origin.example.test/') : root;
+      final http = HttpClient()
+        ..findProxy = (_) =>
+            proxied ? 'PROXY 127.0.0.1:${server.bindPort}' : 'DIRECT';
+      final auth = client(http: http, scope: scope);
+      final uri = scope.replace(
+        path: '',
+        query: 'version=1',
+        fragment: 'client-only',
+      );
+      expect(await get(auth, uri), HttpStatus.ok);
+    });
+  }
+
+  for (final mode in WebDavAuthenticationMode.values) {
+    test('$mode keeps the SDK default for explicit HTTP port zero', () async {
+      int? observedPort;
+      final uri = Uri.parse('http://127.0.0.1:0/');
+      final http = HttpClient()..findProxy = (_) => 'DIRECT';
+      final auth = client(http: http, scope: uri, mode: mode);
+      await IOOverrides.runZoned(
+        () async {
+          await expectLater(get(auth, uri), throwsA(isA<IOException>()));
+        },
+        socketStartConnect:
+            (host, port, {sourceAddress, sourcePort = 0}) async {
+              observedPort = port;
+              throw const SocketException(
+                'Stop before opening a test connection',
+              );
+            },
+      );
+      expect(observedPort, HttpClient.defaultHttpPort);
+      expect(visits, isEmpty);
+    });
+  }
+
+  test('unknown routing aborts the unsent Digest probe connection', () async {
+    requireDigest();
+    final transport = _UnknownRouteClient();
+    final auth = client(http: transport);
+    await expectLater(
+      get(auth),
+      throwsA(
+        isA<WebDavAuthenticationError>().having(
+          (e) => e.message,
+          'message',
+          'Cannot determine the Digest request target',
+        ),
+      ),
+    );
+    expect(() => transport.lastSocket!.port, throwsA(isA<SocketException>()));
+    expect(visits, hasLength(1));
+  });
+
+  for (final scheme in ['Digest', 'Basic auto', 'Basic forced']) {
+    for (final route in [
+      'direct TLS',
+      'CONNECT tunnel',
+      'authenticated CONNECT tunnel',
+      'custom TLS factory',
+      'untrusted TLS',
+      'CONNECT tunnel wrong host',
+    ]) {
+      test(
+        '$scheme $route keeps credentials scoped and preserves TLS configuration',
+        () async {
+          final files = <String, String>{};
+          requireDigest(files: files);
+          if (scheme != 'Digest') {
+            handler = (request, body) async {
+              if (request.headers.value(HttpHeaders.authorizationHeader) !=
+                  _authorization) {
+                request.response.statusCode = HttpStatus.unauthorized;
+                request.response.headers.set(
+                  HttpHeaders.wwwAuthenticateHeader,
+                  _mixed,
+                );
+              } else if (request.method == WebDavMethod.put.name) {
+                files[request.uri.path] = body;
+                request.response.statusCode = HttpStatus.created;
+              } else {
+                request.response.statusCode = HttpStatus.ok;
+                request.response.write(files[request.uri.path] ?? '');
+              }
+            };
+          }
+          final originProxyHeaders = <String?>[];
+          final respondToOrigin = handler!;
+          handler = (request, body) {
+            originProxyHeaders.add(
+              request.headers.value(HttpHeaders.proxyAuthorizationHeader),
+            );
+            return respondToOrigin(request, body);
+          };
+          final respond = server.expectedResponse;
+          await server.close();
+          server = TestUsagedHttpServer()..expectedResponse = respond;
+          const certificate = 'test/intergration_test/fixtures/test-cert.pem';
+          final serverContext = SecurityContext()
+            ..useCertificateChain(certificate)
+            ..usePrivateKey('test/intergration_test/fixtures/test-key.pem');
+          await server.open(securityContext: serverContext);
+          root = Uri.parse('https://localhost:${server.bindPort}/');
+          if (route == 'CONNECT tunnel wrong host') {
+            root = root.replace(host: 'wrong.invalid');
+          }
+          final trust = SecurityContext()
+            ..setTrustedCertificates(
+              'test/intergration_test/fixtures/test-ca.pem',
+            );
+          final http = HttpClient(
+            context: route == 'untrusted TLS' ? SecurityContext() : trust,
+          );
+          final pinned = File(certificate).readAsStringSync().trim();
+          bool isTestCertificate(X509Certificate certificate) =>
+              certificate.pem.trim() == pinned;
+          // Native stores can limit leaf lifetimes even for private test CAs.
+          if (route != 'untrusted TLS') {
+            http.badCertificateCallback = (certificate, host, port) =>
+                host == 'localhost' &&
+                port == server.bindPort &&
+                isTestCertificate(certificate);
+          }
+          var tunnels = 0;
+          var customConnections = 0;
+          if (route.contains('CONNECT tunnel')) {
+            final proxy = await HttpServer.bind(
+              InternetAddress.loopbackIPv4,
+              0,
+            );
+            final sockets = <Socket>[];
+            addTearDown(() async {
+              for (final socket in sockets) {
+                socket.destroy();
+              }
+              await proxy.close(force: true);
+            });
+            Future<void> pipe(Socket source, Socket destination) async {
+              try {
+                await destination.addStream(source);
+                await destination.close();
+              } on IOException {
+                destination.destroy();
+              }
+            }
+
+            proxy.listen((request) async {
+              expect(request.method, 'CONNECT');
+              expect(request.uri.toString(), root.authority);
+              tunnels++;
+              expect(
+                request.headers.value(HttpHeaders.authorizationHeader),
+                isNull,
+              );
+              if (route == 'authenticated CONNECT tunnel') {
+                expect(
+                  request.headers.value(HttpHeaders.proxyAuthorizationHeader),
+                  'Basic ${base64Encode(utf8.encode('proxy-user:proxy-password'))}',
+                );
+              }
+              final upstream = await Socket.connect(
+                '127.0.0.1',
+                server.bindPort,
+              );
+              request.response.statusCode = HttpStatus.ok;
+              request.response.contentLength = 0;
+              final downstream = await request.response.detachSocket();
+              sockets.addAll([upstream, downstream]);
+              unawaited(pipe(upstream, downstream));
+              unawaited(pipe(downstream, upstream));
+            });
+            http.findProxy = (_) => route == 'authenticated CONNECT tunnel'
+                ? 'PROXY proxy-user:proxy-password@127.0.0.1:${proxy.port}'
+                : 'PROXY 127.0.0.1:${proxy.port}';
+          } else if (route == 'custom TLS factory') {
+            http.connectionFactory = (uri, host, port) {
+              customConnections++;
+              expect(host, isNull);
+              return SecureSocket.startConnect(
+                uri.host,
+                uri.port,
+                context: trust,
+                onBadCertificate: isTestCertificate,
+              );
+            };
+          }
+          final auth = client(
+            http: http,
+            scope: root,
+            mode: scheme == 'Basic forced'
+                ? WebDavAuthenticationMode.basic
+                : WebDavAuthenticationMode.auto,
+          );
+          final file = root.resolve('habit%20name.json?version=1#fragment');
+          if (route == 'untrusted TLS' ||
+              route == 'CONNECT tunnel wrong host') {
+            await expectLater(
+              auth.dispatch(file).create(data: 'payload'),
+              throwsA(isA<HandshakeException>()),
+            );
+            expect(originProxyHeaders, isEmpty);
+            return;
+          }
+          final upload =
+              await (await auth.dispatch(file).create(data: 'payload')).close();
+          expect(upload.response.statusCode, HttpStatus.created);
+          await upload.response.drain<void>();
+          final download = await (await auth.dispatch(file).get()).close();
+          expect(download.response.statusCode, HttpStatus.ok);
+          expect(await utf8.decoder.bind(download.response).join(), 'payload');
+          expect(originProxyHeaders, everyElement(isNull));
+          await expectRedirectResponse(auth, root);
+          if (route.contains('CONNECT tunnel')) expect(tunnels, greaterThan(0));
+          if (route == 'custom TLS factory') expect(customConnections, 1);
+        },
+      );
+    }
+  }
+
+  test(
+    'Digest route tracking preserves custom connection cancellation',
+    () async {
+      requireDigest();
+      final pending = Completer<Socket>();
+      var cancellations = 0;
+      var connections = 0;
+      final auth = client(
+        timeout: const Duration(milliseconds: 100),
+        connectionFactory: (uri, host, port) async {
+          if (connections++ == 0) {
+            return Socket.startConnect(uri.host, uri.port);
+          }
+          return ConnectionTask.fromSocket(pending.future, () {
+            cancellations++;
+            if (!pending.isCompleted) {
+              pending.completeError(const SocketException('cancelled'));
+            }
+          });
+        },
+      );
+      await expectLater(get(auth), throwsA(isA<WebDavAuthenticationError>()));
+      expect(cancellations, 1);
+      expect(auth.closed, isTrue);
+      expect(visits, hasLength(1));
+    },
+  );
+
+  for (final qop in [null, 'auth']) {
     for (final password in ['password', 'wrong']) {
       test('pure Digest verifies before PUT ($password, qop: $qop)', () async {
-        final challenge =
-            'Digest realm="WebDAV", nonce="fixed-nonce", algorithm=MD5${qop == null ? '' : ', qop="$qop"'}';
-        handler = (request, body) async {
-          final header =
-              request.headers.value(HttpHeaders.authorizationHeader) ?? '';
-          final fields = header.isEmpty
-              ? <String, String>{}
-              : AuthenticationChallenge.parse(header).parameters;
-          String hash(String s) => md5.convert(utf8.encode(s)).toString();
-          final ha1 = hash('user:WebDAV:password');
-          final ha2 = hash('${request.method}:${request.uri}');
-          final expected = qop == null
-              ? hash('$ha1:fixed-nonce:$ha2')
-              : hash(
-                  '$ha1:fixed-nonce:${fields['nc']}:${fields['cnonce']}:auth:$ha2',
-                );
-          if (fields['response'] != expected) {
-            request.response.statusCode = HttpStatus.unauthorized;
-            request.response.headers.set(
-              HttpHeaders.wwwAuthenticateHeader,
-              challenge,
-            );
-          } else {
-            request.response.statusCode =
-                request.method == WebDavMethod.put.name
-                ? HttpStatus.created
-                : HttpStatus.multiStatus;
-          }
-        };
+        requireDigest(qop: qop);
         final auth = client(
           password: password,
           timeout: const Duration(milliseconds: 300),
@@ -699,4 +1111,68 @@ void main() {
       expect(nonces.toSet(), hasLength(6));
     },
   );
+}
+
+class _UnknownRouteClient extends Fake implements HttpClient {
+  final HttpClient _client = HttpClient();
+  Socket? lastSocket;
+
+  @override
+  set connectionFactory(
+    Future<ConnectionTask<Socket>> Function(Uri, String?, int?)? factory,
+  ) => _client.connectionFactory = (uri, host, port) async {
+    final task = await factory!(uri, host, port);
+    return ConnectionTask.fromSocket(
+      task.socket.then((socket) {
+        lastSocket = socket;
+        return socket;
+      }),
+      task.cancel,
+    );
+  };
+
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri uri) async =>
+      _UnknownRouteRequest(await _client.openUrl(method, uri));
+
+  @override
+  void close({bool force = false}) => _client.close(force: force);
+}
+
+class _UnknownRouteRequest extends Fake implements HttpClientRequest {
+  final HttpClientRequest _request;
+
+  _UnknownRouteRequest(this._request);
+
+  @override
+  Uri get uri => _request.uri;
+  @override
+  HttpHeaders get headers => _request.headers;
+  @override
+  HttpConnectionInfo? get connectionInfo => null;
+  @override
+  set followRedirects(bool value) => _request.followRedirects = value;
+  @override
+  set persistentConnection(bool value) => _request.persistentConnection = value;
+  @override
+  void write(Object? value) => _request.write(value);
+  @override
+  Future<HttpClientResponse> close() => _request.close();
+  @override
+  void abort([Object? exception, StackTrace? stackTrace]) =>
+      _request.abort(exception, stackTrace);
+}
+
+class _FailingOpenClient extends Fake implements HttpClient {
+  final HttpClient _client = HttpClient();
+  Exception? failure;
+
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri uri) {
+    final error = failure;
+    return error == null ? _client.openUrl(method, uri) : Future.error(error);
+  }
+
+  @override
+  void close({bool force = false}) => _client.close(force: force);
 }

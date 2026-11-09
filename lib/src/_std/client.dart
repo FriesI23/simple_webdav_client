@@ -26,23 +26,38 @@ class WebDavStdClient implements WebDavClient {
 
   WebDavStdClient.withClient(this.client);
 
-  /// Uses package-managed discovery, or explicitly preemptive Basic auth.
+  /// Creates a native WebDAV client with scoped Basic or Digest authentication.
   ///
-  /// An injected [client] must be dedicated to this instance, with no SDK
-  /// authentication callback or credentials registered. Do not configure its
-  /// site authentication directly after passing it here. Redirects are not
-  /// followed automatically in this mode.
+  /// [authentication] controls discovery and credential scope. An injected
+  /// [client] must be dedicated to this instance and remain free of SDK
+  /// site-authentication callbacks and credentials.
   ///
-  /// Throws [UnsupportedError] on the Web because its transport cannot prevent
-  /// credential forwarding on automatic redirects. Business 401 responses are
-  /// returned without retries; create a new client to rediscover expired Digest
-  /// credentials or nonces.
+  /// For custom HTTP Digest connections, supply [connectionFactory] here.
+  /// HTTP Digest uses a fresh connection for each request. Other authentication
+  /// modes and HTTPS retain the client's connection handling.
+  ///
+  /// Redirects are not followed automatically. Requests are not replayed by the
+  /// package. SDK proxy-authentication retries can omit request bodies.
+  /// Transport exceptions propagate unchanged. Create a new client to change
+  /// credentials or rediscover an expired Digest nonce.
+  ///
+  /// Throws [UnsupportedError] on the Web.
   WebDavStdClient.authenticated({
     required WebDavAuthenticationConfig authentication,
     HttpClient? client,
+    Future<ConnectionTask<Socket>> Function(
+      Uri uri,
+      String? proxyHost,
+      int? proxyPort,
+    )?
+    connectionFactory,
   }) {
     this.client = client ?? HttpClient();
-    _authentication = WebDavAuthenticationSession(authentication, this.client);
+    _authentication = WebDavAuthenticationSession(
+      authentication,
+      this.client,
+      connectionFactory: connectionFactory,
+    );
   }
 
   @override
@@ -59,7 +74,8 @@ class WebDavStdClient implements WebDavClient {
   /// Pass through setter of [HttpClient.authenticate]. This callback called
   /// when server returns Unauthorized (401). [addCredentials] can be called
   /// in this callback method to authorize client.
-  /// Return [false] when authorization cannot be provided."
+  /// Returns `false` when authorization cannot be provided.
+  /// Throws [StateError] when using [WebDavStdClient.authenticated].
   ///
   /// Example:
   ///
@@ -80,7 +96,7 @@ class WebDavStdClient implements WebDavClient {
   void _checkLegacyAuthentication() {
     if (_authentication != null) {
       throw StateError(
-        'SDK site authentication cannot be mixed with '
+        'SDK authentication cannot be mixed with '
         'package-managed authentication.',
       );
     }
@@ -88,16 +104,19 @@ class WebDavStdClient implements WebDavClient {
 
   /// Sets the function to be called when a proxy is requesting authentication.
   ///
-  /// Pass through setter of [HttpClient.authenticateProxy].
+  /// Delegates to [HttpClient.authenticateProxy].
   @override
   void setAuthenticateProxy(
     Future<bool> Function(String host, int port, String scheme, String? realm)?
     f,
-  ) => client.authenticateProxy = f;
+  ) {
+    client.authenticateProxy = f;
+  }
 
   /// Add credentials to be used for authorizing requests.
   ///
-  /// Pass through setter of [HttpClient.addCredentials].
+  /// Delegates to [HttpClient.addCredentials].
+  /// Throws [StateError] when using [WebDavStdClient.authenticated].
   @override
   void addCredentials(
     Uri url,
@@ -110,14 +129,16 @@ class WebDavStdClient implements WebDavClient {
 
   /// Add credentials to be used for authorizing proxies.
   ///
-  /// Pass through setter of [HttpClient.addProxyCredentials].
+  /// Delegates to [HttpClient.addProxyCredentials].
   @override
   void addProxyCredentials(
     String host,
     int port,
     String realm,
     HttpClientCredentials credentials,
-  ) => client.addProxyCredentials(host, port, realm, credentials);
+  ) {
+    client.addProxyCredentials(host, port, realm, credentials);
+  }
 
   @override
   bool get closed => _closing || (_authentication?.closed ?? false);
