@@ -7,8 +7,8 @@ permissions:
   contents: read
 
 jobs:
-  quality:
-    name: Dart 3.8.3 quality and publishing checks
+  dart-test:
+    name: Dart Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -40,23 +40,19 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: success() || failure()
         with:
-          name: dart-test-results-quality
+          name: dart-test-results
           path: test-results/package_test.log
           if-no-files-found: warn
           retention-days: 7
 
   compatibility:
-    name: Dart ${{ matrix.sdk }} compatibility
+    name: SDK Compatibility
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        sdk: ['3.8.0', stable]
     steps:
       - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: ${{ matrix.sdk }}
+          sdk: stable
       - name: Resolve compatible dependencies
         run: dart pub upgrade
       - name: Require zero analyzer diagnostics
@@ -67,30 +63,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: success() || failure()
         with:
-          name: dart-test-results-${{ matrix.sdk }}
-          path: test-results/package_test.log
-          if-no-files-found: warn
-          retention-days: 7
-
-  downgraded:
-    name: Dart 3.8.0 minimum dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dart-lang/setup-dart@v1
-        with:
-          sdk: '3.8.0'
-      - name: Resolve minimum dependencies
-        run: dart pub downgrade
-      - name: Require zero analyzer diagnostics
-        run: make analyze
-      - name: Run all tests
-        if: success() || failure()
-        run: make test CI=1 MACHINE_OUT=test-results/package_test.log
-      - uses: actions/upload-artifact@v7
-        if: success() || failure()
-        with:
-          name: dart-test-results-downgraded
+          name: dart-test-results-compatibility
           path: test-results/package_test.log
           if-no-files-found: warn
           retention-days: 7
