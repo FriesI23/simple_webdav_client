@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 -->
 
-## Unreleased
+## 0.3.0
 
 - Add scoped Basic and MD5 Digest authentication with read-only discovery,
   mixed Basic challenge support and an explicit Basic mode on native platforms.
@@ -17,6 +17,7 @@
 - Adopt a stricter pure Dart style baseline and Dart 3.8.3 formatting.
 - Add local quality commands and CI checks for SDK and dependency compatibility.
 - Gate tag publishing on all checks and use Dart directly for OIDC publishing.
+- Refresh usage documentation and add related project recommendations.
 
 ## 0.2.0
 
