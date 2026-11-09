@@ -130,12 +130,12 @@ void main() {
       final context = XmlBuilder();
       final nsmgr = StdNamespaceManger();
       final value = ProppatchRequestPropHttpDateValue(
-        DateTime.parse("2024-09-04 17:06:31"),
+        DateTime.utc(2024, 9, 4, 17, 6, 31),
       );
       value.toXml(context, nsmgr);
       expect(
         context.buildDocument().toString(),
-        'Wed, 04 Sep 2024 09:06:31 GMT',
+        'Wed, 04 Sep 2024 17:06:31 GMT',
       );
     });
   });

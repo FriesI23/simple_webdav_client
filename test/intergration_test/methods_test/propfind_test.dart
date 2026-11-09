@@ -461,7 +461,7 @@ DingALing property.
       <D:prop xmlns:R="http://ns.example.com/boxschema/">
         <R:bigbox><R:BoxType>Box type A</R:BoxType></R:bigbox>
         <R:author><R:Name>Hadrian</R:Name></R:author>
-        <D:creationdate>1997-12-01T17:42:21-08:00</D:creationdate>
+        <D:creationdate>1997-12-01T17:42:21Z</D:creationdate>
         <D:displayname>Example collection</D:displayname>
         <D:resourcetype><D:collection/></D:resourcetype>
         <D:supportedlock>
@@ -484,7 +484,7 @@ DingALing property.
       <D:prop xmlns:R="http://ns.example.com/boxschema/">
         <R:bigbox><R:BoxType>Box type B</R:BoxType>
         </R:bigbox>
-        <D:creationdate>1997-12-01T18:27:21-08:00</D:creationdate>
+        <D:creationdate>1997-12-01T18:27:21Z</D:creationdate>
         <D:displayname>Example HTML resource</D:displayname>
         <D:getcontentlength>4525</D:getcontentlength>
         <D:getcontenttype>text/html</D:getcontenttype>
@@ -599,7 +599,7 @@ DingALing property.
             "creationdate",
             kDavNamespaceUrlStr,
             HttpStatus.ok,
-            equals(DateTime.parse("1997-12-01T17:42:21-08:00")),
+            equals(DateTime.utc(1997, 12, 1, 17, 42, 21)),
           ),
           (
             "displayname",
@@ -675,7 +675,7 @@ DingALing property.
             "creationdate",
             kDavNamespaceUrlStr,
             HttpStatus.ok,
-            DateTime.parse("1997-12-01T18:27:21-08:00"),
+            DateTime.utc(1997, 12, 1, 18, 27, 21),
           ),
           (
             "displayname",

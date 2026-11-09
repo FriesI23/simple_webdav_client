@@ -331,13 +331,13 @@ void main() {
             name: "test",
             namespace: Uri.parse("DAV:"),
             status: HttpStatus.accepted,
-            value: DateTime.parse("2024-08-29 11:29:47"),
+            value: DateTime.utc(2024, 8, 29, 11, 29, 47),
           ),
           (name: "test", ns: "CUSTOM:"): WebDavStdResourceProp(
             name: "test",
             namespace: Uri.parse("CUSTOM:"),
             status: HttpStatus.accepted,
-            value: DateTime.parse("1970-01-01 12:00:00"),
+            value: DateTime.utc(1970, 1, 1, 12),
           ),
         },
       );
@@ -354,8 +354,8 @@ WebDavStdResponseResult{
   WebDavStdResource{
     path:http://example.com/1 | status:202,
     props(2):
-      [DAV:]test: WebDavStdResourceProp<dynamic>{name:test,ns:dav:,status:202,value:2024-08-29 11:29:47.000},
-      [CUSTOM:]test: WebDavStdResourceProp<dynamic>{name:test,ns:custom:,status:202,value:1970-01-01 12:00:00.000},
+      [DAV:]test: WebDavStdResourceProp<dynamic>{name:test,ns:dav:,status:202,value:2024-08-29 11:29:47.000Z},
+      [CUSTOM:]test: WebDavStdResourceProp<dynamic>{name:test,ns:custom:,status:202,value:1970-01-01 12:00:00.000Z},
   }
   // http://example.com/2
   WebDavStdResource{

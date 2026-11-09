@@ -36,7 +36,7 @@ void main() {
         node: XmlDocument.parse(
           """
 <D:prop1 xml:lang=en-us xmlns:D=DAV:>
-  2024-09-03T15:27:04
+  2024-09-03T15:27:04Z
 </D:prop1>
 """
               .trim(),
@@ -49,7 +49,7 @@ void main() {
       expect(result.desc, 'test');
       expect(result.error!.message, "mock");
       expect(result.lang, 'en-us');
-      expect(result.value, equals(DateTime.parse("2024-09-03T15:27:04")));
+      expect(result.value, equals(DateTime.utc(2024, 9, 3, 15, 27, 4)));
     });
   });
   group("test HttpDatePropParser", () {
@@ -90,7 +90,7 @@ void main() {
       expect(result.desc, 'test');
       expect(result.error!.message, "mock");
       expect(result.lang, 'en-us');
-      expect(result.value, equals(DateTime.parse("2024-09-03T07:27:04Z")));
+      expect(result.value, equals(DateTime.utc(2024, 9, 3, 7, 27, 4)));
     });
     group("test StringPropParser", () {
       test("convert", () {

@@ -195,7 +195,7 @@ void main() {
 <D:propstat xmlns:D="DAV:">
   <D:prop>
     <D:getetag>"123456789"</D:getetag>
-    <D:getlastmodified>Tue, 10 Aug 2023 14:30:00 GMT</D:getlastmodified>
+    <D:getlastmodified>Thu, 10 Aug 2023 14:30:00 GMT</D:getlastmodified>
   </D:prop>
 </D:propstat>
 """
