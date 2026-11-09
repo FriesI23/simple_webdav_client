@@ -14,12 +14,12 @@ final class _BasicAuthenticationSession extends _WebDavAuthenticationSession {
 final class _BasicAuthentication extends _RequestAuthentication {
   final String _header;
 
-  _BasicAuthentication(
+  factory _BasicAuthentication(
     WebDavAuthenticationConfig configuration, {
+    AuthenticationChallenge? challenge,
     Uri? uri,
     int? statusCode,
-  }) : _header =
-           'Basic ${base64Encode(utf8.encode('${configuration.username}:${configuration.password}'))}' {
+  }) {
     if (configuration.scope.scheme != 'https' &&
         !configuration.allowInsecureBasic) {
       throw WebDavAuthenticationError(
@@ -28,7 +28,13 @@ final class _BasicAuthentication extends _RequestAuthentication {
         statusCode: statusCode,
       );
     }
+    final credentials = _credentialsForChallenge(configuration, challenge);
+    return _BasicAuthentication._(
+      'Basic ${base64Encode(utf8.encode('${credentials.username}:${credentials.password}'))}',
+    );
   }
+
+  const _BasicAuthentication._(this._header);
 
   @override
   void apply(HttpClientRequest request) =>

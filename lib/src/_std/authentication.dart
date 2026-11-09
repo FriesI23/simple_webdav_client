@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart' show md5;
 import 'package:http_parser/http_parser.dart' show AuthenticationChallenge;
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
 
 import '../dav/element.dart';
 import '../error.dart';
@@ -273,6 +274,21 @@ sealed class _RequestAuthentication {
   const _RequestAuthentication();
 
   void apply(HttpClientRequest request);
+}
+
+({String username, String password}) _credentialsForChallenge(
+  WebDavAuthenticationConfig configuration,
+  AuthenticationChallenge? challenge,
+) {
+  final normalize = challenge?.parameters['charset']?.toLowerCase() == 'utf-8';
+  return (
+    username: normalize
+        ? unorm.nfc(configuration.username)
+        : configuration.username,
+    password: normalize
+        ? unorm.nfc(configuration.password)
+        : configuration.password,
+  );
 }
 
 void _configureTransportRequest(HttpClientRequest request) {

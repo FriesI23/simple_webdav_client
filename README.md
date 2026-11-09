@@ -72,8 +72,8 @@ await client
 
 ## Authentication
 
-For protected endpoints on native platforms, use
-`WebDavStdClient.authenticated`:
+Use `WebDavStdClient.authenticated` for scoped Basic and MD5 Digest
+authentication on **native platforms**:
 
 ```dart
 final client = WebDavStdClient.authenticated(
@@ -85,29 +85,77 @@ final client = WebDavStdClient.authenticated(
 );
 ```
 
-| Option | Description |
+- **Mode:** `auto` performs read-only discovery by default. Set
+  `mode: WebDavAuthenticationMode.basic` to send Basic credentials immediately.
+- **Credentials:** restricted to the configured origin and directory subtree;
+  Basic requires HTTPS by default.
+- **Requests:** redirects are returned to the application; the package does not
+  replay business requests.
+
+<details>
+<summary>Configuration options</summary>
+
+| Configuration | Behavior |
 | --- | --- |
-| `scope` | Origin and directory where credentials may be used |
-| `mode` | `WebDavAuthenticationMode.auto` (default), or `WebDavAuthenticationMode.basic` to select Basic |
-| `allowInsecureBasic` | Set to `true` to allow Basic over HTTP; HTTPS is required by default |
+| `scope` | Required HTTP(S) directory URI ending in `/`; limits credentials to that origin and directory subtree |
+| `username`, `password` | Credentials for the selected scheme |
+| `mode` | `WebDavAuthenticationMode.auto` (default) discovers authentication; `WebDavAuthenticationMode.basic` sends Basic credentials immediately without discovery |
+| `probeUri` | Initial discovery URI within `scope`; defaults to `scope` |
+| `discoveryTimeout` | Deadline for discovery requests and response bodies; defaults to 30 seconds |
+| `allowInsecureBasic` | Defaults to `false`, requiring HTTPS for Basic; set to `true` to permit HTTP |
 
-Automatic mode sends read-only discovery requests before the first operation.
-It supports Basic, including mixed Basic challenges, and pure MD5 Digest with
-no `qop` or `qop="auth"`. Bearer and OAuth are not supported.
+</details>
 
-Pass a configured `HttpClient` through `client` for custom proxy, TLS and
-connection settings. For a custom HTTP Digest connection factory, use the
-constructor's `connectionFactory` parameter. HTTP Digest uses a fresh
-connection for each request. Transport errors propagate unchanged.
+<details>
+<summary>Supported schemes and Unicode handling</summary>
 
-Authenticated clients do not follow redirects automatically. The package does
-not replay requests. SDK proxy-authentication retries can omit request bodies.
-Handle redirect and authentication responses in your application. Create a new
-client when changing credentials or renewing an expired Digest nonce.
+Automatic mode selects Basic or supported Digest from the server's challenge.
+Bearer and OAuth are not supported.
 
-`WebDavStdClient()` and `WebDavStdClient.withClient(...)` also support browser
-applications. On native platforms, use `setAuthenticate` and `addCredentials`
-with these constructors for SDK-managed authentication.
+| Capability | Basic | Digest |
+| --- | --- | --- |
+| Discovery | Basic-only or mixed challenges containing Basic | A single Digest challenge |
+| Credential encoding | UTF-8, then Base64 | UTF-8 for digest calculation |
+| NFC normalization | Username and password when the selected challenge declares `charset=UTF-8` | Same |
+| Non-ASCII usernames | Included in the Base64 credentials | Sent using `username*` when username hashing is not enabled |
+| Username hashing | Not applicable | Sends a hashed username and `userhash=true` when advertised by the server |
+| Algorithm and `qop` | Not applicable | MD5 with no `qop` or `qop="auth"` |
+
+The `charset=UTF-8` value is matched case-insensitively. Without that declaration,
+including explicit Basic mode, credentials retain their original Unicode form.
+
+</details>
+
+<details>
+<summary>Custom transport and lifecycle</summary>
+
+- **Discovery:** automatic mode uses bounded, read-only PROPFIND requests before
+  the first operation. Concurrent callers share initialization. After a
+  transport failure or 5xx response, a later call can retry discovery; a
+  discovery timeout closes the client.
+- **Requests:** redirects are returned to the application, and the package does
+  not replay business requests. SDK proxy-authentication retries can omit
+  request bodies. Handle redirect and authentication responses in your app.
+- **Custom transport:** pass a dedicated `HttpClient` through `client` for proxy,
+  TLS, and connection settings. For custom HTTP Digest connections, use the
+  constructor's `connectionFactory` parameter. HTTP Digest uses a fresh
+  connection for each request; other modes and HTTPS retain the client's
+  connection handling.
+- **Errors and credentials:** transport exceptions propagate unchanged. Create
+  a new client to change credentials or rediscover an expired Digest nonce.
+  Keep SDK site-authentication callbacks and credentials off the managed client;
+  SDK proxy-authentication APIs remain available.
+
+</details>
+
+<details>
+<summary>SDK-managed authentication and browser support</summary>
+
+`WebDavStdClient()` and `WebDavStdClient.withClient(...)` support native and
+browser applications. On native platforms, use `setAuthenticate` and
+`addCredentials` with these constructors for SDK-managed site authentication.
+
+</details>
 
 ## Operations
 

@@ -9,6 +9,8 @@
 - Disable automatic redirects for authenticated clients and keep CONNECT proxy
   credentials out of requests to the origin.
 - Preserve transport exceptions and caller-configured proxy authentication.
+- Support UTF-8 credentials, challenge-directed NFC normalization, and Digest
+  extended usernames (`username*`) and username hashing (`userhash=true`).
 - Exclude tests and TLS fixtures from published archives.
 
 - Require Dart 3.8 or later and update WebDAV/XML and development dependencies.

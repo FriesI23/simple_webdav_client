@@ -124,16 +124,18 @@ final class _AuthenticationDiscovery {
     _DiscoveryResponse response,
   ) async {
     final challenges = response.parseChallenges();
-    switch (challenges) {
-      case final values
-          when values.any(
-            (c) => c.scheme == 'basic' && c.parameters['realm'] != null,
-          ):
+    for (final challenge in challenges) {
+      if (challenge.scheme == 'basic' &&
+          challenge.parameters['realm'] != null) {
         return _BasicAuthentication(
           _configuration,
+          challenge: challenge,
           uri: response.uri,
           statusCode: response.status,
         );
+      }
+    }
+    switch (challenges) {
       case [final challenge]
           when response.challenges!.length == 1 &&
               _DigestAuthentication.supports(challenge):
@@ -311,22 +313,38 @@ final class _DigestAuthentication extends _RequestAuthentication {
   final String _nonce;
   final String? _opaque;
   final String _ha1;
+  final String? _usernameHash;
   final _DigestQop _qop;
   final _HttpRequestTargets? _requestTargets;
   final Random _random = Random.secure();
   int _nonceCount = 0;
 
-  _DigestAuthentication(
+  factory _DigestAuthentication(
     WebDavAuthenticationConfig configuration,
     AuthenticationChallenge challenge,
+    _HttpRequestTargets? requestTargets,
+  ) {
+    final credentials = _credentialsForChallenge(configuration, challenge);
+    return _DigestAuthentication._(
+      credentials.username,
+      credentials.password,
+      challenge,
+      requestTargets,
+    );
+  }
+
+  _DigestAuthentication._(
+    this._username,
+    String password,
+    AuthenticationChallenge challenge,
     this._requestTargets,
-  ) : _username = configuration.username,
-      _realm = challenge.parameters['realm']!,
+  ) : _realm = challenge.parameters['realm']!,
       _nonce = challenge.parameters['nonce']!,
       _opaque = challenge.parameters['opaque'],
-      _ha1 = _hash(
-        '${configuration.username}:${challenge.parameters['realm']}:${configuration.password}',
-      ),
+      _ha1 = _hash('$_username:${challenge.parameters['realm']}:$password'),
+      _usernameHash = challenge.parameters['userhash'] == 'true'
+          ? _hash('$_username:${challenge.parameters['realm']}')
+          : null,
       _qop = switch (challenge.parameters['qop']) {
         'auth' => _DigestQop.auth,
         _ => _DigestQop.none,
@@ -340,11 +358,18 @@ final class _DigestAuthentication extends _RequestAuthentication {
         (p['algorithm'] ?? 'MD5').toLowerCase() == 'md5' &&
         (p['qop'] == null || p['qop'] == 'auth') &&
         (p['charset'] == null || p['charset']!.toLowerCase() == 'utf-8') &&
-        p['userhash'] != 'true';
+        (p['userhash'] == null ||
+            const ['true', 'false'].contains(p['userhash']));
   }
 
   static String _hash(String value) =>
       md5.convert(utf8.encode(value)).toString();
+
+  static String _encodeExtendedUsername(String username) {
+    // RFC 5987 uses percent-encoded spaces instead of form encoding's '+'.
+    final encoded = Uri.encodeQueryComponent(username).replaceAll('+', '%20');
+    return "UTF-8''$encoded";
+  }
 
   @override
   void apply(HttpClientRequest request) {
@@ -354,12 +379,18 @@ final class _DigestAuthentication extends _RequestAuthentication {
     if (_requestTargets != null) request.persistentConnection = false;
     final ha2 = _hash('${request.method}:$target');
     final fields = <String, String>{
-      'username': _username,
+      if (_usernameHash != null)
+        'username': _usernameHash
+      else if (_username.codeUnits.any((unit) => unit > 0x7f))
+        'username*': _encodeExtendedUsername(_username)
+      else
+        'username': _username,
       'realm': _realm,
       'nonce': _nonce,
       'uri': target,
       'algorithm': 'MD5',
       'opaque': ?_opaque,
+      if (_usernameHash != null) 'userhash': 'true',
     };
     switch (_qop) {
       case _DigestQop.none:
@@ -370,7 +401,11 @@ final class _DigestAuthentication extends _RequestAuthentication {
     final parameters = fields.entries
         .map((entry) {
           final value = switch (entry.key) {
-            'algorithm' || 'qop' || 'nc' => entry.value,
+            'username*' ||
+            'userhash' ||
+            'algorithm' ||
+            'qop' ||
+            'nc' => entry.value,
             _ =>
               '"${entry.value.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"',
           };

@@ -16,6 +16,7 @@ dependencies:
   crypto: ^3.0.6
   http_parser: ^4.1.2
   universal_io: ^2.3.1
+  unorm_dart: ^0.3.3
   xml: ^6.6.1
 
 dev_dependencies:
