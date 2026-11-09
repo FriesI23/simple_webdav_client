@@ -1,215 +1,422 @@
 # Simple WebDAV Client
 
-![Package][pubdev-package]
+[![Package][pubdev-package]](https://pub.dev/packages/simple_webdav_client)
 ![Likes][pubdev-likes]
 ![Popularity][pubdev-popularity]
 ![Points][pubdev-points]
 
-`simple_webdav_client` is a Dart WebDAV client with full RFC 4918 support,
-including file operations (PUT/GET/CREATE/DELETE/MKCOL/MOVE/COPY),
-property management (PROPFIND/PROPUPDATE), and locking (LOCK/UNLOCK).
-Ideal for these needing complete WebDAV functionality.
-
-Client's API invocation style is similar to `HttpClient` and works more easily with async programming.
-refer to [here](./example/main.dart) for more examples.
+A pure Dart WebDAV client for files, collections, properties, and resource locks.
+The API supports asynchronous requests and customizable response parsing.
 
 ## Features
 
-Following methods have been implemented:
+- File and collection operations: GET, HEAD, POST, PUT, DELETE, MKCOL, COPY, MOVE.
+- Property retrieval and updates: PROPFIND, PROPPATCH.
+- Resource locking: LOCK, UNLOCK.
+- Basic and Digest authentication on native platforms.
+- Custom response decoders and XML property parsers.
 
-- [x] [PROPFIND](#propfind)
-- [x] [PROPPATCH](#proppatch)
-- [x] [MKCOL](#mkcolput)
-- [x] [GET](#getheadpost)
-- [x] [HEAD](#getheadpost)
-- [x] [POST](#getheadpost)
-- [x] [DELETE](#delete)
-- [x] [PUT](#mkcolput)
-- [x] [COPY](#copy)
-- [x] [MOVE](#move)
-- [x] [LOCK](#lock)
-- [x] [UNLOCK](#unlock)
+## Installation
 
-### Propfind
+Requires Dart 3.8 or later.
 
-Used to retrieve properties defined on the resource identified by the Request-URI.
-see [RFC4918#9.1](https://datatracker.ietf.org/doc/html/rfc4918#section-9.1) for more information.
-
-You can make a direct request or use the dispatcher's API to make a request
-(following related sections will not be repeated).
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    // Use [PropfindPropRequestParam] to specify the properties to be requested,
-    // [PropfindAllRequestParam] to retrieve as many live properties as possible,
-    // and [PropfindNameRequestParam] to retrieve all property names.
-    param: PropfindPropRequestParam(...),
-);
-// api
-client.dispatch(url).findProps(...);
-client.dispatch(url).findAllProps(...);
-client.dispatch(url).findPropNames(...);
+```sh
+dart pub add simple_webdav_client
 ```
 
-### Proppatch
+## Quick start
 
-Used to set and/or remove properties defined on the resource identified by the request-URI.
-see [RFC4918#9.2](https://datatracker.ietf.org/doc/html/rfc4918#section-9.2) for more information.
+Retrieve a collection's properties and those of its immediate members:
 
 ```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: ProppatchRequestParam(...),
-);
-// api
-client.dispatch(url).updateProps(...);
+import 'package:simple_webdav_client/client.dart';
+import 'package:simple_webdav_client/utils.dart' show Depth;
+
+Future<void> main() async {
+  final client = WebDavStdClient();
+  final url = Uri.parse('https://example.com/dav/');
+
+  try {
+    final request = await client
+        .dispatch(url)
+        .findAllProps(depth: Depth.members);
+    final response = await request.close();
+    final result = await response.parse();
+    print(result?.toDebugString());
+  } finally {
+    client.close();
+  }
+}
 ```
 
-### Mkcol/Put
+Dispatcher methods return a request. Call `close()` to send it, then `parse()`
+for a WebDAV result. For raw response data, use the underlying
+`response.response` stream instead. Consume each response body and close the
+client when finished.
 
-Creates new (collection) resource at the location specified by the Request-URI.
-see [RFC4918#9.3 - MKCOL](https://datatracker.ietf.org/doc/html/rfc4918#section-9.3) and
-[RFC4918#9.7 - PUT](https://datatracker.ietf.org/doc/html/rfc4918#section-9.7)
-for more information.
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    // mkcol: MkcolRequestParam
-    // put: PutRequestParam
-    param: MkcolRequestParam(...),
-);
-// api
-client.dispatch(url).create(...);
-client.dispatch(url).createDir(...);
-```
-
-### Get/Head/Post
-
-Same as the HTTP methods defined in [RFC7231](https://datatracker.ietf.org/doc/html/rfc7231).
+<details>
+<summary>Example: chain request futures</summary>
 
 ```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    // get: GetRequestParam
-    // head: HeadRequestParam
-    // post: PostRequestParam
-    param: GetRequestParam(...),
-);
-// api: get
-client.dispatch(url).get(...);
-```
-
-### Delete
-
-Deletes resource identified by the Request-URI.
-see [RFC4918#9.6](https://datatracker.ietf.org/doc/html/rfc4918#section-9.6) for more information.
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: DeleteRequestParam(...),
-);
-// api
-client.dispatch(url).delete(...);
-client.dispatch(url).deleteDir(...);
-```
-
-### Copy
-
-Create a copy of the source resource.
-see [RFC4918#9.8](https://datatracker.ietf.org/doc/html/rfc4918#section-9.8) for more information.
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: CopyRequestParam(...),
-);
-// api
-client.dispatch(url).copy(...);
-client.dispatch(url).copyDir(...);
-```
-
-### Move
-
-Move a resource to a new location.
-see [RFC4918#9.9](https://datatracker.ietf.org/doc/html/rfc4918#section-9.9) for more information.
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: MoveRequestParam(...),
-);
-// api
-client.dispatch(url).move(...);
-client.dispatch(url).moveDir(...);
-```
-
-### Lock
-
-Used to Request lock on a resource.
-see [RFC4918#9.10](https://datatracker.ietf.org/doc/html/rfc4918#section-9.10) for more information.
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: LockRequestParam(...),
-);
-// api
-client.dispatch(url).createLock(...);
-client.dispatch(url).createDirLock(...);
-client.dispatch(url).renewLock(...);
-```
-
-### Unlock
-
-Removes the lock identified by the token in Lock-Token.
-see [RFC4918#9.11](https://datatracker.ietf.org/doc/html/rfc4918#section-9.11) for more information.
-
-```dart
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: UnlockRequestParam(...),
-);
-// api
-client.dispatch(url).unlock(...);
-```
-
-## Usage
-
-Check test cases in dir:[intergration_test/methods_test](./test/intergration_test/methods_test/)
-and [example/main.dart](./example/main.dart) for more examples.
-
-### 1. Example - full request
-
-```dart
-WebDavClient.std().dispatch(newFilePath)
-    .findAllProps(includes: [PropfindRequestProp('author', 'CUSTOM:')])
+await client
+    .dispatch(url)
+    .findAllProps(
+      includes: [const PropfindRequestProp('author', 'urn:example:props')],
+    )
     .then((request) => request.close())
     .then((response) => response.parse())
     .then((result) => print(result?.toDebugString()));
 ```
 
-### 2. Example - request with custom parser
+</details>
+
+## Authentication
+
+Use `WebDavStdClient.authenticated` for scoped Basic and MD5 Digest
+authentication on **native platforms**:
+
+```dart
+final client = WebDavStdClient.authenticated(
+  authentication: WebDavAuthenticationConfig(
+    scope: Uri.parse('https://example.com/dav/'),
+    username: 'user',
+    password: 'app-password',
+  ),
+);
+```
+
+- **Mode:** `auto` performs read-only discovery by default. Set
+  `mode: WebDavAuthenticationMode.basic` to send Basic credentials immediately.
+- **Credentials:** restricted to the configured origin and directory subtree;
+  Basic requires HTTPS by default.
+- **Requests:** redirects are returned to the application; the package does not
+  replay business requests.
+
+<details>
+<summary>Configuration options</summary>
+
+| Configuration | Behavior |
+| --- | --- |
+| `scope` | Required HTTP(S) directory URI ending in `/`; limits credentials to that origin and directory subtree |
+| `username`, `password` | Credentials for the selected scheme |
+| `mode` | `WebDavAuthenticationMode.auto` (default) discovers authentication; `WebDavAuthenticationMode.basic` sends Basic credentials immediately without discovery |
+| `probeUri` | Initial discovery URI within `scope`; defaults to `scope` |
+| `discoveryTimeout` | Deadline for discovery requests and response bodies; defaults to 30 seconds |
+| `allowInsecureBasic` | Defaults to `false`, requiring HTTPS for Basic; set to `true` to permit HTTP |
+
+</details>
+
+<details>
+<summary>Supported schemes and Unicode handling</summary>
+
+Automatic mode selects Basic or supported Digest from the server's challenge.
+Bearer and OAuth are not supported.
+
+| Capability | Basic | Digest |
+| --- | --- | --- |
+| Discovery | Basic-only or mixed challenges containing Basic | A single Digest challenge |
+| Credential encoding | UTF-8, then Base64 | UTF-8 for digest calculation |
+| NFC normalization | Username and password when the selected challenge declares `charset=UTF-8` | Same |
+| Non-ASCII usernames | Included in the Base64 credentials | Sent using `username*` when username hashing is not enabled |
+| Username hashing | Not applicable | Sends a hashed username and `userhash=true` when advertised by the server |
+| Algorithm and `qop` | Not applicable | MD5 with no `qop` or `qop="auth"` |
+
+The `charset=UTF-8` value is matched case-insensitively. Without that declaration,
+including explicit Basic mode, credentials retain their original Unicode form.
+
+</details>
+
+<details>
+<summary>Custom transport and lifecycle</summary>
+
+- **Discovery:** automatic mode uses bounded, read-only PROPFIND requests before
+  the first operation. Concurrent callers share initialization. After a
+  transport failure or 5xx response, a later call can retry discovery; a
+  discovery timeout closes the client.
+- **Requests:** redirects are returned to the application, and the package does
+  not replay business requests. SDK proxy-authentication retries can omit
+  request bodies. Handle redirect and authentication responses in your app.
+- **Custom transport:** pass a dedicated `HttpClient` through `client` for proxy,
+  TLS, and connection settings. For custom HTTP Digest connections, use the
+  constructor's `connectionFactory` parameter. HTTP Digest uses a fresh
+  connection for each request; other modes and HTTPS retain the client's
+  connection handling.
+- **Errors and credentials:** transport exceptions propagate unchanged. Create
+  a new client to change credentials or rediscover an expired Digest nonce.
+  Keep SDK site-authentication callbacks and credentials off the managed client;
+  SDK proxy-authentication APIs remain available.
+
+</details>
+
+<details>
+<summary>SDK-managed authentication and browser support</summary>
+
+`WebDavStdClient()` and `WebDavStdClient.withClient(...)` support native and
+browser applications. On native platforms, use `setAuthenticate` and
+`addCredentials` with these constructors for SDK-managed site authentication.
+
+</details>
+
+## Operations
+
+Use `client.dispatch(url)` for common WebDAV operations:
+
+| Operation | HTTP method | Dispatcher method |
+| --- | --- | --- |
+| Read selected properties | PROPFIND | `findProps(props: ...)` |
+| Read all properties | PROPFIND | `findAllProps()` |
+| Read property names | PROPFIND | `findPropNames()` |
+| Set or remove properties | PROPPATCH | `updateProps(operations: ...)` |
+| Download a file | GET | `get()` |
+| Upload or replace a file | PUT | `create(data: ...)` |
+| Create a collection | MKCOL | `createDir()` |
+| Delete a resource | DELETE | `delete()`, `deleteDir()` |
+| Copy a resource | COPY | `copy(to: ...)`, `copyDir(to: ...)` |
+| Move a resource | MOVE | `move(to: ...)`, `moveDir(to: ...)` |
+| Create a lock | LOCK | `createLock(info: ...)`, `createDirLock(info: ...)` |
+| Renew a lock | LOCK | `renewLock(condition: ...)` |
+| Remove a lock | UNLOCK | `unlock(token: ...)` |
+
+The examples below use a configured `client` and a resource `url`. Import the
+public APIs needed by each example:
+
+```dart
+import 'package:simple_webdav_client/client.dart';
+import 'package:simple_webdav_client/dav.dart';
+import 'package:simple_webdav_client/utils.dart';
+```
+
+### PROPFIND
+
+Read selected property values, all properties, or property names. Use `Depth`
+to control whether collection members are included.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client
+    .dispatch(url)
+    .findProps(
+      props: [const PropfindRequestProp('displayname', 'DAV:')],
+      depth: Depth.resource,
+    );
+final response = await request.close();
+print((await response.parse())?.toDebugString());
+
+// Other request builders: findAllProps() and findPropNames().
+```
+
+</details>
+
+### PROPPATCH
+
+Set and remove custom properties in a single request.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client
+    .dispatch(url)
+    .updateProps(
+      operations: [
+        const ProppatchRequestProp.set(
+          name: 'author',
+          namespace: 'urn:example:props',
+          value: ProppatchRequestPropBaseValue('Alice'),
+        ),
+        const ProppatchRequestProp.remove(
+          name: 'obsolete',
+          namespace: 'urn:example:props',
+        ),
+      ],
+    );
+final response = await request.close();
+print((await response.parse())?.toDebugString());
+```
+
+</details>
+
+### MKCOL / PUT
+
+Create a collection with `createDir()`, then upload a file with `create()`.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final directory = url.resolve('notes/');
+final directoryRequest = await client.dispatch(directory).createDir();
+final directoryResponse = await directoryRequest.close();
+await directoryResponse.response.drain<void>();
+
+final fileRequest = await client
+    .dispatch(directory.resolve('hello.txt'))
+    .create(data: 'Hello, WebDAV!');
+final fileResponse = await fileRequest.close();
+print(fileResponse.response.statusCode);
+await fileResponse.response.drain<void>();
+```
+
+</details>
+
+### GET / HEAD / POST
+
+Download data with `get()`. Use `openUrl` for HEAD and POST, pairing each
+method with its corresponding request parameters.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final download = await client.dispatch(url).get();
+final downloadResponse = await download.close();
+final bytes = await downloadResponse.response
+    .expand((chunk) => chunk)
+    .toList();
+print('Downloaded ${bytes.length} bytes');
+
+final head = await client.openUrl(
+  method: WebDavMethod.head,
+  url: url,
+  param: const HeadRequestParam(),
+);
+final headResponse = await head.close();
+print(headResponse.response.statusCode);
+await headResponse.response.drain<void>();
+
+final post = await client.openUrl(
+  method: WebDavMethod.post,
+  url: url,
+  param: const PostRequestParam(data: 'message'),
+);
+final postResponse = await post.close();
+await postResponse.response.drain<void>();
+```
+
+</details>
+
+### DELETE
+
+Delete a file with `delete()` or a collection with `deleteDir()`.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client.dispatch(url).delete();
+final response = await request.close();
+print(response.response.statusCode);
+await response.response.drain<void>();
+```
+
+</details>
+
+### COPY
+
+Copy a file to another URI. Use `copyDir()` for a collection.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client
+    .dispatch(url)
+    .copy(to: url.resolve('copy.txt'), overwrite: false);
+final response = await request.close();
+print(response.response.statusCode);
+await response.response.drain<void>();
+```
+
+</details>
+
+### MOVE
+
+Move a file to another URI. Use `moveDir()` for a collection.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client
+    .dispatch(url)
+    .move(to: url.resolve('renamed.txt'), overwrite: false);
+final response = await request.close();
+print(response.response.statusCode);
+await response.response.drain<void>();
+```
+
+</details>
+
+### LOCK
+
+Create a resource lock and use its token to renew it. Use `createDirLock()`
+when locking a collection.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client
+    .dispatch(url)
+    .createLock(info: const LockInfo(lockScope: LockScope.exclusive));
+final response = await request.close();
+final result = await response.parse();
+final lockToken = result?.firstOrNull?.props
+    .whereType<WebDavStdResourceProp<LockDiscovery>>()
+    .firstOrNull
+    ?.value
+    ?.firstOrNull
+    ?.lockToken;
+
+if (lockToken != null) {
+  final renewal = await client
+      .dispatch(url)
+      .renewLock(
+        condition: IfOr.notag([
+          IfAnd.notag([IfCondition.token(lockToken)]),
+        ]),
+      );
+  final renewalResponse = await renewal.close();
+  await renewalResponse.response.drain<void>();
+}
+```
+
+</details>
+
+### UNLOCK
+
+Release a lock using the `Uri` token returned by the LOCK response.
+
+<details>
+<summary>Example</summary>
+
+```dart
+final request = await client.dispatch(url).unlock(token: lockToken);
+final response = await request.close();
+print(response.response.statusCode);
+await response.response.drain<void>();
+```
+
+</details>
+
+See [example/main.dart](example/main.dart) for file operations, custom properties,
+and locking, or browse the [integration tests](test/intergration_test/methods_test/)
+for individual methods.
+
+## Custom response parsing
+
+Pass `responseBodyDecoders` or `responseResultParser` to `openUrl` or `dispatch`
+to customize response decoding and parsing. The
+[example application](example/main.dart) demonstrates a parser for a custom XML
+property.
+
+Import public entrypoints such as `client.dart`, `dav.dart`, and `utils.dart`
+when using these APIs.
+
+<details>
+<summary>Example: parse a custom XML property</summary>
 
 ```dart
 BaseRespResultParser generateParser() {
@@ -217,56 +424,50 @@ BaseRespResultParser generateParser() {
   propParsers[(name: "author", ns: "CUSTOM:")] = const StringPropParser();
 
   final propstatParser = BasePropstatElementParser(
-      parserManger: WebDavResposneDataParserManger(parsers: propParsers),
-      statusParser: const BaseHttpStatusElementParser(),
-      errorParser: const BaseErrorElementParser());
+    parserManger: WebDavResposneDataParserManger(parsers: propParsers),
+    statusParser: const BaseHttpStatusElementParser(),
+    errorParser: const BaseErrorElementParser(),
+  );
   final responseParser = BaseResponseElementParser(
-      hrefParser: const BaseHrefElementParser(),
-      statusParser: const BaseHttpStatusElementParser(),
-      propstatParser: propstatParser,
-      errorParser: const BaseErrorElementParser(),
-      locationParser: const BaseHrefElementParser());
-  final multistatParser =
-      BaseMultistatusElementParser(responseParser: responseParser);
+    hrefParser: const BaseHrefElementParser(),
+    statusParser: const BaseHttpStatusElementParser(),
+    propstatParser: propstatParser,
+    errorParser: const BaseErrorElementParser(),
+    locationParser: const BaseHrefElementParser(),
+  );
+  final multistatParser = BaseMultistatusElementParser(
+    responseParser: responseParser,
+  );
 
   final parsers = Map.of(kStdElementParserManager);
   parsers[(name: WebDavElementNames.multistatus, ns: kDavNamespaceUrlStr)] =
       multistatParser;
 
   return BaseRespResultParser(
-      singleResDecoder: kStdResponseResultParser.singleResDecoder,
-      multiResDecoder: BaseRespMultiResultParser(
-          parserManger: WebDavResposneDataParserManger(parsers: parsers)));
+    singleResDecoder: kStdResponseResultParser.singleResDecoder,
+    multiResDecoder: BaseRespMultiResultParser(
+      parserManger: WebDavResposneDataParserManger(parsers: parsers),
+    ),
+  );
 }
-
-final parser = generateParser();
-
-// openUrl
-client.openUrl(
-    method: WebDavMethod.propfind,
-    url: url,
-    param: ...,
-    responseResultParser: parser
-);
-// dispatch
-WebDavClient.std().dispatch(newFilePath, responseResultParser: parser);
 ```
 
-## Donate
+Use the parser when creating requests:
 
-[!["Buy Me A Coffee"][buymeacoffee-badge]](https://www.buymeacoffee.com/d49cb87qgww)
-[![Alipay][alipay-badge]][alipay-addr]
-[![WechatPay][wechat-badge]][wechat-addr]
+```dart
+final request = await client
+    .dispatch(url, responseResultParser: generateParser())
+    .findAllProps();
+final response = await request.close();
+print((await response.parse())?.toDebugString());
+```
 
-[![ETH][eth-badge]][eth-addr]
-[![BTC][btc-badge]][btc-addr]
+</details>
 
 ## Development
 
-The package supports Dart **3.8.0 or later**. Development and formatting use
-**Dart 3.8.3**, pinned in `.tool-versions`. No Flutter SDK is required.
-With the Dart plugin installed in asdf, run `asdf install` to install that SDK.
-The commands below require GNU Make and a POSIX shell (Git Bash on Windows).
+Development and formatting use Dart **3.8.3**, pinned in `.tool-versions`.
+Run the following commands from the repository root:
 
 ```sh
 make bootstrap
@@ -275,62 +476,30 @@ make check
 
 | Command | Purpose |
 | --- | --- |
-| `make bootstrap` | Resolve dependencies using the committed lockfile |
-| `make gen` | Regenerate Mockito mocks; follow with `make format` |
-| `make format` | Format library, test, generated, and example Dart files |
-| `make format-check` | Check formatting without changing files |
-| `make fix` | Apply Dart fixes and format; review the diff before committing |
-| `make analyze` | Require zero analyzer errors, warnings, and infos |
-| `make test` | Run all unit and local HTTP integration tests |
+| `make format` | Format Dart sources |
+| `make analyze` | Run static analysis |
+| `make test` | Run unit and local HTTP integration tests |
+| `make gen` | Regenerate Mockito mocks |
 | `make publish-dry-run` | Validate the package without publishing |
-| `make check` | Resolve, check formatting, analyze, and run all tests |
-| `make aio` | Resolve, regenerate mocks, apply fixes, format, and run all checks |
 
-Override the Dart executable with `make check DART=/path/to/dart`.
-For a standalone JSON test report, use
-`make test MACHINE_OUT=test-results/package_test.log`; `make test CI=1` uses
-the GitHub console reporter. Test failures return a nonzero exit code.
-The full test suite starts its own loopback HTTP servers and needs no Docker
-container or external WebDAV service. The interactive example is separate.
+Use `make help` for all commands. Set `DART=/path/to/dart` to select a specific
+SDK, for example `make check DART=/path/to/dart`.
 
-Style rules extend Dart's recommended lints with a pure Dart subset of mHabit's
-rules for final/const declarations, return types, imports, and simpler code.
-Analysis includes tests, examples, and generated mocks. Keep public APIs and
-behavior unchanged when fixing style; any necessary local suppression must
-explain the existing contract it preserves. Do not edit generated mocks by hand.
+Tests run against local HTTP servers and do not require Docker or an external
+WebDAV service.
 
-CI checks generated-code reproducibility, formatting, analysis, tests, and
-publishing validation on the pinned SDK. Separate jobs analyze and test on
-Dart 3.8.0 and the latest stable SDK, plus downgraded dependencies on 3.8.0.
-Only the pinned SDK enforces formatting. PRs, main-branch pushes, manual checks,
-and tag publishing share these gates; a release tag publishes only after they
-all pass.
+## Support
+
+[!["Buy Me A Coffee"][buymeacoffee-badge]](https://www.buymeacoffee.com/d49cb87qgww)
+[![Alipay][alipay-badge]][alipay-addr]
+[![WechatPay][wechat-badge]][wechat-addr]
+
+[![ETH][eth-badge]][eth-addr]
+[![BTC][btc-badge]][btc-addr]
 
 ## License
 
-```text
-MIT License
-
-Copyright (c) 2024 Fries_I23
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+[MIT](LICENSE).
 
 [pubdev-package]: https://img.shields.io/pub/v/simple_webdav_client.svg
 [pubdev-likes]: https://img.shields.io/pub/likes/simple_webdav_client?logo=dart

@@ -4,6 +4,11 @@
 // https://opensource.org/licenses/MIT
 
 export 'src/_std/_param.dart';
+export 'src/_std/authentication.dart'
+    show
+        WebDavAuthenticationConfig,
+        WebDavAuthenticationError,
+        WebDavAuthenticationMode;
 export 'src/_std/client.dart';
 export 'src/_std/client_dispatcher.dart' show WebDavStdRequestDispatcher;
 export 'src/_std/copy.dart';
